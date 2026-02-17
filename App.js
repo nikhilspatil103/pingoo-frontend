@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
-import axios from 'axios';
 
 const API_URL = 'https://pingoo-backend-5dkh.onrender.com/api';
 
@@ -16,13 +15,23 @@ export default function App() {
     }
 
     try {
-      const response = await axios.post(`${API_URL}/signup`, { name, email, password });
-      Alert.alert('Success', response.data.message);
-      setName('');
-      setEmail('');
-      setPassword('');
+      const response = await fetch(`${API_URL}/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        Alert.alert('Success', data.message);
+        setName('');
+        setEmail('');
+        setPassword('');
+      } else {
+        Alert.alert('Error', data.error || 'Signup failed');
+      }
     } catch (error) {
-      Alert.alert('Error', error.response?.data?.error || 'Signup failed');
+      Alert.alert('Error', 'Network error');
     }
   };
 
