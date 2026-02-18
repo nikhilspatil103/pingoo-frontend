@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-
-const API_URL = 'http://localhost:3000/api';
+import { API_URL } from '../config/urlConfig';
 
 export default function LoginScreen({ navigation }) {
   const { login } = useAuth();
