@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { BlurView } from 'expo-blur';
 
 export default function DiscoverScreen({ navigation }) {
   const { theme, isDark, toggleTheme } = useTheme();
@@ -28,7 +29,7 @@ export default function DiscoverScreen({ navigation }) {
       </View>
 
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
+      <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.searchContainer}>
         <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
           style={styles.searchInput}
@@ -37,28 +38,28 @@ export default function DiscoverScreen({ navigation }) {
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
-      </View>
+      </BlurView>
 
       {/* Categories */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categories}>
-        <TouchableOpacity style={styles.categoryChip}>
+        <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.categoryChip}>
           <Text style={styles.categoryText}>All</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.categoryChipOutline}>
+        </BlurView>
+        <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.categoryChipOutline}>
           <Text style={styles.categoryTextOutline}>Sports</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.categoryChipOutline}>
+        </BlurView>
+        <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.categoryChipOutline}>
           <Text style={styles.categoryTextOutline}>Food</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.categoryChipOutline}>
+        </BlurView>
+        <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.categoryChipOutline}>
           <Text style={styles.categoryTextOutline}>Entertainment</Text>
-        </TouchableOpacity>
+        </BlurView>
       </ScrollView>
 
       {/* Groups List */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {groups.map((group) => (
-          <TouchableOpacity key={group.id} style={styles.groupCard}>
+          <BlurView key={group.id} intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.groupCard}>
             <View style={[styles.groupIcon, { backgroundColor: group.color + '20' }]}>
               <Text style={styles.groupEmoji}>{group.icon}</Text>
             </View>
@@ -70,7 +71,7 @@ export default function DiscoverScreen({ navigation }) {
             <TouchableOpacity style={[styles.joinButton, { backgroundColor: group.color }]}>
               <Text style={styles.joinButtonText}>Join</Text>
             </TouchableOpacity>
-          </TouchableOpacity>
+          </BlurView>
         ))}
       </ScrollView>
 
@@ -132,8 +133,10 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     marginVertical: 15,
     paddingHorizontal: 15,
     height: 50,
-    backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5',
     borderRadius: 25,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)',
   },
   searchIcon: { fontSize: 20, marginRight: 10 },
   searchInput: { flex: 1, fontSize: 16, color: theme.text },
@@ -141,29 +144,33 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   categoryChip: {
     paddingHorizontal: 20,
     paddingVertical: 8,
-    backgroundColor: isDark ? '#2a2a2a' : '#e0e0e0',
     borderRadius: 20,
     marginRight: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)',
   },
   categoryText: { color: theme.text, fontWeight: '600', fontSize: 14 },
   categoryChipOutline: {
     paddingHorizontal: 20,
     paddingVertical: 8,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: isDark ? '#2a2a2a' : '#e0e0e0',
     borderRadius: 20,
     marginRight: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)',
   },
   categoryTextOutline: { color: theme.textSecondary, fontWeight: '600', fontSize: 14 },
   content: { flex: 1, paddingHorizontal: 20 },
   groupCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5',
     borderRadius: 16,
     padding: 15,
     marginBottom: 15,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)',
   },
   groupIcon: {
     width: 60,

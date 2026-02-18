@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Tex
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
+import { BlurView } from 'expo-blur';
 
 export default function EditProfileScreen({ navigation }) {
   const { theme, isDark } = useTheme();
@@ -119,105 +120,121 @@ export default function EditProfileScreen({ navigation }) {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Basic Information</Text>
-          <TouchableOpacity style={styles.infoCard} onPress={() => setShowNameEdit(true)}>
-            <View style={styles.infoIcon}>
-              <Text style={styles.infoEmoji}>👤</Text>
-            </View>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Name</Text>
-              <Text style={styles.infoValue}>{name || 'Not set'}</Text>
-            </View>
-            <Text style={styles.infoArrow}>›</Text>
-          </TouchableOpacity>
+          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+            <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowNameEdit(true)}>
+              <View style={styles.infoIcon}>
+                <Text style={styles.infoEmoji}>👤</Text>
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Name</Text>
+                <Text style={styles.infoValue}>{name || 'Not set'}</Text>
+              </View>
+              <Text style={styles.infoArrow}>›</Text>
+            </TouchableOpacity>
+          </BlurView>
 
-          <TouchableOpacity style={styles.infoCard} onPress={() => setShowBioEdit(true)}>
-            <View style={styles.infoIcon}>
-              <Text style={styles.infoEmoji}>📝</Text>
-            </View>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Bio</Text>
-              <Text style={styles.infoValue} numberOfLines={1}>{bio || 'Not set'}</Text>
-            </View>
-            <Text style={styles.infoArrow}>›</Text>
-          </TouchableOpacity>
+          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+            <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowBioEdit(true)}>
+              <View style={styles.infoIcon}>
+                <Text style={styles.infoEmoji}>📝</Text>
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Bio</Text>
+                <Text style={styles.infoValue} numberOfLines={1}>{bio || 'Not set'}</Text>
+              </View>
+              <Text style={styles.infoArrow}>›</Text>
+            </TouchableOpacity>
+          </BlurView>
 
-          <TouchableOpacity style={styles.infoCard} onPress={() => setShowHeightEdit(true)}>
-            <View style={styles.infoIcon}>
-              <Text style={styles.infoEmoji}>📏</Text>
-            </View>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Height</Text>
-              <Text style={styles.infoValue}>{height ? `${height} cm` : 'Not set'}</Text>
-            </View>
-            <Text style={styles.infoArrow}>›</Text>
-          </TouchableOpacity>
+          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+            <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowHeightEdit(true)}>
+              <View style={styles.infoIcon}>
+                <Text style={styles.infoEmoji}>📏</Text>
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Height</Text>
+                <Text style={styles.infoValue}>{height ? `${height} cm` : 'Not set'}</Text>
+              </View>
+              <Text style={styles.infoArrow}>›</Text>
+            </TouchableOpacity>
+          </BlurView>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Lifestyle</Text>
-          <TouchableOpacity style={styles.infoCard} onPress={() => setShowBodyTypeEdit(true)}>
-            <View style={styles.infoIcon}>
-              <Text style={styles.infoEmoji}>💪</Text>
-            </View>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Body Type</Text>
-              <Text style={styles.infoValue}>{bodyType || 'Not set'}</Text>
-            </View>
-            <Text style={styles.infoArrow}>›</Text>
-          </TouchableOpacity>
+          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+            <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowBodyTypeEdit(true)}>
+              <View style={styles.infoIcon}>
+                <Text style={styles.infoEmoji}>💪</Text>
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Body Type</Text>
+                <Text style={styles.infoValue}>{bodyType || 'Not set'}</Text>
+              </View>
+              <Text style={styles.infoArrow}>›</Text>
+            </TouchableOpacity>
+          </BlurView>
 
-          <TouchableOpacity style={styles.infoCard} onPress={() => setShowLifestyleEdit(true)}>
-            <View style={styles.infoIcon}>
-              <Text style={styles.infoEmoji}>🌟</Text>
-            </View>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Lifestyle</Text>
-              <Text style={styles.infoValue}>Smoking, Drinking, Exercise, Diet</Text>
-            </View>
-            <Text style={styles.infoArrow}>›</Text>
-          </TouchableOpacity>
+          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+            <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowLifestyleEdit(true)}>
+              <View style={styles.infoIcon}>
+                <Text style={styles.infoEmoji}>🌟</Text>
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Lifestyle</Text>
+                <Text style={styles.infoValue}>Smoking, Drinking, Exercise, Diet</Text>
+              </View>
+              <Text style={styles.infoArrow}>›</Text>
+            </TouchableOpacity>
+          </BlurView>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Work & Education</Text>
-          <TouchableOpacity style={styles.infoCard} onPress={() => setShowWorkEdit(true)}>
-            <View style={styles.infoIcon}>
-              <Text style={styles.infoEmoji}>💼</Text>
-            </View>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Work Details</Text>
-              <Text style={styles.infoValue}>{occupation || company || graduation || school || 'Not set'}</Text>
-            </View>
-            <Text style={styles.infoArrow}>›</Text>
-          </TouchableOpacity>
+          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+            <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowWorkEdit(true)}>
+              <View style={styles.infoIcon}>
+                <Text style={styles.infoEmoji}>💼</Text>
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Work Details</Text>
+                <Text style={styles.infoValue}>{occupation || company || graduation || school || 'Not set'}</Text>
+              </View>
+              <Text style={styles.infoArrow}>›</Text>
+            </TouchableOpacity>
+          </BlurView>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Location</Text>
-          <TouchableOpacity style={styles.infoCard} onPress={() => setShowLocationEdit(true)}>
-            <View style={styles.infoIcon}>
-              <Text style={styles.infoEmoji}>📍</Text>
-            </View>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Location</Text>
-              <Text style={styles.infoValue}>{currentCity || hometown || 'Not set'}</Text>
-            </View>
-            <Text style={styles.infoArrow}>›</Text>
-          </TouchableOpacity>
+          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+            <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowLocationEdit(true)}>
+              <View style={styles.infoIcon}>
+                <Text style={styles.infoEmoji}>📍</Text>
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Location</Text>
+                <Text style={styles.infoValue}>{currentCity || hometown || 'Not set'}</Text>
+              </View>
+              <Text style={styles.infoArrow}>›</Text>
+            </TouchableOpacity>
+          </BlurView>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Relationship</Text>
-          <TouchableOpacity style={styles.infoCard} onPress={() => setShowRelationshipEdit(true)}>
-            <View style={styles.infoIcon}>
-              <Text style={styles.infoEmoji}>💕</Text>
-            </View>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Relationship Info</Text>
-              <Text style={styles.infoValue}>{lookingFor || relationshipStatus || kids || 'Not set'}</Text>
-            </View>
-            <Text style={styles.infoArrow}>›</Text>
-          </TouchableOpacity>
+          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+            <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowRelationshipEdit(true)}>
+              <View style={styles.infoIcon}>
+                <Text style={styles.infoEmoji}>💕</Text>
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Relationship Info</Text>
+                <Text style={styles.infoValue}>{lookingFor || relationshipStatus || kids || 'Not set'}</Text>
+              </View>
+              <Text style={styles.infoArrow}>›</Text>
+            </TouchableOpacity>
+          </BlurView>
         </View>
 
         <View style={{ height: 40 }} />
@@ -225,7 +242,7 @@ export default function EditProfileScreen({ navigation }) {
 
       <Modal visible={showNameEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Edit Name</Text>
               <TouchableOpacity onPress={() => setShowNameEdit(false)}>
@@ -245,13 +262,13 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
       </Modal>
 
       <Modal visible={showBioEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Edit Bio</Text>
               <TouchableOpacity onPress={() => setShowBioEdit(false)}>
@@ -274,13 +291,13 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
       </Modal>
 
       <Modal visible={showHeightEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Edit Height</Text>
               <TouchableOpacity onPress={() => setShowHeightEdit(false)}>
@@ -291,13 +308,13 @@ export default function EditProfileScreen({ navigation }) {
             <TouchableOpacity style={styles.saveBtn} onPress={() => setShowHeightEdit(false)}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
       </Modal>
 
       <Modal visible={showBodyTypeEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Body Type</Text>
               <TouchableOpacity onPress={() => setShowBodyTypeEdit(false)}>
@@ -309,13 +326,13 @@ export default function EditProfileScreen({ navigation }) {
                 <Text style={styles.optionText}>{type}</Text>
               </TouchableOpacity>
             ))}
-          </View>
+          </BlurView>
         </View>
       </Modal>
 
       <Modal visible={showLifestyleEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Lifestyle</Text>
               <TouchableOpacity onPress={() => setShowLifestyleEdit(false)}>
@@ -357,13 +374,13 @@ export default function EditProfileScreen({ navigation }) {
             <TouchableOpacity style={styles.saveBtn} onPress={() => setShowLifestyleEdit(false)}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
       </Modal>
 
       <Modal visible={showWorkEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Work & Education</Text>
               <TouchableOpacity onPress={() => setShowWorkEdit(false)}>
@@ -377,13 +394,13 @@ export default function EditProfileScreen({ navigation }) {
             <TouchableOpacity style={styles.saveBtn} onPress={() => setShowWorkEdit(false)}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
       </Modal>
 
       <Modal visible={showLocationEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Location</Text>
               <TouchableOpacity onPress={() => setShowLocationEdit(false)}>
@@ -395,13 +412,13 @@ export default function EditProfileScreen({ navigation }) {
             <TouchableOpacity style={styles.saveBtn} onPress={() => setShowLocationEdit(false)}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
       </Modal>
 
       <Modal visible={showRelationshipEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Relationship</Text>
               <TouchableOpacity onPress={() => setShowRelationshipEdit(false)}>
@@ -429,7 +446,7 @@ export default function EditProfileScreen({ navigation }) {
             <TouchableOpacity style={styles.saveBtn} onPress={() => setShowRelationshipEdit(false)}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
       </Modal>
     </SafeAreaView>
@@ -453,7 +470,8 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   addPhotoText: { fontSize: 40, color: theme.textSecondary },
   section: { paddingHorizontal: 20, marginBottom: 20, marginTop: 20 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: theme.text, marginBottom: 16 },
-  infoCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', borderRadius: 16, padding: 16, marginBottom: 12 },
+  infoCard: { borderRadius: 16, marginBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)' },
+  infoCardInner: { flexDirection: 'row', alignItems: 'center', padding: 16 },
   infoIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#667eea', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   infoEmoji: { fontSize: 24 },
   infoContent: { flex: 1 },
@@ -461,7 +479,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   infoValue: { fontSize: 15, fontWeight: '600', color: theme.text },
   infoArrow: { fontSize: 24, color: theme.textSecondary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: isDark ? '#2a2a2a' : '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '80%' },
+  modalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '80%', overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: theme.text },
   closeBtn: { fontSize: 24, color: theme.text },

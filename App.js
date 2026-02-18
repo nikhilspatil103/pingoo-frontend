@@ -7,16 +7,32 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import HomeScreen from './screens/HomeScreen';
-import DiscoverScreen from './screens/DiscoverScreen';
+import ContactsScreen from './screens/ContactsScreen';
 import ProfileViewScreen from './screens/ProfileViewScreen';
 import MyProfileScreen from './screens/MyProfileScreen';
 import EditProfileScreen from './screens/EditProfileScreen';
+import MyCoinsScreen from './screens/MyCoinsScreen';
+import TermsScreen from './screens/TermsScreen';
+import AboutScreen from './screens/AboutScreen';
+import BlockListScreen from './screens/BlockListScreen';
+import DeleteAccountScreen from './screens/DeleteAccountScreen';
 import ChatScreen from './screens/ChatScreen';
 import ChatListScreen from './screens/ChatListScreen';
-import { ActivityIndicator, View, Text } from 'react-native';
+import { ActivityIndicator, View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+const TabIcon = ({ focused, icon, isDark }) => (
+  <View style={[
+    styles.iconContainer,
+    focused && { backgroundColor: isDark ? '#2A1F35' : '#E8D5E0' }
+  ]}>
+    <Ionicons name={icon} size={24} color={focused ? (isDark ? '#F70776' : '#FF6B9D') : (isDark ? '#8E8E93' : '#999')} />
+  </View>
+);
 
 function MainTabs() {
   const { theme, isDark } = useTheme();
@@ -26,45 +42,56 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: isDark ? '#130B1A' : '#F3E9EC',
-          borderTopWidth: 1,
-          borderTopColor: isDark ? '#1a1a1a' : '#f0f0f0',
-          paddingBottom: 10,
-          paddingTop: 10,
+          position: 'absolute',
+          bottom: 20,
+          left: 20,
+          right: 20,
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
           height: 70,
+          paddingTop: 10,
         },
+        tabBarBackground: () => (
+          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={{
+            flex: 1,
+            borderRadius: 35,
+            overflow: 'hidden',
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)',
+          }} />
+        ),
         tabBarActiveTintColor: isDark ? '#F70776' : '#FF6B9D',
         tabBarInactiveTintColor: theme.textSecondary,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-        tabBarItemStyle: { flex: 1, justifyContent: 'center' },
+        tabBarShowLabel: false,
       }}
     >
       <Tab.Screen 
         name="Find" 
         component={HomeScreen}
         options={{
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24, color }}>◎</Text>,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="home-outline" isDark={isDark} />,
         }}
       />
       <Tab.Screen 
-        name="Discover" 
-        component={DiscoverScreen}
+        name="Contacts" 
+        component={ContactsScreen}
         options={{
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24, color }}>☆</Text>,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="people-outline" isDark={isDark} />,
         }}
       />
       <Tab.Screen 
         name="Chats" 
         component={ChatListScreen}
         options={{
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24, color }}>✉</Text>,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="chatbubble-outline" isDark={isDark} />,
         }}
       />
       <Tab.Screen 
         name="Profile" 
         component={MyProfileScreen}
         options={{
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 24, color }}>○</Text>,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="person-outline" isDark={isDark} />,
         }}
       />
     </Tab.Navigator>
@@ -100,6 +127,11 @@ function AppNavigator() {
             <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen name="ProfileView" component={ProfileViewScreen} options={{ presentation: 'card' }} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+            <Stack.Screen name="MyCoins" component={MyCoinsScreen} />
+            <Stack.Screen name="Terms" component={TermsScreen} />
+            <Stack.Screen name="About" component={AboutScreen} />
+            <Stack.Screen name="BlockList" component={BlockListScreen} />
+            <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
             <Stack.Screen name="Chat" component={ChatScreen} />
           </>
         )}
@@ -117,3 +149,14 @@ export default function App() {
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+});

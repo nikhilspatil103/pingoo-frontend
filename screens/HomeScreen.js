@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, ImageBackground, Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -35,125 +37,131 @@ export default function HomeScreen({ navigation }) {
   const styles = getStyles(theme, isDark);
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Pingoo</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.viewToggle} onPress={() => setIsListView(!isListView)}>
-            <Text style={styles.viewToggleIcon}>{isListView ? '⊞' : '☰'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.themeButton} onPress={toggleTheme}>
-            <Text style={styles.themeIcon}>{isDark ? '☀️' : '🌙'}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']}
+        style={styles.gradientBackground}
+      >
+        <SafeAreaView style={styles.safeArea}>
+          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.header}>
+            <Text style={styles.headerTitle}>Pingoo</Text>
+            <View style={styles.headerRight}>
+              <TouchableOpacity style={styles.viewToggle} onPress={() => setIsListView(!isListView)}>
+                <Text style={styles.viewToggleIcon}>{isListView ? '⊞' : '☰'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.themeButton} onPress={toggleTheme}>
+                <Text style={styles.themeIcon}>{isDark ? '☀️' : '🌙'}</Text>
+              </TouchableOpacity>
+            </View>
+          </BlurView>
 
-      {/* Profiles Grid */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <Animated.View style={[isListView ? styles.listContainer : styles.gridContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          {profiles.map((profile, index) => (
-            <TouchableOpacity key={profile.id} style={isListView ? styles.listCard : styles.profileCardWrapper} onPress={() => navigation.navigate('ProfileView', { profile })}>
-              {isListView ? (
-                <View style={styles.listCardContent}>
-                  {profile.image ? (
-                    <ImageBackground source={{ uri: profile.image }} style={styles.listImage} imageStyle={styles.listImageStyle} />
+          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Animated.View style={[isListView ? styles.listContainer : styles.gridContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+              {profiles.map((profile) => (
+                <TouchableOpacity key={profile.id} style={isListView ? styles.listCard : styles.profileCardWrapper} onPress={() => navigation.navigate('ProfileView', { profile })}>
+                  {isListView ? (
+                    <View style={styles.listCardContent}>
+                      {profile.image ? (
+                        <ImageBackground source={{ uri: profile.image }} style={styles.listImage} imageStyle={styles.listImageStyle} />
+                      ) : (
+                        <View style={[styles.listImage, { backgroundColor: profile.borderColor[0] }]}>
+                          <Text style={styles.listAvatarLetter}>{profile.name.charAt(0)}</Text>
+                        </View>
+                      )}
+                      <View style={styles.listInfo}>
+                        <Text style={styles.listName}>{profile.name}, {profile.age}</Text>
+                        <Text style={styles.listLocation}>📍 {profile.location}</Text>
+                        <View style={styles.listTagRow}>
+                          <Text style={[styles.listGenderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>
+                            {profile.gender === 'female' ? '♀' : '♂'}
+                          </Text>
+                          <Text style={styles.listTag}>{profile.tag}</Text>
+                        </View>
+                      </View>
+                    </View>
                   ) : (
-                    <View style={[styles.listImage, { backgroundColor: profile.borderColor[0] }]}>
-                      <Text style={styles.listAvatarLetter}>{profile.name.charAt(0)}</Text>
-                    </View>
+                    <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.glassCard}>
+                      {profile.image ? (
+                        <ImageBackground source={{ uri: profile.image }} style={styles.cardImage} imageStyle={styles.cardImageStyle}>
+                          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} style={styles.cardGradient}>
+                            <BlurView intensity={30} tint="dark" style={styles.cardOverlay}>
+                              <View style={styles.cardInfo}>
+                                <Text style={styles.profileName}>{profile.name}, {profile.age}</Text>
+                                <Text style={styles.profileLocation}>📍 {profile.location}</Text>
+                                <BlurView intensity={20} tint="dark" style={styles.tagBadge}>
+                                  <Text style={[styles.genderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>{profile.gender === 'female' ? '♀' : '♂'}</Text>
+                                  <Text style={styles.tagText}>{profile.tag}</Text>
+                                </BlurView>
+                              </View>
+                            </BlurView>
+                          </LinearGradient>
+                        </ImageBackground>
+                      ) : (
+                        <LinearGradient colors={profile.borderColor} style={styles.cardImage}>
+                          <View style={styles.avatarContainer}>
+                            <View style={styles.avatarCircle}>
+                              <Text style={styles.avatarLetter}>{profile.name.charAt(0)}</Text>
+                            </View>
+                          </View>
+                          <BlurView intensity={30} tint="dark" style={styles.cardOverlay}>
+                            <View style={styles.cardInfo}>
+                              <Text style={styles.profileName}>{profile.name}, {profile.age}</Text>
+                              <Text style={styles.profileLocation}>📍 {profile.location}</Text>
+                              <BlurView intensity={20} tint="dark" style={styles.tagBadge}>
+                                <Text style={[styles.genderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>{profile.gender === 'female' ? '♀' : '♂'}</Text>
+                                <Text style={styles.tagText}>{profile.tag}</Text>
+                              </BlurView>
+                            </View>
+                          </BlurView>
+                        </LinearGradient>
+                      )}
+                    </BlurView>
                   )}
-                  <View style={styles.listInfo}>
-                    <Text style={styles.listName}>{profile.name}, {profile.age}</Text>
-                    <Text style={styles.listLocation}>📍 {profile.location}</Text>
-                    <View style={styles.listTagRow}>
-                      <Text style={[styles.listGenderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>
-                        {profile.gender === 'female' ? '♀' : '♂'}
-                      </Text>
-                      <Text style={styles.listTag}>{profile.tag}</Text>
-                    </View>
-                  </View>
-                </View>
-              ) : (
-              <View style={[styles.gradientBorder, { 
-                borderColor: profile.borderColor[0],
-                shadowColor: profile.borderColor[0],
-              }]}>
-                {profile.image ? (
-                  <ImageBackground
-                    source={{ uri: profile.image }}
-                    style={styles.cardImage}
-                    imageStyle={styles.cardImageStyle}
-                  >
-                    <View style={styles.cardOverlay}>
-                      <View style={styles.cardInfo}>
-                        <Text style={styles.profileName}>{profile.name}, {profile.age}</Text>
-                        <Text style={styles.profileLocation}>📍 {profile.location}</Text>
-                        <View style={styles.tagBadge}>
-                          <Text style={[styles.genderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>{profile.gender === 'female' ? '♀' : '♂'}</Text>
-                          <Text style={styles.tagText}>{profile.tag}</Text>
-                        </View>
-                      </View>
-                    </View>
-                  </ImageBackground>
-                ) : (
-                  <View style={styles.cardImage}>
-                    <View style={styles.avatarContainer}>
-                      <View style={[styles.avatarCircle, { backgroundColor: profile.borderColor[0] }]}>
-                        <Text style={styles.avatarLetter}>{profile.name.charAt(0)}</Text>
-                      </View>
-                    </View>
-                    <View style={styles.cardOverlay}>
-                      <View style={styles.cardInfo}>
-                        <Text style={styles.profileName}>{profile.name}, {profile.age}</Text>
-                        <Text style={styles.profileLocation}>📍 {profile.location}</Text>
-                        <View style={styles.tagBadge}>
-                          <Text style={[styles.genderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>{profile.gender === 'female' ? '♀' : '♂'}</Text>
-                          <Text style={styles.tagText}>{profile.tag}</Text>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-                )}
-              </View>
-            )}
-            </TouchableOpacity>
-          ))}
-        </Animated.View>
+                </TouchableOpacity>
+              ))}
+            </Animated.View>
 
-        {/* Sort Buttons */}
-        <View style={styles.sortContainer}>
-          <TouchableOpacity style={styles.sortButton}>
-            <Text style={styles.sortButtonText}>Sort by location</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sortButtonOutline}>
-            <Text style={styles.sortButtonTextOutline}>Sort by tags</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+            <View style={styles.sortContainer}>
+              <TouchableOpacity>
+                <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.sortButton}>
+                  <Text style={styles.sortButtonText}>Sort by location</Text>
+                </BlurView>
+              </TouchableOpacity>
+              <TouchableOpacity>
+                <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.sortButtonOutline}>
+                  <Text style={styles.sortButtonTextOutline}>Sort by tags</Text>
+                </BlurView>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </LinearGradient>
+    </View>
   );
 }
 
 const getStyles = (theme, isDark) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: isDark ? '#130B1A' : '#F3E9EC' },
+  container: { flex: 1 },
+  gradientBackground: { flex: 1 },
+  safeArea: { flex: 1 },
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
     paddingHorizontal: 20, 
     paddingVertical: 15,
-    backgroundColor: isDark ? '#130B1A' : '#F3E9EC',
+    borderRadius: 0,
+    overflow: 'hidden',
   },
   headerRight: { flexDirection: 'row', gap: 10 },
-  viewToggle: { width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', justifyContent: 'center', alignItems: 'center' },
+  viewToggle: { width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', justifyContent: 'center', alignItems: 'center' },
   viewToggleIcon: { fontSize: 20, color: theme.text },
   headerTitle: { fontSize: 28, fontWeight: 'bold', color: theme.text },
   themeButton: { 
     width: 40, 
     height: 40, 
     borderRadius: 20, 
-    backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5', 
+    backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', 
     justifyContent: 'center', 
     alignItems: 'center' 
   },
@@ -180,15 +188,16 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   profileCardWrapper: { 
     width: '47%',
   },
-  gradientBorder: {
+  glassCard: {
     borderRadius: 24,
-    borderWidth: 3,
-    padding: 0,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: isDark ? 0.3 : 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-    backgroundColor: isDark ? 'transparent' : '#fff',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: isDark ? 0.4 : 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+    shadowColor: isDark ? '#000' : '#999',
   },
   cardImage: {
     width: '100%',
@@ -200,11 +209,18 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   cardImageStyle: {
     borderRadius: 20,
   },
+  cardGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '50%',
+  },
   cardOverlay: {
-    backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.95)',
     padding: 10,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
+    overflow: 'hidden',
   },
   cardInfo: {
     gap: 4,
@@ -212,33 +228,37 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   profileName: { 
     fontSize: 16, 
     fontWeight: 'bold', 
-    color: isDark ? '#fff' : '#1a1a1a',
+    color: '#fff',
   },
   profileLocation: {
     fontSize: 11,
-    color: isDark ? '#fff' : '#555',
+    color: '#fff',
   },
   tagBadge: { 
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.1)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
     alignSelf: 'flex-start',
     gap: 4,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   genderIcon: { fontSize: 12, fontWeight: 'bold' },
-  tagText: { fontSize: 11, color: isDark ? '#fff' : '#1a1a1a', fontWeight: '500' },
+  tagText: { fontSize: 11, color: '#fff', fontWeight: '500' },
   sortContainer: {
     padding: 20,
     gap: 12,
   },
   sortButton: {
-    backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5',
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)',
   },
   sortButtonText: {
     fontSize: 16,
@@ -246,53 +266,22 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     color: theme.text,
   },
   sortButtonOutline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: isDark ? '#2a2a2a' : '#e0e0e0',
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)',
   },
   sortButtonTextOutline: {
     fontSize: 16,
     fontWeight: '600',
     color: theme.textSecondary,
   },
-  bottomNav: { 
-    flexDirection: 'row', 
-    backgroundColor: isDark ? '#130B1A' : '#F3E9EC',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: isDark ? '#1a1a1a' : '#f0f0f0',
-    justifyContent: 'space-around',
-  },
-  navItem: { 
-    alignItems: 'center',
-    gap: 4,
-  },
-  navIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: isDark ? '#1a1a1a' : '#f5f5f5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navIconActive: {
-    backgroundColor: isDark ? '#2a2a2a' : '#e0e0e0',
-  },
-  navIcon: { fontSize: 24 },
-  navLabel: {
-    fontSize: 11,
-    color: theme.textSecondary,
-    marginTop: 4,
-  },
   avatarContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: isDark ? '#1a1a1a' : '#e0e0e0',
   },
   avatarCircle: {
     width: 100,
@@ -300,6 +289,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   avatarLetter: {
     fontSize: 48,

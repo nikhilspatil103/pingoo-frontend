@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Alert } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,6 +13,7 @@ export default function MyProfileScreen({ navigation }) {
   const { logout } = useAuth();
   const [profile, setProfile] = useState(null);
   const [showFullProfile, setShowFullProfile] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [likesCount, setLikesCount] = useState(0);
   const [coins, setCoins] = useState(100);
@@ -58,7 +61,6 @@ export default function MyProfileScreen({ navigation }) {
       
       setProfile(profileData);
       
-      // Calculate completion
       const fields = [userName, userEmail, userPhoto, profileData.bio, profileData.height, profileData.bodyType];
       const filled = fields.filter(f => f && f !== '').length;
       setProfileCompletion(Math.round((filled / fields.length) * 100));
@@ -68,30 +70,21 @@ export default function MyProfileScreen({ navigation }) {
   };
 
   const handleLogout = async () => {
-    console.log('handleLogout called');
-    console.log('Logout confirmed');
     try {
       const token = await AsyncStorage.getItem('token');
-      console.log('Logout - Token:', token);
-      
       if (token) {
-        const response = await fetch(`${API_URL}/logout`, {
+        await fetch(`${API_URL}/logout`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
         });
-        console.log('Logout API Response:', response.status);
-        const data = await response.json();
-        console.log('Logout API Data:', data);
       }
     } catch (error) {
       console.error('Logout API error:', error);
     } finally {
-      console.log('Calling logout function');
       await logout();
-      console.log('Logout function completed');
     }
   };
 
@@ -106,121 +99,157 @@ export default function MyProfileScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Profile</Text>
-        <TouchableOpacity>
-          <Text style={styles.menuIcon}>⋮</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']}
+        style={styles.gradientBackground}
+      >
+        <SafeAreaView style={styles.safeArea}>
+          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Text style={styles.backIcon}>←</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>My Profile</Text>
+            <TouchableOpacity onPress={() => setShowMenu(true)}>
+              <Text style={styles.menuIcon}>⋮</Text>
+            </TouchableOpacity>
+          </BlurView>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.profileCard}>
-          <View style={styles.avatarContainer}>
-            {profile.photo ? (
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.profileCard}>
+              <View style={styles.avatarContainer}>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
+                </View>
+                <View style={styles.editBadge}>
+                  <Text style={styles.editIcon}>✏️</Text>
+                </View>
               </View>
-            ) : (
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
+              <Text style={styles.profileName}>{profile.name}</Text>
+              <Text style={styles.profileEmail}>{profile.email}</Text>
+              <View style={styles.progressBar}>
+                <View style={[styles.progressFill, { width: `${profileCompletion}%` }]} />
               </View>
-            )}
-            <View style={styles.editBadge}>
-              <Text style={styles.editIcon}>✏️</Text>
-            </View>
-          </View>
-          <Text style={styles.profileName}>{profile.name}</Text>
-          <Text style={styles.profileEmail}>{profile.email}</Text>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${profileCompletion}%` }]} />
-          </View>
-          <Text style={styles.progressText}>{profileCompletion}% Profile Completed</Text>
-        </View>
+              <Text style={styles.progressText}>{profileCompletion}% Profile Completed</Text>
+            </BlurView>
 
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>◎</Text>
-            <Text style={styles.statValue}>{coins}</Text>
-            <Text style={styles.statLabel}>Coins</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>♥</Text>
-            <Text style={styles.statValue}>{likesCount}</Text>
-            <Text style={styles.statLabel}>Likes</Text>
-          </View>
-          <TouchableOpacity style={styles.statCard} onPress={() => setShowFullProfile(true)}>
-            <Text style={styles.statIcon}>○</Text>
-            <Text style={styles.statValue}>View</Text>
-            <Text style={styles.statLabel}>My Profile</Text>
-          </TouchableOpacity>
-        </View>
+            <View style={styles.statsRow}>
+              <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.statCard}>
+                <Text style={styles.statIcon}>◎</Text>
+                <Text style={styles.statValue}>{coins}</Text>
+                <Text style={styles.statLabel}>Coins</Text>
+              </BlurView>
+              <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.statCard}>
+                <Text style={styles.statIcon}>♥</Text>
+                <Text style={styles.statValue}>{likesCount}</Text>
+                <Text style={styles.statLabel}>Likes</Text>
+              </BlurView>
+              <TouchableOpacity onPress={() => setShowFullProfile(true)}>
+                <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.statCard}>
+                  <Text style={styles.statIcon}>○</Text>
+                  <Text style={styles.statValue}>View</Text>
+                  <Text style={styles.statLabel}>My Profile</Text>
+                </BlurView>
+              </TouchableOpacity>
+            </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('EditProfile')}>
-            <View style={styles.actionIconContainer}>
-              <Text style={styles.actionIcon}>✎</Text>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Quick Actions</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
+                <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.actionCard}>
+                  <View style={styles.actionIconContainer}>
+                    <Text style={styles.actionIcon}>✎</Text>
+                  </View>
+                  <View style={styles.actionInfo}>
+                    <Text style={styles.actionTitle}>Edit Profile</Text>
+                    <Text style={styles.actionDesc}>Update your information</Text>
+                  </View>
+                  <Text style={styles.actionArrow}>›</Text>
+                </BlurView>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('MyCoins')}>
+                <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.actionCard}>
+                  <View style={styles.actionIconContainer}>
+                    <Text style={styles.actionIcon}>◎</Text>
+                  </View>
+                  <View style={styles.actionInfo}>
+                    <Text style={styles.actionTitle}>My Coins</Text>
+                    <Text style={styles.actionDesc}>{coins} coins available</Text>
+                  </View>
+                  <Text style={styles.actionArrow}>›</Text>
+                </BlurView>
+              </TouchableOpacity>
+              <TouchableOpacity>
+                <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.actionCard}>
+                  <View style={styles.actionIconContainer}>
+                    <Text style={styles.actionIcon}>⊕</Text>
+                  </View>
+                  <View style={styles.actionInfo}>
+                    <Text style={styles.actionTitle}>Buy Coins</Text>
+                    <Text style={styles.actionDesc}>Get more coins to chat</Text>
+                  </View>
+                  <Text style={styles.actionArrow}>›</Text>
+                </BlurView>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleLogout}>
+                <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.actionCard}>
+                  <View style={styles.actionIconContainer}>
+                    <Text style={styles.actionIcon}>⎋</Text>
+                  </View>
+                  <View style={styles.actionInfo}>
+                    <Text style={styles.actionTitle}>Logout</Text>
+                    <Text style={styles.actionDesc}>Sign out of your account</Text>
+                  </View>
+                  <Text style={styles.actionArrow}>›</Text>
+                </BlurView>
+              </TouchableOpacity>
             </View>
-            <View style={styles.actionInfo}>
-              <Text style={styles.actionTitle}>Edit Profile</Text>
-              <Text style={styles.actionDesc}>Update your information</Text>
-            </View>
-            <Text style={styles.actionArrow}>›</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard}>
-            <View style={styles.actionIconContainer}>
-              <Text style={styles.actionIcon}>◎</Text>
-            </View>
-            <View style={styles.actionInfo}>
-              <Text style={styles.actionTitle}>My Coins</Text>
-              <Text style={styles.actionDesc}>{coins} coins available</Text>
-            </View>
-            <Text style={styles.actionArrow}>›</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard}>
-            <View style={styles.actionIconContainer}>
-              <Text style={styles.actionIcon}>⊕</Text>
-            </View>
-            <View style={styles.actionInfo}>
-              <Text style={styles.actionTitle}>Buy Coins</Text>
-              <Text style={styles.actionDesc}>Get more coins to chat</Text>
-            </View>
-            <Text style={styles.actionArrow}>›</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={handleLogout}>
-            <View style={styles.actionIconContainer}>
-              <Text style={styles.actionIcon}>⎋</Text>
-            </View>
-            <View style={styles.actionInfo}>
-              <Text style={styles.actionTitle}>Logout</Text>
-              <Text style={styles.actionDesc}>Sign out of your account</Text>
-            </View>
-            <Text style={styles.actionArrow}>›</Text>
-          </TouchableOpacity>
-        </View>
 
-        <View style={{ height: 100 }} />
-      </ScrollView>
+            <View style={{ height: 100 }} />
+          </ScrollView>
 
-      <Modal visible={showFullProfile} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShowFullProfile(false)}>
-        <ProfileViewScreen route={{ params: { profile } }} navigation={{ goBack: () => setShowFullProfile(false) }} />
-      </Modal>
-    </SafeAreaView>
+          <Modal visible={showFullProfile} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShowFullProfile(false)}>
+            <ProfileViewScreen route={{ params: { profile } }} navigation={{ goBack: () => setShowFullProfile(false) }} />
+          </Modal>
+
+          <Modal visible={showMenu} animationType="fade" transparent onRequestClose={() => setShowMenu(false)}>
+            <TouchableOpacity style={styles.menuOverlay} activeOpacity={1} onPress={() => setShowMenu(false)}>
+              <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.menuModal}>
+                <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); navigation.navigate('Terms'); }}>
+                  <Text style={styles.menuItemIcon}>📜</Text>
+                  <Text style={styles.menuItemText}>Terms & Conditions</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); navigation.navigate('About'); }}>
+                  <Text style={styles.menuItemIcon}>ℹ️</Text>
+                  <Text style={styles.menuItemText}>About Pingoo</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); navigation.navigate('BlockList'); }}>
+                  <Text style={styles.menuItemIcon}>🚫</Text>
+                  <Text style={styles.menuItemText}>Blocked Users</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); navigation.navigate('DeleteAccount'); }}>
+                  <Text style={styles.menuItemIcon}>🗑️</Text>
+                  <Text style={styles.menuItemText}>Delete Account</Text>
+                </TouchableOpacity>
+              </BlurView>
+            </TouchableOpacity>
+          </Modal>
+        </SafeAreaView>
+      </LinearGradient>
+    </View>
   );
 }
 
 const getStyles = (theme, isDark) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: isDark ? '#130B1A' : '#F3E9EC' },
+  container: { flex: 1 },
+  gradientBackground: { flex: 1 },
+  safeArea: { flex: 1 },
   loading: { flex: 1, textAlign: 'center', marginTop: 100, fontSize: 18 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, backgroundColor: isDark ? '#130B1A' : '#F3E9EC' },
-  backIcon: { fontSize: 24, color: isDark ? '#fff' : '#333' },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: isDark ? '#fff' : '#333' },
-  menuIcon: { fontSize: 24, color: isDark ? '#fff' : '#333' },
-  profileCard: { margin: 20, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', borderRadius: 24, padding: 30, alignItems: 'center' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)' },
+  backIcon: { fontSize: 24, color: theme.text },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: theme.text },
+  menuIcon: { fontSize: 24, color: theme.text },
+  profileCard: { margin: 20, borderRadius: 24, padding: 30, alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)' },
   avatarContainer: { position: 'relative', marginBottom: 16 },
   avatar: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#FFB6C1', justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 48, fontWeight: 'bold', color: '#fff' },
@@ -232,17 +261,22 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   progressFill: { height: '100%', backgroundColor: '#F70776' },
   progressText: { fontSize: 12, color: theme.textSecondary },
   statsRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 12, marginBottom: 20 },
-  statCard: { flex: 1, borderRadius: 16, padding: 16, alignItems: 'center', gap: 6, backgroundColor: 'transparent', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' },
+  statCard: { flex: 1, borderRadius: 16, padding: 16, alignItems: 'center', gap: 6, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)' },
   statIcon: { fontSize: 28, color: theme.text },
   statValue: { fontSize: 20, fontWeight: 'bold', color: theme.text },
   statLabel: { fontSize: 12, color: theme.textSecondary },
   section: { paddingHorizontal: 20, marginBottom: 20 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: theme.text, marginBottom: 16 },
-  actionCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', borderRadius: 16, padding: 16, marginBottom: 12 },
+  actionCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 16, marginBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)' },
   actionIconContainer: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginRight: 12, backgroundColor: 'transparent', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' },
   actionIcon: { fontSize: 24, color: theme.text, fontWeight: '300' },
   actionInfo: { flex: 1 },
   actionTitle: { fontSize: 15, fontWeight: 'bold', color: theme.text, marginBottom: 4 },
   actionDesc: { fontSize: 12, color: theme.textSecondary },
   actionArrow: { fontSize: 24, color: theme.textSecondary },
+  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  menuModal: { width: '80%', borderRadius: 24, padding: 8, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)' },
+  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16 },
+  menuItemIcon: { fontSize: 24, marginRight: 16 },
+  menuItemText: { fontSize: 16, color: theme.text, fontWeight: '500' },
 });
