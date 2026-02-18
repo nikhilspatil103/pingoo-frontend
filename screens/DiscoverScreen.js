@@ -94,7 +94,7 @@ export default function DiscoverScreen({ navigation }) {
           </View>
           <Text style={styles.navLabel}>Chats</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('MyProfile')}>
           <View style={styles.navIconContainer}>
             <Text style={styles.navIcon}>👤</Text>
           </View>

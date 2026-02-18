@@ -13,8 +13,9 @@ export const AuthProvider = ({ children }) => {
 
   const checkLoginStatus = async () => {
     try {
+      const token = await AsyncStorage.getItem('token');
       const userData = await AsyncStorage.getItem('user');
-      if (userData) {
+      if (token && userData) {
         setUser(JSON.parse(userData));
       }
     } catch (error) {
@@ -24,9 +25,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (userData) => {
+  const login = async (userData, token) => {
     try {
+      await AsyncStorage.setItem('token', token);
       await AsyncStorage.setItem('user', JSON.stringify(userData));
+      await AsyncStorage.setItem('userName', userData.name);
+      await AsyncStorage.setItem('userEmail', userData.email);
       setUser(userData);
     } catch (error) {
       console.error('Error saving user data:', error);
@@ -35,8 +39,16 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      console.log('AuthContext - Logging out...');
+      await AsyncStorage.removeItem('token');
       await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem('userName');
+      await AsyncStorage.removeItem('userEmail');
+      await AsyncStorage.removeItem('userProfilePhoto');
+      await AsyncStorage.removeItem('userCoins');
+      console.log('AuthContext - Storage cleared');
       setUser(null);
+      console.log('AuthContext - User set to null');
     } catch (error) {
       console.error('Error logging out:', error);
     }
