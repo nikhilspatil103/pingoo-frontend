@@ -21,7 +21,7 @@ export default function ChatListScreen({ navigation }) {
     <TouchableOpacity 
       onPress={() => navigation.navigate('Chat', { profile: { name: item.name, age: item.age } })}
     >
-      <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.chatItem}>
+      <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.chatItem}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{item.avatar}</Text>
         </View>
@@ -49,7 +49,7 @@ export default function ChatListScreen({ navigation }) {
           <Text style={styles.title}>Chats</Text>
           
           <View style={styles.searchContainer}>
-            <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.searchWrapper}>
+            <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.searchWrapper}>
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search"

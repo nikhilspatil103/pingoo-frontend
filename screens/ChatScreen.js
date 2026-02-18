@@ -20,9 +20,9 @@ export default function ChatScreen({ route, navigation }) {
         style={styles.gradientBackground}
       >
         <SafeAreaView style={styles.safeArea}>
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.header}>
+          <BlurView intensity={isDark ? 30 : 20} tint={isDark ? 'dark' : 'light'} style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
-              <BlurView intensity={40} tint={isDark ? 'dark' : 'light'} style={styles.backButton}>
+              <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={styles.backButton}>
                 <Text style={styles.backIcon}>←</Text>
               </BlurView>
             </TouchableOpacity>
@@ -59,13 +59,13 @@ export default function ChatScreen({ route, navigation }) {
           </ScrollView>
 
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-            <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.inputContainer}>
+            <BlurView intensity={isDark ? 30 : 20} tint={isDark ? 'dark' : 'light'} style={styles.inputContainer}>
               <TouchableOpacity>
-                <BlurView intensity={30} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
+                <BlurView intensity={15} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>🔗</Text>
                 </BlurView>
               </TouchableOpacity>
-              <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={styles.inputWrapper}>
+              <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
                   placeholder="Message"
@@ -75,12 +75,12 @@ export default function ChatScreen({ route, navigation }) {
                 />
               </BlurView>
               <TouchableOpacity>
-                <BlurView intensity={30} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
+                <BlurView intensity={15} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>➤</Text>
                 </BlurView>
               </TouchableOpacity>
               <TouchableOpacity>
-                <BlurView intensity={30} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
+                <BlurView intensity={15} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>🎤</Text>
                 </BlurView>
               </TouchableOpacity>

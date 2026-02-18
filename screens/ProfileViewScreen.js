@@ -46,7 +46,7 @@ export default function ProfileViewScreen({ route, navigation }) {
       >
         <SafeAreaView style={styles.safeArea}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <BlurView intensity={60} tint="dark" style={styles.backButtonBlur}>
+            <BlurView intensity={30} tint="dark" style={styles.backButtonBlur}>
               <Text style={styles.backIcon}>←</Text>
             </BlurView>
           </TouchableOpacity>
@@ -62,7 +62,7 @@ export default function ProfileViewScreen({ route, navigation }) {
               </LinearGradient>
             )}
 
-            <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+            <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Age:</Text>
                 <Text style={styles.infoValue}>{profile.age}</Text>
@@ -254,7 +254,7 @@ export default function ProfileViewScreen({ route, navigation }) {
 
           <View style={styles.actionButtons}>
             <TouchableOpacity style={{ flex: 1 }} onPress={() => navigation.navigate('Chat', { profile })}>
-              <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.chatButton}>
+              <BlurView intensity={isDark ? 40 : 30} tint={isDark ? 'dark' : 'light'} style={styles.chatButton}>
                 <Text style={styles.chatButtonText}>💬 Start Chat</Text>
               </BlurView>
             </TouchableOpacity>
