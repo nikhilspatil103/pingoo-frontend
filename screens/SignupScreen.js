@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, SafeAreaView } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, SafeAreaView, StatusBar } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/urlConfig';
 
@@ -31,9 +31,14 @@ export default function SignupScreen({ navigation }) {
       const data = await response.json();
       
       if (response.ok) {
-        Alert.alert('Success', 'Account created! Please login.', [
-          { text: 'OK', onPress: () => navigation.navigate('Login') }
-        ]);
+        // Check if signup returns token for auto-login
+        if (data.token && data.user) {
+          await login(data.user, data.token);
+        } else {
+          Alert.alert('Success', 'Account created! Please login.', [
+            { text: 'OK', onPress: () => navigation.navigate('Login') }
+          ]);
+        }
       } else {
         Alert.alert('Error', data.error || 'Signup failed');
       }
@@ -46,6 +51,7 @@ export default function SignupScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#1C0F2A" />
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.logo}>◎</Text>
@@ -104,7 +110,7 @@ export default function SignupScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1C0F2A' },
+  container: { flex: 1, backgroundColor: '#1C0F2A', paddingTop: StatusBar.currentHeight || 0 },
   content: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
   header: { alignItems: 'center', marginBottom: 48 },
   logo: { fontSize: 64, color: '#FF6B9D', marginBottom: 8 },

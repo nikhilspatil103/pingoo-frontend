@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, ImageBackground, Animated } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, ImageBackground, Animated, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -38,6 +38,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? '#1a0a2e' : '#ffeef8'} />
       <LinearGradient
         colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']}
         style={styles.gradientBackground}
@@ -143,7 +144,7 @@ export default function HomeScreen({ navigation }) {
 const getStyles = (theme, isDark) => StyleSheet.create({
   container: { flex: 1 },
   gradientBackground: { flex: 1 },
-  safeArea: { flex: 1 },
+  safeArea: { flex: 1, paddingTop: StatusBar.currentHeight || 0 },
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -217,6 +218,10 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     height: '50%',
   },
   cardOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: 10,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,

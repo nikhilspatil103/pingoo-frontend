@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, FlatList } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, FlatList, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -41,6 +41,7 @@ export default function ChatListScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? '#1a0a2e' : '#ffeef8'} />
       <LinearGradient
         colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']}
         style={styles.gradientBackground}
@@ -77,14 +78,14 @@ export default function ChatListScreen({ navigation }) {
 const getStyles = (theme, isDark) => StyleSheet.create({
   container: { flex: 1 },
   gradientBackground: { flex: 1 },
-  safeArea: { flex: 1 },
+  safeArea: { flex: 1, paddingTop: StatusBar.currentHeight || 0 },
   title: { fontSize: 24, fontWeight: '600', color: theme.text, textAlign: 'center', marginTop: 20, marginBottom: 20 },
   searchContainer: { paddingHorizontal: 20, marginBottom: 20 },
   searchWrapper: {
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)',
+    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(147,147,147,0.5)',
   },
   searchInput: { 
     paddingHorizontal: 16, 
@@ -101,7 +102,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)',
+    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(147,147,147,0.5)',
     marginBottom: 12,
   },
   avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F70776', justifyContent: 'center', alignItems: 'center', marginRight: 12 },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, ImageBackground } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, ImageBackground, Modal, Image, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -7,8 +7,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileViewScreen({ route, navigation }) {
   const { theme, isDark } = useTheme();
-  const { profile } = route.params;
+  const { profile, isMyProfile } = route.params;
   const [isStarred, setIsStarred] = useState(false);
+  const [showFullImage, setShowFullImage] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     checkIfStarred();
@@ -45,22 +47,32 @@ export default function ProfileViewScreen({ route, navigation }) {
         style={styles.gradientBackground}
       >
         <SafeAreaView style={styles.safeArea}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <BlurView intensity={30} tint="dark" style={styles.backButtonBlur}>
+          <BlurView intensity={20} tint="dark" style={styles.backButton}>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
               <Text style={styles.backIcon}>←</Text>
+            </TouchableOpacity>
+          </BlurView>
+
+          {!isMyProfile && (
+            <BlurView intensity={20} tint="dark" style={styles.menuButton}>
+              <TouchableOpacity onPress={() => setShowMenu(true)}>
+                <Text style={styles.menuIcon}>⋮</Text>
+              </TouchableOpacity>
             </BlurView>
-          </TouchableOpacity>
+          )}
 
           <Text style={styles.headerTitle}>{profile.name}, {profile.age}</Text>
 
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {profile.image ? (
-              <ImageBackground source={{ uri: profile.image }} style={styles.profileImage} imageStyle={styles.imageStyle} />
-            ) : (
-              <LinearGradient colors={profile.borderColor} style={styles.profileImage}>
-                <Text style={styles.avatarLetter}>{profile.name.charAt(0)}</Text>
-              </LinearGradient>
-            )}
+            <TouchableOpacity onPress={() => profile.image && setShowFullImage(true)}>
+              {profile.image ? (
+                <ImageBackground source={{ uri: profile.image }} style={styles.profileImage} imageStyle={styles.imageStyle} />
+              ) : (
+                <LinearGradient colors={profile.borderColor} style={styles.profileImage}>
+                  <Text style={styles.avatarLetter}>{profile.name.charAt(0)}</Text>
+                </LinearGradient>
+              )}
+            </TouchableOpacity>
 
             <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
               <View style={styles.infoRow}>
@@ -252,24 +264,54 @@ export default function ProfileViewScreen({ route, navigation }) {
             </BlurView>
           </ScrollView>
 
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={{ flex: 1 }} onPress={() => navigation.navigate('Chat', { profile })}>
-              <BlurView intensity={isDark ? 40 : 30} tint={isDark ? 'dark' : 'light'} style={styles.chatButton}>
-                <Text style={styles.chatButtonText}>💬 Start Chat</Text>
-              </BlurView>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.actionButton}>
-                <Text style={styles.actionIcon}>❤️</Text>
-              </BlurView>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={toggleStar}>
-              <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.actionButton}>
-                <Text style={styles.actionIcon}>{isStarred ? '⭐' : '☆'}</Text>
-              </BlurView>
-            </TouchableOpacity>
-          </View>
+          {!isMyProfile && (
+            <View style={styles.actionButtons}>
+              <TouchableOpacity style={{ flex: 1 }} onPress={() => navigation.navigate('Chat', { profile })}>
+                <View style={styles.chatButton}>
+                  <Text style={styles.chatButtonText}>💬 Start Chat</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity>
+                <View style={styles.actionButton}>
+                  <Text style={styles.actionIcon}>❤️</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={toggleStar}>
+                <View style={styles.actionButton}>
+                  <Text style={styles.actionIcon}>{isStarred ? '⭐' : '☆'}</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
         </SafeAreaView>
+        
+        <Modal visible={showFullImage} transparent={true} animationType="fade">
+          <View style={styles.fullScreenModal}>
+            <TouchableOpacity style={styles.closeButton} onPress={() => setShowFullImage(false)}>
+              <Text style={styles.closeIcon}>✕</Text>
+            </TouchableOpacity>
+            <Image source={{ uri: profile.image }} style={styles.fullScreenImage} resizeMode="contain" />
+          </View>
+        </Modal>
+
+        <Modal visible={showMenu} transparent={true} animationType="slide">
+          <TouchableOpacity style={styles.menuOverlay} activeOpacity={1} onPress={() => setShowMenu(false)}>
+            <View style={styles.menuModal}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); }}>
+                <Text style={styles.menuItemIcon}>🙅</Text>
+                <Text style={styles.menuItemText}>Block User</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); }}>
+                <Text style={styles.menuItemIcon}>🚩</Text>
+                <Text style={styles.menuItemText}>Report User</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); }}>
+                <Text style={styles.menuItemIcon}>🔗</Text>
+                <Text style={styles.menuItemText}>Share Profile</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
       </LinearGradient>
     </View>
   );
@@ -279,9 +321,36 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   container: { flex: 1 },
   gradientBackground: { flex: 1 },
   safeArea: { flex: 1 },
-  backButton: { position: 'absolute', top: 50, left: 20, zIndex: 10, width: 44, height: 44, borderRadius: 22, overflow: 'hidden' },
-  backButtonBlur: { flex: 1, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
-  backIcon: { fontSize: 24, color: '#fff' },
+  backButton: { 
+    position: 'absolute', 
+    top: 50, 
+    left: 20, 
+    zIndex: 10, 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22,
+    justifyContent: 'center', 
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  backIcon: { fontSize: 16, color: '#fff', fontWeight: '500' },
+  menuButton: { 
+    position: 'absolute', 
+    top: 50, 
+    right: 20, 
+    zIndex: 10, 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22,
+    justifyContent: 'center', 
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  menuIcon: { fontSize: 16, color: '#fff', fontWeight: '500' },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: theme.text, textAlign: 'center', marginTop: 50, marginBottom: 20 },
   content: { flex: 1, paddingHorizontal: 20, paddingBottom: 100 },
   profileImage: { width: '100%', height: 450, borderRadius: 24, marginBottom: 20, justifyContent: 'center', alignItems: 'center' },
@@ -306,8 +375,17 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   tagOutline: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.5)' },
   tagOutlineText: { color: theme.text, fontSize: 14, fontWeight: '500' },
   actionButtons: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingBottom: 20, backgroundColor: 'transparent' },
-  actionButton: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.5)' },
-  actionIcon: { fontSize: 24 },
-  chatButton: { paddingVertical: 14, borderRadius: 28, alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.5)' },
-  chatButtonText: { fontSize: 16, fontWeight: '600', color: theme.text },
+  actionButton: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', backgroundColor: isDark ? '#1a1a1a' : '#2a2a2a', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)' },
+  actionIcon: { fontSize: 24, color: '#fff' },
+  chatButton: { paddingVertical: 14, borderRadius: 28, alignItems: 'center', backgroundColor: isDark ? '#1a1a1a' : '#2a2a2a', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)' },
+  chatButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  fullScreenModal: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  fullScreenImage: { width: '100%', height: '100%' },
+  closeButton: { position: 'absolute', top: 50, right: 20, zIndex: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  closeIcon: { fontSize: 20, color: '#fff', fontWeight: 'bold' },
+  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  menuModal: { backgroundColor: 'rgba(0,0,0,0.9)', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingVertical: 20 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
+  menuItemIcon: { fontSize: 24, marginRight: 16 },
+  menuItemText: { fontSize: 16, color: '#fff', fontWeight: '500' },
 });

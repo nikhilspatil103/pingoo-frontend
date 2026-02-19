@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -28,6 +28,7 @@ export default function ContactsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? '#1a0a2e' : '#ffeef8'} />
       <LinearGradient
         colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']}
         style={styles.gradientBackground}
@@ -83,7 +84,7 @@ export default function ContactsScreen({ navigation }) {
 const getStyles = (theme, isDark) => StyleSheet.create({
   container: { flex: 1 },
   gradientBackground: { flex: 1 },
-  safeArea: { flex: 1 },
+  safeArea: { flex: 1, paddingTop: StatusBar.currentHeight || 0 },
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -111,7 +112,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)',
+    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(147,147,147,0.5)',
   },
   emptyIcon: { fontSize: 64, marginBottom: 16 },
   emptyTitle: { fontSize: 20, fontWeight: 'bold', color: theme.text, marginBottom: 8 },
@@ -121,7 +122,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     borderRadius: 20, 
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)',
+    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(147,147,147,0.5)',
   },
   contactInner: { flexDirection: 'row', alignItems: 'center', padding: 16 },
   avatar: { 

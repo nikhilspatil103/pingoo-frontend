@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, Modal, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, Modal, Image, StatusBar } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import { BlurView } from 'expo-blur';
 
 export default function EditProfileScreen({ navigation }) {
   const { theme, isDark } = useTheme();
@@ -78,14 +79,20 @@ export default function EditProfileScreen({ navigation }) {
   const styles = getStyles(theme, isDark);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <View style={styles.container}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? '#1a0a2e' : '#ffeef8'} />
+      <LinearGradient
+        colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']}
+        style={styles.gradientBackground}
+      >
+        <SafeAreaView style={styles.safeArea}>
+          <BlurView intensity={isDark ? 30 : 20} tint={isDark ? 'dark' : 'light'} style={styles.header}>
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+              <Text style={styles.backIcon}>←</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Edit Profile</Text>
+            <View style={{ width: 40 }} />
+          </BlurView>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.photoSection}>
@@ -449,15 +456,35 @@ export default function EditProfileScreen({ navigation }) {
           </BlurView>
         </View>
       </Modal>
-    </SafeAreaView>
+        </SafeAreaView>
+      </LinearGradient>
+    </View>
   );
 }
 
 const getStyles = (theme, isDark) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: isDark ? '#130B1A' : '#F3E9EC' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, backgroundColor: isDark ? '#130B1A' : '#F3E9EC' },
-  backIcon: { fontSize: 24, color: isDark ? '#fff' : '#333' },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: isDark ? '#fff' : '#333' },
+  container: { flex: 1 },
+  gradientBackground: { flex: 1 },
+  safeArea: { flex: 1, paddingTop: StatusBar.currentHeight || 0 },
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 20, 
+    paddingVertical: 15,
+    borderRadius: 0,
+    overflow: 'hidden',
+  },
+  backButton: { 
+    width: 40, 
+    height: 40, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 8,
+  },
+  backIcon: { fontSize: 18, color: '#fff', fontWeight: '600' },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: theme.text },
   photoSection: { padding: 20, alignItems: 'center' },
   photoContainer: { position: 'relative', marginBottom: 20 },
   profileImage: { width: 120, height: 120, borderRadius: 60 },

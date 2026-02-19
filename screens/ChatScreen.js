@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform ,StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -15,50 +15,54 @@ export default function ChatScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? '#1a0a2e' : '#ffeef8'} />
       <LinearGradient
         colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']}
         style={styles.gradientBackground}
       >
-        <SafeAreaView style={styles.safeArea}>
-          <BlurView intensity={isDark ? 30 : 20} tint={isDark ? 'dark' : 'light'} style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={styles.backButton}>
-                <Text style={styles.backIcon}>←</Text>
-              </BlurView>
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{profile.name}, {profile.age}</Text>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
-            </View>
-          </BlurView>
-
-          <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
-            {messages.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>Start the conversation</Text>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <SafeAreaView style={styles.safeArea}>
+            <BlurView intensity={isDark ? 30 : 20} tint={isDark ? 'dark' : 'light'} style={styles.header}>
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={styles.backButton}>
+                  <Text style={styles.backIcon}>←</Text>
+                </BlurView>
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>{profile.name}, {profile.age}</Text>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
               </View>
-            ) : (
-              messages.map((msg) => (
-                <View key={msg.id}>
-                  <BlurView 
-                    intensity={isDark ? 40 : 20} 
-                    tint={msg.sent ? (isDark ? 'dark' : 'light') : 'light'} 
-                    style={[styles.messageBubble, msg.sent ? styles.sentBubble : styles.receivedBubble]}
-                  >
-                    <Text style={[styles.messageText, msg.sent ? styles.sentText : styles.receivedText]}>{msg.text}</Text>
-                    <Text style={[styles.messageTime, msg.sent ? styles.sentTime : styles.receivedTime]}>{msg.time} ✓✓</Text>
-                  </BlurView>
-                  {msg.sent && (
-                    <View style={styles.sentLabel}>
-                      <Text style={styles.sentLabelText}>✓✓ Sent</Text>
-                    </View>
-                  )}
-                </View>
-              ))
-            )}
-          </ScrollView>
+            </BlurView>
 
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
+              {messages.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyText}>Start the conversation</Text>
+                </View>
+              ) : (
+                messages.map((msg) => (
+                  <View key={msg.id}>
+                    <BlurView 
+                      intensity={isDark ? 40 : 20} 
+                      tint={msg.sent ? (isDark ? 'dark' : 'light') : 'light'} 
+                      style={[styles.messageBubble, msg.sent ? styles.sentBubble : styles.receivedBubble]}
+                    >
+                      <Text style={[styles.messageText, msg.sent ? styles.sentText : styles.receivedText]}>{msg.text}</Text>
+                      <Text style={[styles.messageTime, msg.sent ? styles.sentTime : styles.receivedTime]}>{msg.time} ✓✓</Text>
+                    </BlurView>
+                    {msg.sent && (
+                      <View style={styles.sentLabel}>
+                        <Text style={styles.sentLabelText}>✓✓ Sent</Text>
+                      </View>
+                    )}
+                  </View>
+                ))
+              )}
+            </ScrollView>
+
             <BlurView intensity={isDark ? 30 : 20} tint={isDark ? 'dark' : 'light'} style={styles.inputContainer}>
               <TouchableOpacity>
                 <BlurView intensity={15} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
@@ -85,17 +89,18 @@ export default function ChatScreen({ route, navigation }) {
                 </BlurView>
               </TouchableOpacity>
             </BlurView>
-          </KeyboardAvoidingView>
-        </SafeAreaView>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </LinearGradient>
     </View>
   );
 }
 
 const getStyles = (theme, isDark) => StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1 }, 
   gradientBackground: { flex: 1 },
-  safeArea: { flex: 1 },
+  keyboardView: { flex: 1 },
+  safeArea: { flex: 1, paddingTop: StatusBar.currentHeight || 0 },
   header: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -171,6 +176,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
+    backgroundColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.1)',
   },
   input: { 
     flex: 1, 

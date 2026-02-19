@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Alert, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -100,19 +100,24 @@ export default function MyProfileScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? '#1a0a2e' : '#ffeef8'} />
       <LinearGradient
         colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']}
         style={styles.gradientBackground}
       >
         <SafeAreaView style={styles.safeArea}>
           <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Text style={styles.backIcon}>←</Text>
-            </TouchableOpacity>
+            <BlurView intensity={20} tint="dark" style={styles.backButton}>
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Text style={styles.backIcon}>←</Text>
+              </TouchableOpacity>
+            </BlurView>
             <Text style={styles.headerTitle}>My Profile</Text>
-            <TouchableOpacity onPress={() => setShowMenu(true)}>
-              <Text style={styles.menuIcon}>⋮</Text>
-            </TouchableOpacity>
+            <BlurView intensity={20} tint="dark" style={styles.menuButton}>
+              <TouchableOpacity onPress={() => setShowMenu(true)}>
+                <Text style={styles.menuIcon}>⋮</Text>
+              </TouchableOpacity>
+            </BlurView>
           </BlurView>
 
           <ScrollView showsVerticalScrollIndicator={false}>
@@ -209,12 +214,15 @@ export default function MyProfileScreen({ navigation }) {
           </ScrollView>
 
           <Modal visible={showFullProfile} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setShowFullProfile(false)}>
-            <ProfileViewScreen route={{ params: { profile } }} navigation={{ goBack: () => setShowFullProfile(false) }} />
+            <ProfileViewScreen 
+              route={{ params: { profile, isMyProfile: true } }} 
+              navigation={{ goBack: () => setShowFullProfile(false) }} 
+            />
           </Modal>
 
-          <Modal visible={showMenu} animationType="fade" transparent onRequestClose={() => setShowMenu(false)}>
+          <Modal visible={showMenu} animationType="slide" transparent onRequestClose={() => setShowMenu(false)}>
             <TouchableOpacity style={styles.menuOverlay} activeOpacity={1} onPress={() => setShowMenu(false)}>
-              <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.menuModal}>
+              <View style={styles.menuModal}>
                 <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); navigation.navigate('Terms'); }}>
                   <Text style={styles.menuItemIcon}>📜</Text>
                   <Text style={styles.menuItemText}>Terms & Conditions</Text>
@@ -231,7 +239,7 @@ export default function MyProfileScreen({ navigation }) {
                   <Text style={styles.menuItemIcon}>🗑️</Text>
                   <Text style={styles.menuItemText}>Delete Account</Text>
                 </TouchableOpacity>
-              </BlurView>
+              </View>
             </TouchableOpacity>
           </Modal>
         </SafeAreaView>
@@ -243,13 +251,32 @@ export default function MyProfileScreen({ navigation }) {
 const getStyles = (theme, isDark) => StyleSheet.create({
   container: { flex: 1 },
   gradientBackground: { flex: 1 },
-  safeArea: { flex: 1 },
+  safeArea: { flex: 1, paddingTop: StatusBar.currentHeight || 0 },
   loading: { flex: 1, textAlign: 'center', marginTop: 100, fontSize: 18 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)' },
-  backIcon: { fontSize: 24, color: theme.text },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: theme.text },
-  menuIcon: { fontSize: 24, color: theme.text },
-  profileCard: { margin: 20, borderRadius: 24, padding: 30, alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)' },
+  backButton: { 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22,
+    justifyContent: 'center', 
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  backIcon: { fontSize: 16, color: '#fff', fontWeight: '500' },
+  menuButton: { 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22,
+    justifyContent: 'center', 
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  menuIcon: { fontSize: 16, color: '#fff', fontWeight: '500' },
+  profileCard: { margin: 20, borderRadius: 24, padding: 30, alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(147,147,147,0.5)' },
   avatarContainer: { position: 'relative', marginBottom: 16 },
   avatar: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#FFB6C1', justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 48, fontWeight: 'bold', color: '#fff' },
@@ -261,22 +288,22 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   progressFill: { height: '100%', backgroundColor: '#F70776' },
   progressText: { fontSize: 12, color: theme.textSecondary },
   statsRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 12, marginBottom: 20 },
-  statCard: { flex: 1, borderRadius: 16, padding: 16, alignItems: 'center', gap: 6, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)' },
+  statCard: { flex: 1, borderRadius: 16, padding: 16, alignItems: 'center', gap: 6, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(147,147,147,0.5)' },
   statIcon: { fontSize: 28, color: theme.text },
   statValue: { fontSize: 20, fontWeight: 'bold', color: theme.text },
   statLabel: { fontSize: 12, color: theme.textSecondary },
   section: { paddingHorizontal: 20, marginBottom: 20 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: theme.text, marginBottom: 16 },
-  actionCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 16, marginBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)' },
+  actionCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 16, marginBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(147,147,147,0.5)' },
   actionIconContainer: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginRight: 12, backgroundColor: 'transparent', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' },
   actionIcon: { fontSize: 24, color: theme.text, fontWeight: '300' },
   actionInfo: { flex: 1 },
   actionTitle: { fontSize: 15, fontWeight: 'bold', color: theme.text, marginBottom: 4 },
   actionDesc: { fontSize: 12, color: theme.textSecondary },
   actionArrow: { fontSize: 24, color: theme.textSecondary },
-  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  menuModal: { width: '80%', borderRadius: 24, padding: 8, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)' },
-  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16 },
+  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  menuModal: { backgroundColor: 'rgba(0,0,0,0.9)', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingVertical: 20 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
   menuItemIcon: { fontSize: 24, marginRight: 16 },
-  menuItemText: { fontSize: 16, color: theme.text, fontWeight: '500' },
+  menuItemText: { fontSize: 16, color: '#fff', fontWeight: '500' },
 });
