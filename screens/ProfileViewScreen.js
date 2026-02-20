@@ -54,11 +54,11 @@ export default function ProfileViewScreen({ route, navigation }) {
           </BlurView>
 
           {!isMyProfile && (
-            <BlurView intensity={20} tint="dark" style={styles.menuButton}>
-              <TouchableOpacity onPress={() => setShowMenu(true)}>
+            <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(true)} activeOpacity={1}>
+              <BlurView intensity={20} tint="dark" style={styles.menuButtonInner}>
                 <Text style={styles.menuIcon}>⋮</Text>
-              </TouchableOpacity>
-            </BlurView>
+              </BlurView>
+            </TouchableOpacity>
           )}
 
           <Text style={styles.headerTitle}>{profile.name}, {profile.age}</Text>
@@ -341,6 +341,10 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     top: 50, 
     right: 20, 
     zIndex: 10, 
+    width: 44, 
+    height: 44, 
+  },
+  menuButtonInner: {
     width: 44, 
     height: 44, 
     borderRadius: 22,

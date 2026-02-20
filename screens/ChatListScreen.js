@@ -20,6 +20,7 @@ export default function ChatListScreen({ navigation }) {
   const renderChatItem = ({ item }) => (
     <TouchableOpacity 
       onPress={() => navigation.navigate('Chat', { profile: { name: item.name, age: item.age } })}
+      activeOpacity={1}
     >
       <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.chatItem}>
         <View style={styles.avatar}>

@@ -47,10 +47,10 @@ export default function HomeScreen({ navigation }) {
           <BlurView intensity={isDark ? 30 : 20} tint={isDark ? 'dark' : 'light'} style={styles.header}>
             <Text style={styles.headerTitle}>Pingoo</Text>
             <View style={styles.headerRight}>
-              <TouchableOpacity style={styles.viewToggle} onPress={() => setIsListView(!isListView)}>
+              <TouchableOpacity style={styles.viewToggle} onPress={() => setIsListView(!isListView)} activeOpacity={1}>
                 <Text style={styles.viewToggleIcon}>{isListView ? '⊞' : '☰'}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.themeButton} onPress={toggleTheme}>
+              <TouchableOpacity style={styles.themeButton} onPress={toggleTheme} activeOpacity={1}>
                 <Text style={styles.themeIcon}>{isDark ? '☀️' : '🌙'}</Text>
               </TouchableOpacity>
             </View>
@@ -59,7 +59,7 @@ export default function HomeScreen({ navigation }) {
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
             <Animated.View style={[isListView ? styles.listContainer : styles.gridContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
               {profiles.map((profile) => (
-                <TouchableOpacity key={profile.id} style={isListView ? styles.listCard : styles.profileCardWrapper} onPress={() => navigation.navigate('ProfileView', { profile })}>
+                <TouchableOpacity key={profile.id} style={isListView ? styles.listCard : styles.profileCardWrapper} onPress={() => navigation.navigate('ProfileView', { profile })} activeOpacity={1}>
                   {isListView ? (
                     <View style={styles.listCardContent}>
                       {profile.image ? (
@@ -123,12 +123,12 @@ export default function HomeScreen({ navigation }) {
             </Animated.View>
 
             <View style={styles.sortContainer}>
-              <TouchableOpacity>
+              <TouchableOpacity activeOpacity={1}>
                 <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.sortButton}>
                   <Text style={styles.sortButtonText}>Sort by location</Text>
                 </BlurView>
               </TouchableOpacity>
-              <TouchableOpacity>
+              <TouchableOpacity activeOpacity={1}>
                 <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.sortButtonOutline}>
                   <Text style={styles.sortButtonTextOutline}>Sort by tags</Text>
                 </BlurView>

@@ -107,17 +107,12 @@ export default function MyProfileScreen({ navigation }) {
       >
         <SafeAreaView style={styles.safeArea}>
           <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.header}>
-            <BlurView intensity={20} tint="dark" style={styles.backButton}>
-              <TouchableOpacity onPress={() => navigation.goBack()}>
-                <Text style={styles.backIcon}>←</Text>
-              </TouchableOpacity>
-            </BlurView>
             <Text style={styles.headerTitle}>My Profile</Text>
-            <BlurView intensity={20} tint="dark" style={styles.menuButton}>
-              <TouchableOpacity onPress={() => setShowMenu(true)}>
+            <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(true)} activeOpacity={1}>
+              <BlurView intensity={20} tint="dark" style={styles.menuButtonInner}>
                 <Text style={styles.menuIcon}>⋮</Text>
-              </TouchableOpacity>
-            </BlurView>
+              </BlurView>
+            </TouchableOpacity>
           </BlurView>
 
           <ScrollView showsVerticalScrollIndicator={false}>
@@ -149,7 +144,7 @@ export default function MyProfileScreen({ navigation }) {
                 <Text style={styles.statValue}>{likesCount}</Text>
                 <Text style={styles.statLabel}>Likes</Text>
               </BlurView>
-              <TouchableOpacity onPress={() => setShowFullProfile(true)}>
+              <TouchableOpacity onPress={() => setShowFullProfile(true)} activeOpacity={1}>
                 <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.statCard}>
                   <Text style={styles.statIcon}>○</Text>
                   <Text style={styles.statValue}>View</Text>
@@ -160,7 +155,7 @@ export default function MyProfileScreen({ navigation }) {
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Quick Actions</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
+              <TouchableOpacity onPress={() => navigation.navigate('EditProfile')} activeOpacity={1}>
                 <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.actionCard}>
                   <View style={styles.actionIconContainer}>
                     <Text style={styles.actionIcon}>✎</Text>
@@ -172,7 +167,7 @@ export default function MyProfileScreen({ navigation }) {
                   <Text style={styles.actionArrow}>›</Text>
                 </BlurView>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => navigation.navigate('MyCoins')}>
+              <TouchableOpacity onPress={() => navigation.navigate('MyCoins')} activeOpacity={1}>
                 <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.actionCard}>
                   <View style={styles.actionIconContainer}>
                     <Text style={styles.actionIcon}>◎</Text>
@@ -184,7 +179,7 @@ export default function MyProfileScreen({ navigation }) {
                   <Text style={styles.actionArrow}>›</Text>
                 </BlurView>
               </TouchableOpacity>
-              <TouchableOpacity>
+              <TouchableOpacity activeOpacity={1}>
                 <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.actionCard}>
                   <View style={styles.actionIconContainer}>
                     <Text style={styles.actionIcon}>⊕</Text>
@@ -196,7 +191,7 @@ export default function MyProfileScreen({ navigation }) {
                   <Text style={styles.actionArrow}>›</Text>
                 </BlurView>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleLogout}>
+              <TouchableOpacity onPress={handleLogout} activeOpacity={1}>
                 <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.actionCard}>
                   <View style={styles.actionIconContainer}>
                     <Text style={styles.actionIcon}>⎋</Text>
@@ -223,19 +218,19 @@ export default function MyProfileScreen({ navigation }) {
           <Modal visible={showMenu} animationType="slide" transparent onRequestClose={() => setShowMenu(false)}>
             <TouchableOpacity style={styles.menuOverlay} activeOpacity={1} onPress={() => setShowMenu(false)}>
               <View style={styles.menuModal}>
-                <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); navigation.navigate('Terms'); }}>
+                <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); navigation.navigate('Terms'); }} activeOpacity={1}>
                   <Text style={styles.menuItemIcon}>📜</Text>
                   <Text style={styles.menuItemText}>Terms & Conditions</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); navigation.navigate('About'); }}>
+                <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); navigation.navigate('About'); }} activeOpacity={1}>
                   <Text style={styles.menuItemIcon}>ℹ️</Text>
                   <Text style={styles.menuItemText}>About Pingoo</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); navigation.navigate('BlockList'); }}>
+                <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); navigation.navigate('BlockList'); }} activeOpacity={1}>
                   <Text style={styles.menuItemIcon}>🚫</Text>
                   <Text style={styles.menuItemText}>Blocked Users</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); navigation.navigate('DeleteAccount'); }}>
+                <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); navigation.navigate('DeleteAccount'); }} activeOpacity={1}>
                   <Text style={styles.menuItemIcon}>🗑️</Text>
                   <Text style={styles.menuItemText}>Delete Account</Text>
                 </TouchableOpacity>
@@ -254,18 +249,12 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   safeArea: { flex: 1, paddingTop: StatusBar.currentHeight || 0 },
   loading: { flex: 1, textAlign: 'center', marginTop: 100, fontSize: 18 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)' },
-  backButton: { 
+  headerTitle: { fontSize: 24, fontWeight: '600', color: theme.text, textAlign: 'center' },
+  menuButton: { 
     width: 44, 
     height: 44, 
-    borderRadius: 22,
-    justifyContent: 'center', 
-    alignItems: 'center',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
   },
-  backIcon: { fontSize: 16, color: '#fff', fontWeight: '500' },
-  menuButton: { 
+  menuButtonInner: {
     width: 44, 
     height: 44, 
     borderRadius: 22,

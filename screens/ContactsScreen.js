@@ -53,6 +53,7 @@ export default function ContactsScreen({ navigation }) {
                     <TouchableOpacity 
                       style={styles.contactInner}
                       onPress={() => navigation.navigate('ProfileView', { profile: contact })}
+                      activeOpacity={1}
                     >
                       <View style={[styles.avatar, { backgroundColor: contact.borderColor?.[0] || '#FFB6C1' }]}>
                         <Text style={styles.avatarText}>{contact.name.charAt(0)}</Text>
@@ -65,6 +66,7 @@ export default function ContactsScreen({ navigation }) {
                       <TouchableOpacity 
                         style={styles.removeBtn}
                         onPress={() => removeContact(contact.id)}
+                        activeOpacity={1}
                       >
                         <Text style={styles.removeIcon}>✕</Text>
                       </TouchableOpacity>

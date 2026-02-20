@@ -26,15 +26,19 @@ export default function ChatScreen({ route, navigation }) {
         >
           <SafeAreaView style={styles.safeArea}>
             <BlurView intensity={isDark ? 30 : 20} tint={isDark ? 'dark' : 'light'} style={styles.header}>
-              <TouchableOpacity onPress={() => navigation.goBack()}>
-                <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={styles.backButton}>
+              <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={1}>
+                <BlurView intensity={isDark ? 40 : 25} tint={isDark ? 'dark' : 'light'} style={styles.backButton}>
                   <Text style={styles.backIcon}>←</Text>
                 </BlurView>
               </TouchableOpacity>
-              <Text style={styles.headerTitle}>{profile.name}, {profile.age}</Text>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
-              </View>
+              <TouchableOpacity onPress={() => navigation.navigate('ProfileView', { profile })} activeOpacity={1}>
+                <Text style={styles.headerTitle}>{profile.name}, {profile.age}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('ProfileView', { profile })} activeOpacity={1}>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
+                </View>
+              </TouchableOpacity>
             </BlurView>
 
             <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
@@ -103,6 +107,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   safeArea: { flex: 1, paddingTop: StatusBar.currentHeight || 0 },
   header: { 
     flexDirection: 'row', 
+    justifyContent: 'space-between',
     alignItems: 'center', 
     paddingHorizontal: 20, 
     paddingVertical: 15, 
@@ -112,17 +117,22 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
   },
   backButton: { 
-    width: 40, 
-    height: 40, 
-    borderRadius: 20, 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22, 
     justifyContent: 'center', 
     alignItems: 'center',
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
+    borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+    shadowColor: isDark ? '#fff' : '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDark ? 0.1 : 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  backIcon: { fontSize: 24, color: theme.text },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: '600', color: theme.text, textAlign: 'center' },
+  backIcon: { fontSize: 18, color: theme.text, fontWeight: '600' },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: theme.text },
   avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F70776', justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
   messagesContainer: { flex: 1 },
