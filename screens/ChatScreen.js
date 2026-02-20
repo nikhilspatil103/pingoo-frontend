@@ -1,17 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform ,StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { getAvatarColor } from '../utils/avatarColors';
+import SocketService from '../services/SocketService';
 
 export default function ChatScreen({ route, navigation }) {
   const { theme, isDark } = useTheme();
+  const { user } = useAuth();
   const { profile } = route.params;
   const [message, setMessage] = useState('');
-
+  const [messages, setMessages] = useState([]);
+  const scrollViewRef = useRef();
   const styles = getStyles(theme, isDark);
 
-  const [messages, setMessages] = useState([]);
+  useEffect(() => {
+    SocketService.connect(user.userId);
+    
+    SocketService.onReceiveMessage((data) => {
+      if (data.senderId === profile.id) {
+        const newMessage = {
+          id: Date.now(),
+          text: data.message,
+          sent: false,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setMessages(prev => [...prev, newMessage]);
+      }
+    });
+
+    return () => {
+      SocketService.offReceiveMessage();
+    };
+  }, [profile.id, user.userId]);
+
+  const sendMessage = () => {
+    if (message.trim()) {
+      const newMessage = {
+        id: Date.now(),
+        text: message.trim(),
+        sent: true,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      
+      setMessages(prev => [...prev, newMessage]);
+      SocketService.sendMessage(profile.id, message.trim(), user.userId);
+      setMessage('');
+      
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -35,13 +77,17 @@ export default function ChatScreen({ route, navigation }) {
                 <Text style={styles.headerTitle}>{profile.name}, {profile.age}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => navigation.navigate('ProfileView', { profile })} activeOpacity={1}>
-                <View style={styles.avatar}>
+                <LinearGradient colors={getAvatarColor(profile.name, profile.email)} style={styles.avatar}>
                   <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
-                </View>
+                </LinearGradient>
               </TouchableOpacity>
             </BlurView>
 
-            <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
+            <ScrollView 
+              ref={scrollViewRef}
+              style={styles.messagesContainer} 
+              contentContainerStyle={styles.messagesContent}
+            >
               {messages.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyText}>Start the conversation</Text>
@@ -82,7 +128,7 @@ export default function ChatScreen({ route, navigation }) {
                   onChangeText={setMessage}
                 />
               </BlurView>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={sendMessage}>
                 <BlurView intensity={15} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>➤</Text>
                 </BlurView>
@@ -133,7 +179,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   },
   backIcon: { fontSize: 18, color: theme.text, fontWeight: '600' },
   headerTitle: { fontSize: 18, fontWeight: '600', color: theme.text },
-  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F70776', justifyContent: 'center', alignItems: 'center' },
+  avatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
   messagesContainer: { flex: 1 },
   messagesContent: { padding: 20, gap: 4, flexGrow: 1 },

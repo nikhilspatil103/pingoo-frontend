@@ -26,6 +26,7 @@ export default function LoginScreen({ navigation }) {
       
       if (response.ok) {
         const userData = data.user || { userId: data.userId, name: data.name, email: data.email };
+        console.log('Login successful, token:', data.token);
         await login(userData, data.token);
       } else {
         Alert.alert('Error', data.error || 'Login failed');

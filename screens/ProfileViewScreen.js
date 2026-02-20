@@ -4,17 +4,50 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../config/urlConfig';
 
 export default function ProfileViewScreen({ route, navigation }) {
   const { theme, isDark } = useTheme();
-  const { profile, isMyProfile } = route.params;
+  const { profile: initialProfile, isMyProfile } = route.params;
+  const [profile, setProfile] = useState(initialProfile);
   const [isStarred, setIsStarred] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     checkIfStarred();
+    if (!isMyProfile && initialProfile?.id) {
+      fetchProfileDetails();
+    }
   }, []);
+
+  const fetchProfileDetails = async () => {
+    try {
+      setLoading(true);
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/user/${initialProfile.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setProfile({
+          ...data.user,
+          image: data.user.profilePhoto,
+          borderColor: initialProfile.borderColor
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const checkIfStarred = async () => {
     const contacts = await AsyncStorage.getItem('contacts');
@@ -68,7 +101,7 @@ export default function ProfileViewScreen({ route, navigation }) {
               {profile.image ? (
                 <ImageBackground source={{ uri: profile.image }} style={styles.profileImage} imageStyle={styles.imageStyle} />
               ) : (
-                <LinearGradient colors={profile.borderColor} style={styles.profileImage}>
+                <LinearGradient colors={profile.borderColor || ['#F70776', '#FF88C5']} style={styles.profileImage}>
                   <Text style={styles.avatarLetter}>{profile.name.charAt(0)}</Text>
                 </LinearGradient>
               )}
@@ -86,22 +119,22 @@ export default function ProfileViewScreen({ route, navigation }) {
                 </Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Height:</Text>
-                <Text style={styles.infoValue}>{profile.height ? `${profile.height} cm` : 'Not mentioned'}</Text>
+                <Text style={styles.infoLabel}>Looking for:</Text>
+                <Text style={[styles.infoValue, profile.lookingFor === 'Not added' ? styles.notAddedText : {}]}>{profile.lookingFor}</Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Body Type:</Text>
-                <Text style={styles.infoValue}>{profile.bodyType || 'Not mentioned'}</Text>
+                <Text style={styles.infoLabel}>Distance:</Text>
+                <Text style={styles.infoValue}>📍 {profile.distance || '2.5 km away'}</Text>
               </View>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Location:</Text>
-                <Text style={styles.infoValue}>📍 {profile.currentCity || 'New York'}</Text>
+                <Text style={[styles.infoValue, profile.currentCity === 'Not added' ? styles.notAddedText : {}]}>📍 {profile.currentCity}</Text>
               </View>
               
               <View style={styles.divider} />
               
               <Text style={styles.aboutTitle}>About me:</Text>
-              <Text style={styles.aboutText}>{profile.bio || 'Looking for people interested in art and culture. Love exploring new places and meeting creative minds.'}</Text>
+              <Text style={[styles.aboutText, profile.bio === 'Not added' ? styles.notAddedText : {}]}>{profile.bio}</Text>
               
               <View style={styles.divider} />
               
@@ -130,31 +163,45 @@ export default function ProfileViewScreen({ route, navigation }) {
               <Text style={styles.aboutTitle}>Lifestyle:</Text>
               <View style={styles.detailRow}>
                 <View style={styles.detailItem}>
+                  <Text style={styles.detailIcon}>📏</Text>
+                  <View>
+                    <Text style={styles.detailLabel}>Height</Text>
+                    <Text style={[styles.detailValue, profile.height ? {} : styles.notAddedText]}>{profile.height ? `${profile.height} cm` : 'Not added'}</Text>
+                  </View>
+                </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailIcon}>💪</Text>
+                  <View>
+                    <Text style={styles.detailLabel}>Body Type</Text>
+                    <Text style={[styles.detailValue, profile.bodyType === 'Not added' ? styles.notAddedText : {}]}>{profile.bodyType}</Text>
+                  </View>
+                </View>
+                <View style={styles.detailItem}>
                   <Text style={styles.detailIcon}>🚬</Text>
                   <View>
                     <Text style={styles.detailLabel}>Smoking</Text>
-                    <Text style={styles.detailValue}>{profile.smoking || 'Not mentioned'}</Text>
+                    <Text style={[styles.detailValue, profile.smoking === 'Not added' ? styles.notAddedText : {}]}>{profile.smoking}</Text>
                   </View>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailIcon}>🍷</Text>
                   <View>
                     <Text style={styles.detailLabel}>Drinking</Text>
-                    <Text style={styles.detailValue}>{profile.drinking || 'Not mentioned'}</Text>
+                    <Text style={[styles.detailValue, profile.drinking === 'Not added' ? styles.notAddedText : {}]}>{profile.drinking}</Text>
                   </View>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailIcon}>🏃</Text>
                   <View>
                     <Text style={styles.detailLabel}>Exercise</Text>
-                    <Text style={styles.detailValue}>{profile.exercise || 'Not mentioned'}</Text>
+                    <Text style={[styles.detailValue, profile.exercise === 'Not added' ? styles.notAddedText : {}]}>{profile.exercise}</Text>
                   </View>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailIcon}>🥗</Text>
                   <View>
                     <Text style={styles.detailLabel}>Diet</Text>
-                    <Text style={styles.detailValue}>{profile.diet || 'Not mentioned'}</Text>
+                    <Text style={[styles.detailValue, profile.diet === 'Not added' ? styles.notAddedText : {}]}>{profile.diet}</Text>
                   </View>
                 </View>
               </View>
@@ -164,24 +211,17 @@ export default function ProfileViewScreen({ route, navigation }) {
               <Text style={styles.aboutTitle}>Relationship:</Text>
               <View style={styles.detailRow}>
                 <View style={styles.detailItem}>
-                  <Text style={styles.detailIcon}>💕</Text>
-                  <View>
-                    <Text style={styles.detailLabel}>Looking for</Text>
-                    <Text style={styles.detailValue}>{profile.lookingFor || 'Not mentioned'}</Text>
-                  </View>
-                </View>
-                <View style={styles.detailItem}>
                   <Text style={styles.detailIcon}>💑</Text>
                   <View>
                     <Text style={styles.detailLabel}>Status</Text>
-                    <Text style={styles.detailValue}>{profile.relationshipStatus || 'Not mentioned'}</Text>
+                    <Text style={[styles.detailValue, profile.relationshipStatus === 'Not added' ? styles.notAddedText : {}]}>{profile.relationshipStatus}</Text>
                   </View>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailIcon}>👶</Text>
                   <View>
                     <Text style={styles.detailLabel}>Kids</Text>
-                    <Text style={styles.detailValue}>{profile.kids || 'Not mentioned'}</Text>
+                    <Text style={[styles.detailValue, profile.kids === 'Not added' ? styles.notAddedText : {}]}>{profile.kids}</Text>
                   </View>
                 </View>
               </View>
@@ -194,28 +234,28 @@ export default function ProfileViewScreen({ route, navigation }) {
                   <Text style={styles.detailIcon}>💼</Text>
                   <View>
                     <Text style={styles.detailLabel}>Occupation</Text>
-                    <Text style={styles.detailValue}>{profile.occupation || 'Not mentioned'}</Text>
+                    <Text style={[styles.detailValue, profile.occupation === 'Not added' ? styles.notAddedText : {}]}>{profile.occupation}</Text>
                   </View>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailIcon}>🏢</Text>
                   <View>
                     <Text style={styles.detailLabel}>Company</Text>
-                    <Text style={styles.detailValue}>{profile.company || 'Not mentioned'}</Text>
+                    <Text style={[styles.detailValue, profile.company === 'Not added' ? styles.notAddedText : {}]}>{profile.company}</Text>
                   </View>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailIcon}>🎓</Text>
                   <View>
                     <Text style={styles.detailLabel}>Education</Text>
-                    <Text style={styles.detailValue}>{profile.graduation || 'Not mentioned'}</Text>
+                    <Text style={[styles.detailValue, profile.graduation === 'Not added' ? styles.notAddedText : {}]}>{profile.graduation}</Text>
                   </View>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailIcon}>🏫</Text>
                   <View>
                     <Text style={styles.detailLabel}>School</Text>
-                    <Text style={styles.detailValue}>{profile.school || 'Not mentioned'}</Text>
+                    <Text style={[styles.detailValue, profile.school === 'Not added' ? styles.notAddedText : {}]}>{profile.school}</Text>
                   </View>
                 </View>
               </View>
@@ -228,14 +268,14 @@ export default function ProfileViewScreen({ route, navigation }) {
                   <Text style={styles.detailIcon}>🏠</Text>
                   <View>
                     <Text style={styles.detailLabel}>Hometown</Text>
-                    <Text style={styles.detailValue}>{profile.hometown || 'Not mentioned'}</Text>
+                    <Text style={[styles.detailValue, profile.hometown === 'Not added' ? styles.notAddedText : {}]}>{profile.hometown}</Text>
                   </View>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailIcon}>📍</Text>
                   <View>
                     <Text style={styles.detailLabel}>Lives in</Text>
-                    <Text style={styles.detailValue}>{profile.currentCity || 'Not mentioned'}</Text>
+                    <Text style={[styles.detailValue, profile.currentCity === 'Not added' ? styles.notAddedText : {}]}>{profile.currentCity}</Text>
                   </View>
                 </View>
               </View>
@@ -392,4 +432,5 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   menuItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
   menuItemIcon: { fontSize: 24, marginRight: 16 },
   menuItemText: { fontSize: 16, color: '#fff', fontWeight: '500' },
+  notAddedText: { color: '#999', fontStyle: 'italic' },
 });

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, Modal, Image, StatusBar } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, Modal, Image, StatusBar, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
+import { API_URL } from '../config/urlConfig';
+import { uploadImageToCloudinary } from '../utils/imageUpload';
 
 export default function EditProfileScreen({ navigation }) {
   const { theme, isDark } = useTheme();
@@ -37,20 +39,138 @@ export default function EditProfileScreen({ navigation }) {
   const [showWorkEdit, setShowWorkEdit] = useState(false);
   const [showLocationEdit, setShowLocationEdit] = useState(false);
   const [showRelationshipEdit, setShowRelationshipEdit] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    const userName = await AsyncStorage.getItem('userName');
-    const userPhoto = await AsyncStorage.getItem('userProfilePhoto');
-    if (userName) setName(userName);
-    if (userPhoto) setProfilePhoto(userPhoto);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/profile`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setName(data.user.name || '');
+        setProfilePhoto(data.user.profilePhoto || '');
+        setPhotos(data.user.additionalPhotos || []);
+        setBio(data.user.bio || '');
+        setHeight(data.user.height?.toString() || '');
+        setBodyType(data.user.bodyType || '');
+        setSmoking(data.user.smoking || '');
+        setDrinking(data.user.drinking || '');
+        setExercise(data.user.exercise || '');
+        setDiet(data.user.diet || '');
+        setOccupation(data.user.occupation || '');
+        setCompany(data.user.company || '');
+        setGraduation(data.user.graduation || '');
+        setSchool(data.user.school || '');
+        setHometown(data.user.hometown || '');
+        setCurrentCity(data.user.currentCity || '');
+        setLookingFor(data.user.lookingFor || '');
+        setRelationshipStatus(data.user.relationshipStatus || '');
+        setKids(data.user.kids || '');
+      }
+    } catch (error) {
+      console.error('Failed to load profile data:', error);
+    }
   };
 
-  const saveField = async (field, value) => {
-    await AsyncStorage.setItem(field, value);
+  const updateProfile = async (updateData) => {
+    try {
+      console.log('Updating profile with data:', updateData);
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(updateData),
+      });
+      
+      console.log('Update response status:', response.status);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Update response data:', data);
+        Alert.alert('Success', 'Profile updated successfully');
+        return true;
+      } else {
+        const errorData = await response.json();
+        console.log('Update error:', errorData);
+        Alert.alert('Error', errorData.error || 'Failed to update profile');
+        return false;
+      }
+    } catch (error) {
+      console.log('Update network error:', error);
+      Alert.alert('Error', 'Network error. Please try again.');
+      return false;
+    }
+  };
+
+  const deletePhoto = async (photoUrl, isProfile) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/delete-photo`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ photoUrl, isProfilePhoto: isProfile }),
+      });
+      
+      if (response.ok) {
+        if (isProfile) {
+          setProfilePhoto('');
+        } else {
+          setPhotos(photos.filter(photo => photo !== photoUrl));
+        }
+        Alert.alert('Success', 'Photo deleted successfully');
+      } else {
+        Alert.alert('Error', 'Failed to delete photo');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Network error. Please try again.');
+    }
+  };
+
+  const setAsProfilePhoto = async (photoUrl) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/set-profile-photo`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ photoUrl }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setProfilePhoto(data.user.profilePhoto);
+        setPhotos(data.user.additionalPhotos);
+        Alert.alert('Success', 'Profile photo updated successfully');
+      } else {
+        Alert.alert('Error', 'Failed to update profile photo');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Network error. Please try again.');
+    }
+  };
+
+  const showPhotoOptions = (photoUrl, isProfile) => {
+    setSelectedPhoto({ url: photoUrl, isProfile });
+    setShowPhotoModal(true);
   };
 
   const pickImage = async (isProfile) => {
@@ -61,17 +181,38 @@ export default function EditProfileScreen({ navigation }) {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.5,
+      quality: 0.8,
     });
 
     if (!result.canceled && result.assets[0]) {
       const uri = result.assets[0].uri;
+      
       if (isProfile) {
-        setProfilePhoto(uri);
-        await saveField('userProfilePhoto', uri);
+        // Show loading state
+        Alert.alert('Uploading', 'Please wait while we upload your image...');
+        
+        // Upload to Cloudinary
+        const uploadResult = await uploadImageToCloudinary(uri);
+        if (uploadResult.success) {
+          setProfilePhoto(uploadResult.imageUrl);
+          await updateProfile({ profilePhoto: uploadResult.imageUrl });
+          Alert.alert('Success', 'Profile photo updated successfully!');
+        } else {
+          Alert.alert('Error', uploadResult.error || 'Failed to upload image');
+        }
       } else {
-        const newPhotos = [...photos, uri];
-        setPhotos(newPhotos);
+        // Upload additional photo to Cloudinary
+        Alert.alert('Uploading', 'Please wait while we upload your image...');
+        
+        const uploadResult = await uploadImageToCloudinary(uri);
+        if (uploadResult.success) {
+          const newPhotos = [...photos, uploadResult.imageUrl];
+          setPhotos(newPhotos);
+          await updateProfile({ additionalPhotos: newPhotos });
+          Alert.alert('Success', 'Photo added successfully!');
+        } else {
+          Alert.alert('Error', uploadResult.error || 'Failed to upload image');
+        }
       }
     }
   };
@@ -97,7 +238,7 @@ export default function EditProfileScreen({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.photoSection}>
           <Text style={styles.sectionTitle}>Profile Photo</Text>
-          <TouchableOpacity style={styles.photoContainer} onPress={() => pickImage(true)}>
+          <TouchableOpacity style={styles.photoContainer} onPress={() => profilePhoto ? showPhotoOptions(profilePhoto, true) : pickImage(true)}>
             {profilePhoto ? (
               <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
             ) : (
@@ -115,7 +256,9 @@ export default function EditProfileScreen({ navigation }) {
           <Text style={styles.sectionTitle}>More Photos</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {photos.map((photo, index) => (
-              <Image key={index} source={{ uri: photo }} style={styles.photoThumb} />
+              <TouchableOpacity key={index} onPress={() => showPhotoOptions(photo, false)}>
+                <Image source={{ uri: photo }} style={styles.photoThumb} />
+              </TouchableOpacity>
             ))}
             {photos.length < 6 && (
               <TouchableOpacity style={styles.addPhotoBtn} onPress={() => pickImage(false)}>
@@ -148,6 +291,19 @@ export default function EditProfileScreen({ navigation }) {
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Bio</Text>
                 <Text style={styles.infoValue} numberOfLines={1}>{bio || 'Not set'}</Text>
+              </View>
+              <Text style={styles.infoArrow}>›</Text>
+            </TouchableOpacity>
+          </BlurView>
+
+          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+            <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowRelationshipEdit(true)}>
+              <View style={styles.infoIcon}>
+                <Text style={styles.infoEmoji}>🔍</Text>
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Looking for</Text>
+                <Text style={styles.infoValue} numberOfLines={1}>{lookingFor || 'Not set'}</Text>
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
@@ -264,8 +420,8 @@ export default function EditProfileScreen({ navigation }) {
               placeholderTextColor={theme.textSecondary}
             />
             <TouchableOpacity style={styles.saveBtn} onPress={async () => {
-              await saveField('userName', name);
-              setShowNameEdit(false);
+              const success = await updateProfile({ name });
+              if (success) setShowNameEdit(false);
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
@@ -293,8 +449,8 @@ export default function EditProfileScreen({ navigation }) {
             />
             <Text style={styles.charCount}>{bio.length}/150</Text>
             <TouchableOpacity style={styles.saveBtn} onPress={async () => {
-              await saveField('userBio', bio);
-              setShowBioEdit(false);
+              const success = await updateProfile({ bio });
+              if (success) setShowBioEdit(false);
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
@@ -312,7 +468,10 @@ export default function EditProfileScreen({ navigation }) {
               </TouchableOpacity>
             </View>
             <TextInput style={styles.input} value={height} onChangeText={setHeight} placeholder="Height in cm" placeholderTextColor={theme.textSecondary} keyboardType="numeric" />
-            <TouchableOpacity style={styles.saveBtn} onPress={() => setShowHeightEdit(false)}>
+            <TouchableOpacity style={styles.saveBtn} onPress={async () => {
+              const success = await updateProfile({ height: parseInt(height) });
+              if (success) setShowHeightEdit(false);
+            }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
           </BlurView>
@@ -329,7 +488,11 @@ export default function EditProfileScreen({ navigation }) {
               </TouchableOpacity>
             </View>
             {['Slim', 'Athletic', 'Average', 'Curvy'].map((type) => (
-              <TouchableOpacity key={type} style={[styles.optionBtn, bodyType === type && styles.optionSelected]} onPress={() => { setBodyType(type); setShowBodyTypeEdit(false); }}>
+              <TouchableOpacity key={type} style={[styles.optionBtn, bodyType === type && styles.optionSelected]} onPress={async () => { 
+                setBodyType(type); 
+                await updateProfile({ bodyType: type });
+                setShowBodyTypeEdit(false); 
+              }}>
                 <Text style={styles.optionText}>{type}</Text>
               </TouchableOpacity>
             ))}
@@ -378,7 +541,10 @@ export default function EditProfileScreen({ navigation }) {
                 </TouchableOpacity>
               ))}
             </View>
-            <TouchableOpacity style={styles.saveBtn} onPress={() => setShowLifestyleEdit(false)}>
+            <TouchableOpacity style={styles.saveBtn} onPress={async () => {
+              await updateProfile({ smoking, drinking, exercise, diet });
+              setShowLifestyleEdit(false);
+            }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
           </BlurView>
@@ -398,7 +564,10 @@ export default function EditProfileScreen({ navigation }) {
             <TextInput style={styles.input} value={company} onChangeText={setCompany} placeholder="Company" placeholderTextColor={theme.textSecondary} />
             <TextInput style={styles.input} value={graduation} onChangeText={setGraduation} placeholder="Education" placeholderTextColor={theme.textSecondary} />
             <TextInput style={styles.input} value={school} onChangeText={setSchool} placeholder="School" placeholderTextColor={theme.textSecondary} />
-            <TouchableOpacity style={styles.saveBtn} onPress={() => setShowWorkEdit(false)}>
+            <TouchableOpacity style={styles.saveBtn} onPress={async () => {
+              await updateProfile({ occupation, company, graduation, school });
+              setShowWorkEdit(false);
+            }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
           </BlurView>
@@ -416,7 +585,10 @@ export default function EditProfileScreen({ navigation }) {
             </View>
             <TextInput style={styles.input} value={hometown} onChangeText={setHometown} placeholder="Hometown" placeholderTextColor={theme.textSecondary} />
             <TextInput style={styles.input} value={currentCity} onChangeText={setCurrentCity} placeholder="Current City" placeholderTextColor={theme.textSecondary} />
-            <TouchableOpacity style={styles.saveBtn} onPress={() => setShowLocationEdit(false)}>
+            <TouchableOpacity style={styles.saveBtn} onPress={async () => {
+              await updateProfile({ hometown, currentCity });
+              setShowLocationEdit(false);
+            }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
           </BlurView>
@@ -427,33 +599,64 @@ export default function EditProfileScreen({ navigation }) {
         <View style={styles.modalOverlay}>
           <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Relationship</Text>
+              <Text style={styles.modalTitle}>Looking For</Text>
               <TouchableOpacity onPress={() => setShowRelationshipEdit(false)}>
                 <Text style={styles.closeBtn}>✕</Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.fieldLabel}>Looking For</Text>
-            {['Relationship', 'Friendship', 'Casual'].map((opt) => (
-              <TouchableOpacity key={opt} style={[styles.optionBtn, lookingFor === opt && styles.optionSelected]} onPress={() => setLookingFor(opt)}>
-                <Text style={styles.optionText}>{opt}</Text>
-              </TouchableOpacity>
-            ))}
-            <Text style={styles.fieldLabel}>Status</Text>
-            {['Single', 'Divorced', 'Widowed'].map((opt) => (
-              <TouchableOpacity key={opt} style={[styles.optionBtn, relationshipStatus === opt && styles.optionSelected]} onPress={() => setRelationshipStatus(opt)}>
-                <Text style={styles.optionText}>{opt}</Text>
-              </TouchableOpacity>
-            ))}
-            <Text style={styles.fieldLabel}>Kids</Text>
-            {["Don't have", 'Have kids', "Don't want"].map((opt) => (
-              <TouchableOpacity key={opt} style={[styles.optionBtn, kids === opt && styles.optionSelected]} onPress={() => setKids(opt)}>
-                <Text style={styles.optionText}>{opt}</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity style={styles.saveBtn} onPress={() => setShowRelationshipEdit(false)}>
+            <TextInput
+              style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+              value={lookingFor}
+              onChangeText={setLookingFor}
+              placeholder="What are you looking for? (e.g., serious relationship, friendship, casual dating)"
+              placeholderTextColor={theme.textSecondary}
+              multiline
+              maxLength={100}
+            />
+            <Text style={styles.charCount}>{lookingFor.length}/100</Text>
+            <TouchableOpacity style={styles.saveBtn} onPress={async () => {
+              const success = await updateProfile({ lookingFor });
+              if (success) setShowRelationshipEdit(false);
+            }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
           </BlurView>
+        </View>
+      </Modal>
+
+      <Modal visible={showPhotoModal} animationType="fade" transparent>
+        <View style={styles.photoModalOverlay}>
+          <View style={styles.photoModalContent}>
+            <Image source={{ uri: selectedPhoto?.url }} style={styles.fullScreenImage} />
+            <View style={styles.photoActions}>
+              {!selectedPhoto?.isProfile && (
+                <TouchableOpacity 
+                  style={styles.actionBtn} 
+                  onPress={() => {
+                    setAsProfilePhoto(selectedPhoto.url);
+                    setShowPhotoModal(false);
+                  }}
+                >
+                  <Text style={styles.actionBtnText}>Set as Profile</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity 
+                style={[styles.actionBtn, styles.deleteBtn]} 
+                onPress={() => {
+                  deletePhoto(selectedPhoto.url, selectedPhoto.isProfile);
+                  setShowPhotoModal(false);
+                }}
+              >
+                <Text style={styles.actionBtnText}>Delete</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.actionBtn} 
+                onPress={() => setShowPhotoModal(false)}
+              >
+                <Text style={styles.actionBtnText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </Modal>
         </SafeAreaView>
@@ -520,4 +723,11 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   fieldLabel: { fontSize: 14, fontWeight: '600', color: theme.text, marginTop: 15, marginBottom: 10 },
   optionRow: { flexDirection: 'row', gap: 8, marginBottom: 15 },
   optionChip: { flex: 1, padding: 12, borderRadius: 10, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+  photoModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  photoModalContent: { width: '90%', alignItems: 'center' },
+  fullScreenImage: { width: '100%', height: 400, borderRadius: 12, marginBottom: 20 },
+  photoActions: { flexDirection: 'row', gap: 12 },
+  actionBtn: { backgroundColor: '#667eea', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8 },
+  deleteBtn: { backgroundColor: '#ff4757' },
+  actionBtnText: { color: '#fff', fontWeight: '600' },
 });

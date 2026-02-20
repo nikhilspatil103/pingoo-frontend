@@ -10,12 +10,7 @@ export default function ChatListScreen({ navigation }) {
 
   const styles = getStyles(theme, isDark);
 
-  const chats = [
-    { id: 1, name: 'Mari', age: 22, message: 'You: It was great!', time: '03:25', avatar: 'M', unread: false },
-    { id: 2, name: 'Veronika', age: 19, message: 'Photo - super!)', time: '22:34', avatar: 'V', unread: false },
-    { id: 3, name: 'Anastasia', age: 30, message: 'You: Yes, I really think so', time: '15:03', avatar: 'A', unread: false },
-    { id: 4, name: 'Elena', age: 19, message: 'You: Get to know your cat?', time: '12:28', avatar: 'E', unread: false },
-  ];
+  const chats = [];
 
   const renderChatItem = ({ item }) => (
     <TouchableOpacity 
@@ -62,14 +57,21 @@ export default function ChatListScreen({ navigation }) {
             </BlurView>
           </View>
 
-          <FlatList
-            data={chats}
-            renderItem={renderChatItem}
-            keyExtractor={(item) => item.id.toString()}
-            style={styles.chatList}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-            showsVerticalScrollIndicator={false}
-          />
+          {chats.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>No conversations yet</Text>
+              <Text style={styles.emptySubtext}>Start chatting with someone!</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={chats}
+              renderItem={renderChatItem}
+              keyExtractor={(item) => item.id.toString()}
+              style={styles.chatList}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
         </SafeAreaView>
       </LinearGradient>
     </View>
@@ -116,4 +118,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   checkmark: { fontSize: 12, color: '#03C8F0' },
   chatMessage: { fontSize: 14, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' },
   separator: { height: 12 },
+  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
+  emptyText: { fontSize: 18, fontWeight: '600', color: theme.text, marginBottom: 8 },
+  emptySubtext: { fontSize: 14, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' },
 });

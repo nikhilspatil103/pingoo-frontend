@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Alert, StatusBar } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Alert, StatusBar, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
 import ProfileViewScreen from './ProfileViewScreen';
+import { getAvatarColor } from '../utils/avatarColors';
 
 export default function MyProfileScreen({ navigation }) {
   const { theme, isDark } = useTheme();
@@ -22,48 +23,59 @@ export default function MyProfileScreen({ navigation }) {
     loadProfile();
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadProfile(); // Refresh profile when screen comes into focus
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   const loadProfile = async () => {
     try {
-      const userName = await AsyncStorage.getItem('userName');
-      const userEmail = await AsyncStorage.getItem('userEmail');
-      const userPhoto = await AsyncStorage.getItem('userProfilePhoto');
-      const userCoins = await AsyncStorage.getItem('userCoins');
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/profile`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       
-      if (userCoins) setCoins(parseInt(userCoins));
-      
-      const profileData = {
-        name: userName || 'User',
-        age: 25,
-        gender: 'female',
-        email: userEmail,
-        photo: userPhoto,
-        bio: 'Looking for people interested in art and culture.',
-        height: 165,
-        bodyType: 'Athletic',
-        smoking: 'Never',
-        drinking: 'Socially',
-        exercise: 'Regularly',
-        diet: 'Vegetarian',
-        lookingFor: 'Friendship',
-        relationshipStatus: 'Single',
-        kids: 'No',
-        occupation: 'Designer',
-        company: 'Tech Corp',
-        graduation: "Bachelor's",
-        school: 'State University',
-        hometown: 'Mumbai',
-        currentCity: 'New York',
-        interests: ['Art & Culture', 'Photography', 'Travel'],
-        languages: ['English', 'Spanish', 'Hindi'],
-        tag: 'Art & Culture',
-        borderColor: ['#F70776', '#FF88C5'],
-      };
-      
-      setProfile(profileData);
-      
-      const fields = [userName, userEmail, userPhoto, profileData.bio, profileData.height, profileData.bodyType];
-      const filled = fields.filter(f => f && f !== '').length;
-      setProfileCompletion(Math.round((filled / fields.length) * 100));
+      if (response.ok) {
+        const data = await response.json();
+        const profileData = {
+          ...data.user,
+          image: data.user.profilePhoto,
+          bio: data.user.bio || 'Not added',
+          height: data.user.height || null,
+          bodyType: data.user.bodyType || 'Not added',
+          smoking: data.user.smoking || 'Not added',
+          drinking: data.user.drinking || 'Not added',
+          exercise: data.user.exercise || 'Not added',
+          diet: data.user.diet || 'Not added',
+          lookingFor: data.user.lookingFor || 'Not added',
+          relationshipStatus: data.user.relationshipStatus || 'Not added',
+          kids: data.user.kids || 'Not added',
+          occupation: data.user.occupation || 'Not added',
+          company: data.user.company || 'Not added',
+          graduation: data.user.graduation || 'Not added',
+          school: data.user.school || 'Not added',
+          hometown: data.user.hometown || 'Not added',
+          currentCity: data.user.currentCity || data.user.location || 'Not added',
+          languages: data.user.languages?.length ? data.user.languages : ['Not added'],
+          tag: data.user.interests?.[0] || 'Not added',
+          borderColor: ['#F70776', '#FF88C5'],
+        };
+        
+        setProfile(profileData);
+        
+        // Calculate profile completion
+        const fields = [profileData.name, profileData.email, profileData.profilePhoto, profileData.bio, profileData.age, profileData.gender];
+        const filled = fields.filter(f => f && f !== '').length;
+        setProfileCompletion(Math.round((filled / fields.length) * 100));
+      } else {
+        console.error('Failed to load profile');
+      }
     } catch (error) {
       console.error('Failed to load profile:', error);
     }
@@ -118,9 +130,13 @@ export default function MyProfileScreen({ navigation }) {
           <ScrollView showsVerticalScrollIndicator={false}>
             <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.profileCard}>
               <View style={styles.avatarContainer}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
-                </View>
+                {profile.profilePhoto ? (
+                  <Image source={{ uri: profile.profilePhoto }} style={styles.avatar} />
+                ) : (
+                  <LinearGradient colors={getAvatarColor(profile.email, profile.name)} style={styles.avatar}>
+                    <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
+                  </LinearGradient>
+                )}
                 <View style={styles.editBadge}>
                   <Text style={styles.editIcon}>✏️</Text>
                 </View>
@@ -144,7 +160,10 @@ export default function MyProfileScreen({ navigation }) {
                 <Text style={styles.statValue}>{likesCount}</Text>
                 <Text style={styles.statLabel}>Likes</Text>
               </BlurView>
-              <TouchableOpacity onPress={() => setShowFullProfile(true)} activeOpacity={1}>
+              <TouchableOpacity onPress={async () => {
+                await loadProfile();
+                setShowFullProfile(true);
+              }} activeOpacity={1}>
                 <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.statCard}>
                   <Text style={styles.statIcon}>○</Text>
                   <Text style={styles.statValue}>View</Text>
@@ -267,7 +286,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   menuIcon: { fontSize: 16, color: '#fff', fontWeight: '500' },
   profileCard: { margin: 20, borderRadius: 24, padding: 30, alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(147,147,147,0.5)' },
   avatarContainer: { position: 'relative', marginBottom: 16 },
-  avatar: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#FFB6C1', justifyContent: 'center', alignItems: 'center' },
+  avatar: { width: 120, height: 120, borderRadius: 60, justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 48, fontWeight: 'bold', color: '#fff' },
   editBadge: { position: 'absolute', bottom: 0, right: 0, width: 36, height: 36, borderRadius: 18, backgroundColor: '#F70776', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#fff' },
   editIcon: { fontSize: 16 },

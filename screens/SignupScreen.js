@@ -8,10 +8,11 @@ export default function SignupScreen({ navigation }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSignup = async () => {
-    if (!name || !email || !password) {
+  const handleNext = () => {
+    if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'All fields are required');
       return;
     }
@@ -21,28 +22,13 @@ export default function SignupScreen({ navigation }) {
       return;
     }
 
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password })
-      });
-      const data = await response.json();
-      
-      if (response.ok) {
-        // Use actual response data if available, otherwise create mock data
-        const userData = data.user || { id: Date.now(), name, email };
-        const token = data.token || 'signup_token_' + Date.now();
-        await login(userData, token);
-      } else {
-        Alert.alert('Error', data.error || 'Signup failed');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Network error. Please try again.');
-    } finally {
-      setLoading(false);
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
     }
+
+    // Navigate to profile setup with basic info
+    navigation.navigate('ProfileSetup', { name, email, password });
   };
 
   return (
@@ -84,14 +70,21 @@ export default function SignupScreen({ navigation }) {
             secureTextEntry
           />
 
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm Password"
+            placeholderTextColor="rgba(255, 255, 255, 0.5)"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+          />
+
           <TouchableOpacity 
             style={[styles.button, loading && styles.buttonDisabled]} 
-            onPress={handleSignup}
+            onPress={handleNext}
             disabled={loading}
           >
-            <Text style={styles.buttonText}>
-              {loading ? 'Creating Account...' : 'Sign Up'}
-            </Text>
+            <Text style={styles.buttonText}>Next</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
