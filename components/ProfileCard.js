@@ -13,8 +13,8 @@ const ProfileCard = React.memo(({ profile, onPress, isDark, theme }) => {
   const priority = Platform.OS !== 'web' ? FastImage?.priority?.normal : undefined;
   
   return (
-    <TouchableOpacity style={styles.wrapper} onPress={onPress} activeOpacity={1}>
-      <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.glassCard(isDark)}>
+    <TouchableOpacity style={styles.wrapper} onPress={onPress} activeOpacity={0.9}>
+      <View style={styles.glassCard(isDark)}>
         <View style={styles.cardImage}>
           <OptimizedImage
             uri={profile.profilePhoto}
@@ -28,8 +28,8 @@ const ProfileCard = React.memo(({ profile, onPress, isDark, theme }) => {
               <Text style={styles.onlineBadgeText}>🟢</Text>
             </View>
           )}
-          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} style={styles.cardGradient}>
-            <BlurView intensity={8} tint="dark" style={styles.cardOverlay}>
+          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.cardGradient}>
+            <View style={styles.cardOverlay}>
               <View style={styles.cardInfo}>
                 <View style={styles.nameRow}>
                   <Text style={styles.profileName}>{profile.name}, {profile.age || 'N/A'}</Text>
@@ -40,19 +40,19 @@ const ProfileCard = React.memo(({ profile, onPress, isDark, theme }) => {
                   )}
                 </View>
                 <Text style={styles.profileLocation}>📍 {profile.location || 'Unknown'}</Text>
-                <BlurView intensity={5} tint="dark" style={styles.tagBadge}>
+                <View style={styles.tagBadge}>
                   <Text style={[styles.genderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>
                     {profile.gender === 'female' ? '♀' : '♂'}
                   </Text>
                   <Text style={styles.tagText} numberOfLines={2} ellipsizeMode="tail">
                     {profile.lookingFor || 'Looking for friends'}
                   </Text>
-                </BlurView>
+                </View>
               </View>
-            </BlurView>
+            </View>
           </LinearGradient>
         </View>
-      </BlurView>
+      </View>
     </TouchableOpacity>
   );
 });
@@ -117,14 +117,14 @@ const styles = StyleSheet.create({
   onlineBadge: { position: 'absolute', top: 10, right: 10, width: 12, height: 12, borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   onlineBadgeText: { fontSize: 10 },
   cardGradient: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '50%' },
-  cardOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 10, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, overflow: 'hidden' },
+  cardOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 10, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, backgroundColor: 'rgba(0,0,0,0.3)' },
   cardInfo: { gap: 4 },
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   likesBadge: { flexDirection: 'row', alignItems: 'center' },
   likesText: { fontSize: 10, color: '#fff', fontWeight: 'bold' },
   profileName: { fontSize: 16, fontWeight: 'bold', color: '#fff' },
   profileLocation: { fontSize: 11, color: '#fff' },
-  tagBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, overflow: 'hidden', alignSelf: 'flex-start' },
+  tagBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.4)', alignSelf: 'flex-start' },
   genderIcon: { fontSize: 14, fontWeight: 'bold' },
   tagText: { fontSize: 11, color: '#fff', flex: 1 },
   listCard: (isDark) => ({ width: '100%', backgroundColor: isDark ? '#1a1a1a' : '#fff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3, marginBottom: 15 }),

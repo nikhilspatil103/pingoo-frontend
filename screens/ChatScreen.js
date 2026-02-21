@@ -114,7 +114,7 @@ export default function ChatScreen({ route, navigation }) {
           style={styles.keyboardView}
         >
           <SafeAreaView style={styles.safeArea}>
-            <BlurView intensity={isDark ? 30 : 20} tint={isDark ? 'dark' : 'light'} style={styles.header}>
+            <BlurView intensity={isDark ? 15 : 10} tint={isDark ? 'dark' : 'light'} style={styles.header}>
               <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={1}>
                 <BlurView intensity={isDark ? 40 : 25} tint={isDark ? 'dark' : 'light'} style={styles.backButton}>
                   <Text style={styles.backIcon}>←</Text>
@@ -177,13 +177,13 @@ export default function ChatScreen({ route, navigation }) {
               )}
             </ScrollView>
 
-            <BlurView intensity={isDark ? 30 : 20} tint={isDark ? 'dark' : 'light'} style={styles.inputContainer}>
+            <BlurView intensity={isDark ? 15 : 10} tint={isDark ? 'dark' : 'light'} style={styles.inputContainer}>
               <TouchableOpacity>
-                <BlurView intensity={8} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
+                <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>🔗</Text>
                 </BlurView>
               </TouchableOpacity>
-              <BlurView intensity={5} tint={isDark ? 'dark' : 'light'} style={styles.inputWrapper}>
+              <BlurView intensity={8} tint={isDark ? 'dark' : 'light'} style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
                   placeholder="Message"
@@ -193,12 +193,12 @@ export default function ChatScreen({ route, navigation }) {
                 />
               </BlurView>
               <TouchableOpacity onPress={sendMessage}>
-                <BlurView intensity={8} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
+                <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>➤</Text>
                 </BlurView>
               </TouchableOpacity>
               <TouchableOpacity>
-                <BlurView intensity={8} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
+                <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>🎤</Text>
                 </BlurView>
               </TouchableOpacity>

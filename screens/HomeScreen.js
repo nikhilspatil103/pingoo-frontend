@@ -107,7 +107,7 @@ export default function HomeScreen({ navigation }) {
         style={styles.gradientBackground}
       >
         <SafeAreaView style={styles.safeArea}>
-          <BlurView intensity={isDark ? 30 : 20} tint={isDark ? 'dark' : 'light'} style={styles.header}>
+          <BlurView intensity={isDark ? 15 : 10} tint={isDark ? 'dark' : 'light'} style={styles.header}>
             <Text style={styles.headerTitle}>Pingoo</Text>
             <View style={styles.headerRight}>
               <TouchableOpacity style={styles.viewToggle} onPress={() => setIsListView(!isListView)} activeOpacity={1}>
@@ -139,10 +139,16 @@ export default function HomeScreen({ navigation }) {
               onEndReachedThreshold={0.5}
               ListFooterComponent={renderFooter}
               ListEmptyComponent={<View style={styles.emptyContainer}><Text style={styles.emptyText}>No users found</Text></View>}
-              windowSize={5}
-              maxToRenderPerBatch={10}
+              windowSize={10}
+              maxToRenderPerBatch={6}
               removeClippedSubviews={true}
-              initialNumToRender={10}
+              initialNumToRender={6}
+              updateCellsBatchingPeriod={50}
+              getItemLayout={(data, index) => ({
+                length: isListView ? 100 : 260,
+                offset: (isListView ? 100 : 260) * index,
+                index,
+              })}
             />
           )}
         </SafeAreaView>

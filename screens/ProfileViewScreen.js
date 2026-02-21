@@ -215,7 +215,7 @@ export default function ProfileViewScreen({ route, navigation }) {
               </TouchableOpacity>
             )}
 
-            <BlurView intensity={isDark ? 40 : 30} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+            <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Age:</Text>
                 <Text style={styles.infoValue}>{profile.age}</Text>
