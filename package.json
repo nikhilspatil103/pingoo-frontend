@@ -27,8 +27,8 @@
     "react-native-screens": "~4.0.0",
     "react-native-web": "~0.19.6",
 
-    "socket.io-client": "^4.8.3" ,
-    "react-native-device-info": "^15.0.1",
+    "socket.io-client": "^4.8.3",
+    "react-native-device-info": "^10.11.0",
     "react-native-fast-image": "^8.6.3",
     "zustand": "^3.7.2" 
   },
