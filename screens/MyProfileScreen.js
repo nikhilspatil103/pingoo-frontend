@@ -133,7 +133,7 @@ export default function MyProfileScreen({ navigation }) {
           <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.header}>
             <Text style={styles.headerTitle}>My Profile</Text>
             <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(true)} activeOpacity={1}>
-              <BlurView intensity={20} tint="dark" style={styles.menuButtonInner}>
+              <BlurView intensity={10} tint="dark" style={styles.menuButtonInner}>
                 <Text style={styles.menuIcon}>⋮</Text>
               </BlurView>
             </TouchableOpacity>

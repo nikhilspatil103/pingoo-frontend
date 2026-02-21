@@ -67,7 +67,7 @@ export default function ChatListScreen({ navigation }) {
       onPress={() => navigation.navigate('Chat', { profile: { id: item.id, name: item.name, age: item.age, profilePhoto: item.profilePhoto } })}
       activeOpacity={1}
     >
-      <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.chatItem}>
+      <BlurView intensity={isDark ? 40 : 30} tint={isDark ? 'dark' : 'light'} style={styles.chatItem}>
         {item.profilePhoto ? (
           <View style={styles.avatar}>
             <Image source={{ uri: item.profilePhoto }} style={styles.avatarImage} />
@@ -109,7 +109,7 @@ export default function ChatListScreen({ navigation }) {
           <Text style={styles.title}>Chats</Text>
           
           <View style={styles.searchContainer}>
-            <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.searchWrapper}>
+            <BlurView intensity={isDark ? 40 : 30} tint={isDark ? 'dark' : 'light'} style={styles.searchWrapper}>
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search"

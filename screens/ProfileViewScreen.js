@@ -153,7 +153,7 @@ export default function ProfileViewScreen({ route, navigation }) {
         style={styles.gradientBackground}
       >
         <SafeAreaView style={styles.safeArea}>
-          <BlurView intensity={20} tint="dark" style={styles.backButton}>
+          <BlurView intensity={10} tint="dark" style={styles.backButton}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Text style={styles.backIcon}>←</Text>
             </TouchableOpacity>
@@ -161,7 +161,7 @@ export default function ProfileViewScreen({ route, navigation }) {
 
           {!isMyProfile && (
             <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(true)} activeOpacity={1}>
-              <BlurView intensity={20} tint="dark" style={styles.menuButtonInner}>
+              <BlurView intensity={10} tint="dark" style={styles.menuButtonInner}>
                 <Text style={styles.menuIcon}>⋮</Text>
               </BlurView>
             </TouchableOpacity>
@@ -215,7 +215,7 @@ export default function ProfileViewScreen({ route, navigation }) {
               </TouchableOpacity>
             )}
 
-            <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+            <BlurView intensity={isDark ? 40 : 30} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Age:</Text>
                 <Text style={styles.infoValue}>{profile.age}</Text>
@@ -250,16 +250,16 @@ export default function ProfileViewScreen({ route, navigation }) {
               <View style={styles.tagsContainer}>
                 {profile.interests && profile.interests.length > 0 ? (
                   profile.interests.map((interest, index) => (
-                    <BlurView key={index} intensity={20} tint={isDark ? 'dark' : 'light'} style={styles.tag}>
+                    <BlurView key={index} intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.tag}>
                       <Text style={styles.tagText}>{interest}</Text>
                     </BlurView>
                   ))
                 ) : (
                   <>
-                    <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={styles.tag}>
+                    <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.tag}>
                       <Text style={styles.tagText}>{profile.tag}</Text>
                     </BlurView>
-                    <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={styles.tag}>
+                    <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.tag}>
                       <Text style={styles.tagText}>Art & Culture</Text>
                     </BlurView>
                   </>
@@ -394,16 +394,16 @@ export default function ProfileViewScreen({ route, navigation }) {
               <View style={styles.tagsContainer}>
                 {profile.languages && profile.languages.length > 0 ? (
                   profile.languages.map((lang, index) => (
-                    <BlurView key={index} intensity={20} tint={isDark ? 'dark' : 'light'} style={styles.tagOutline}>
+                    <BlurView key={index} intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.tagOutline}>
                       <Text style={styles.tagOutlineText}>{lang}</Text>
                     </BlurView>
                   ))
                 ) : (
                   <>
-                    <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={styles.tagOutline}>
+                    <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.tagOutline}>
                       <Text style={styles.tagOutlineText}>English</Text>
                     </BlurView>
-                    <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={styles.tagOutline}>
+                    <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.tagOutline}>
                       <Text style={styles.tagOutlineText}>Spanish</Text>
                     </BlurView>
                   </>

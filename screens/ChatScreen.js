@@ -179,11 +179,11 @@ export default function ChatScreen({ route, navigation }) {
 
             <BlurView intensity={isDark ? 30 : 20} tint={isDark ? 'dark' : 'light'} style={styles.inputContainer}>
               <TouchableOpacity>
-                <BlurView intensity={15} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
+                <BlurView intensity={8} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>🔗</Text>
                 </BlurView>
               </TouchableOpacity>
-              <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.inputWrapper}>
+              <BlurView intensity={5} tint={isDark ? 'dark' : 'light'} style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
                   placeholder="Message"
@@ -193,12 +193,12 @@ export default function ChatScreen({ route, navigation }) {
                 />
               </BlurView>
               <TouchableOpacity onPress={sendMessage}>
-                <BlurView intensity={15} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
+                <BlurView intensity={8} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>➤</Text>
                 </BlurView>
               </TouchableOpacity>
               <TouchableOpacity>
-                <BlurView intensity={15} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
+                <BlurView intensity={8} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>🎤</Text>
                 </BlurView>
               </TouchableOpacity>

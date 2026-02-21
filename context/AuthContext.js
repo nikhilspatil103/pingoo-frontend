@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SocketService from '../services/SocketService';
+import { API_URL } from '../config/urlConfig';
 
 const AuthContext = createContext();
 
@@ -16,8 +17,18 @@ export const AuthProvider = ({ children }) => {
     try {
       const token = await AsyncStorage.getItem('token');
       const userData = await AsyncStorage.getItem('user');
+      const savedApiUrl = await AsyncStorage.getItem('apiUrl');
+      
+      // Auto-logout if API URL changed
+      if (savedApiUrl && savedApiUrl !== API_URL) {
+        console.log('API URL changed, logging out...');
+        await logout();
+        return;
+      }
+      
       if (token && userData) {
         setUser(JSON.parse(userData));
+        await AsyncStorage.setItem('apiUrl', API_URL);
       }
     } catch (error) {
       console.error('Error checking login status:', error);
@@ -32,6 +43,7 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.setItem('user', JSON.stringify(userData));
       await AsyncStorage.setItem('userName', userData.name);
       await AsyncStorage.setItem('userEmail', userData.email);
+      await AsyncStorage.setItem('apiUrl', API_URL);
       setUser(userData);
     } catch (error) {
       console.error('Error saving user data:', error);

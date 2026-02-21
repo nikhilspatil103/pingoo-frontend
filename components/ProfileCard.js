@@ -29,7 +29,7 @@ const ProfileCard = React.memo(({ profile, onPress, isDark, theme }) => {
             </View>
           )}
           <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} style={styles.cardGradient}>
-            <BlurView intensity={15} tint="dark" style={styles.cardOverlay}>
+            <BlurView intensity={8} tint="dark" style={styles.cardOverlay}>
               <View style={styles.cardInfo}>
                 <View style={styles.nameRow}>
                   <Text style={styles.profileName}>{profile.name}, {profile.age || 'N/A'}</Text>
@@ -40,7 +40,7 @@ const ProfileCard = React.memo(({ profile, onPress, isDark, theme }) => {
                   )}
                 </View>
                 <Text style={styles.profileLocation}>📍 {profile.location || 'Unknown'}</Text>
-                <BlurView intensity={10} tint="dark" style={styles.tagBadge}>
+                <BlurView intensity={5} tint="dark" style={styles.tagBadge}>
                   <Text style={[styles.genderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>
                     {profile.gender === 'female' ? '♀' : '♂'}
                   </Text>
