@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, Modal, Image, StatusBar, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, Modal, Image, StatusBar, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -41,6 +41,7 @@ export default function EditProfileScreen({ navigation }) {
   const [showRelationshipEdit, setShowRelationshipEdit] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -118,6 +119,7 @@ export default function EditProfileScreen({ navigation }) {
 
   const deletePhoto = async (photoUrl, isProfile) => {
     try {
+      setUploading(true);
       const token = await AsyncStorage.getItem('token');
       const response = await fetch(`${API_URL}/delete-photo`, {
         method: 'DELETE',
@@ -140,11 +142,14 @@ export default function EditProfileScreen({ navigation }) {
       }
     } catch (error) {
       Alert.alert('Error', 'Network error. Please try again.');
+    } finally {
+      setUploading(false);
     }
   };
 
   const setAsProfilePhoto = async (photoUrl) => {
     try {
+      setUploading(true);
       const token = await AsyncStorage.getItem('token');
       const response = await fetch(`${API_URL}/set-profile-photo`, {
         method: 'PUT',
@@ -165,6 +170,8 @@ export default function EditProfileScreen({ navigation }) {
       }
     } catch (error) {
       Alert.alert('Error', 'Network error. Please try again.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -187,11 +194,9 @@ export default function EditProfileScreen({ navigation }) {
     if (!result.canceled && result.assets[0]) {
       const uri = result.assets[0].uri;
       
+      setUploading(true);
+      
       if (isProfile) {
-        // Show loading state
-        Alert.alert('Uploading', 'Please wait while we upload your image...');
-        
-        // Upload to Cloudinary
         const uploadResult = await uploadImageToCloudinary(uri);
         if (uploadResult.success) {
           setProfilePhoto(uploadResult.imageUrl);
@@ -201,9 +206,6 @@ export default function EditProfileScreen({ navigation }) {
           Alert.alert('Error', uploadResult.error || 'Failed to upload image');
         }
       } else {
-        // Upload additional photo to Cloudinary
-        Alert.alert('Uploading', 'Please wait while we upload your image...');
-        
         const uploadResult = await uploadImageToCloudinary(uri);
         if (uploadResult.success) {
           const newPhotos = [...photos, uploadResult.imageUrl];
@@ -214,6 +216,8 @@ export default function EditProfileScreen({ navigation }) {
           Alert.alert('Error', uploadResult.error || 'Failed to upload image');
         }
       }
+      
+      setUploading(false);
     }
   };
 
@@ -238,8 +242,12 @@ export default function EditProfileScreen({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.photoSection}>
           <Text style={styles.sectionTitle}>Profile Photo</Text>
-          <TouchableOpacity style={styles.photoContainer} onPress={() => profilePhoto ? showPhotoOptions(profilePhoto, true) : pickImage(true)}>
-            {profilePhoto ? (
+          <TouchableOpacity style={styles.photoContainer} onPress={() => !uploading && (profilePhoto ? showPhotoOptions(profilePhoto, true) : pickImage(true))} disabled={uploading}>
+            {uploading ? (
+              <View style={styles.profileImage}>
+                <ActivityIndicator size="large" color="#F70776" />
+              </View>
+            ) : profilePhoto ? (
               <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
             ) : (
               <View style={styles.avatarPlaceholder}>
@@ -690,7 +698,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: theme.text },
   photoSection: { padding: 20, alignItems: 'center' },
   photoContainer: { position: 'relative', marginBottom: 20 },
-  profileImage: { width: 120, height: 120, borderRadius: 60 },
+  profileImage: { width: 120, height: 120, borderRadius: 60, justifyContent: 'center', alignItems: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' },
   avatarPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#FFB6C1', justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 48, fontWeight: 'bold', color: '#fff' },
   editBadge: { position: 'absolute', bottom: 0, right: 0, width: 36, height: 36, borderRadius: 18, backgroundColor: '#F70776', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#fff' },

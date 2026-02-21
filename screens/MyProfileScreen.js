@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Alert, StatusBar, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Alert, StatusBar, Image, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -18,6 +18,7 @@ export default function MyProfileScreen({ navigation }) {
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [likesCount, setLikesCount] = useState(0);
   const [coins, setCoins] = useState(100);
+  const [imageLoading, setImageLoading] = useState(true);
 
   useEffect(() => {
     loadProfile();
@@ -32,6 +33,7 @@ export default function MyProfileScreen({ navigation }) {
 
   const loadProfile = async () => {
     try {
+      setImageLoading(true);
       const token = await AsyncStorage.getItem('token');
       const response = await fetch(`${API_URL}/profile`, {
         method: 'GET',
@@ -69,6 +71,9 @@ export default function MyProfileScreen({ navigation }) {
         
         setProfile(profileData);
         
+        // Set likes count from backend
+        setLikesCount(data.user.likes?.length || 0);
+        
         // Calculate profile completion
         const fields = [profileData.name, profileData.email, profileData.profilePhoto, profileData.bio, profileData.age, profileData.gender];
         const filled = fields.filter(f => f && f !== '').length;
@@ -78,6 +83,8 @@ export default function MyProfileScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Failed to load profile:', error);
+    } finally {
+      setImageLoading(false);
     }
   };
 
@@ -129,9 +136,16 @@ export default function MyProfileScreen({ navigation }) {
 
           <ScrollView showsVerticalScrollIndicator={false}>
             <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.profileCard}>
-              <View style={styles.avatarContainer}>
-                {profile.profilePhoto ? (
-                  <Image source={{ uri: profile.profilePhoto }} style={styles.avatar} />
+              <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate('EditProfile')}>
+                {imageLoading ? (
+                  <View style={styles.avatar}>
+                    <ActivityIndicator size="large" color="#F70776" />
+                  </View>
+                ) : profile.profilePhoto ? (
+                  <Image 
+                    source={{ uri: profile.profilePhoto }} 
+                    style={styles.avatar}
+                  />
                 ) : (
                   <LinearGradient colors={getAvatarColor(profile.email, profile.name)} style={styles.avatar}>
                     <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
@@ -140,7 +154,7 @@ export default function MyProfileScreen({ navigation }) {
                 <View style={styles.editBadge}>
                   <Text style={styles.editIcon}>✏️</Text>
                 </View>
-              </View>
+              </TouchableOpacity>
               <Text style={styles.profileName}>{profile.name}</Text>
               <Text style={styles.profileEmail}>{profile.email}</Text>
               <View style={styles.progressBar}>
@@ -286,7 +300,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   menuIcon: { fontSize: 16, color: '#fff', fontWeight: '500' },
   profileCard: { margin: 20, borderRadius: 24, padding: 30, alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(147,147,147,0.5)' },
   avatarContainer: { position: 'relative', marginBottom: 16 },
-  avatar: { width: 120, height: 120, borderRadius: 60, justifyContent: 'center', alignItems: 'center' },
+  avatar: { width: 120, height: 120, borderRadius: 60, justifyContent: 'center', alignItems: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' },
   avatarText: { fontSize: 48, fontWeight: 'bold', color: '#fff' },
   editBadge: { position: 'absolute', bottom: 0, right: 0, width: 36, height: 36, borderRadius: 18, backgroundColor: '#F70776', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#fff' },
   editIcon: { fontSize: 16 },

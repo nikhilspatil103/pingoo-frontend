@@ -1,26 +1,75 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, FlatList, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, FlatList, StatusBar, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
+import { useUnread } from '../context/UnreadContext';
+import { API_URL } from '../config/urlConfig';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAvatarColor } from '../utils/avatarColors';
 
 export default function ChatListScreen({ navigation }) {
   const { theme, isDark } = useTheme();
+  const { refreshUnreadCount } = useUnread();
   const [searchQuery, setSearchQuery] = useState('');
-
+  const [chats, setChats] = useState([]);
+  const [loading, setLoading] = useState(true);
   const styles = getStyles(theme, isDark);
 
-  const chats = [];
+  useEffect(() => {
+    fetchConversations();
+  }, []);
+
+  const fetchConversations = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${API_URL}/conversations`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const formattedChats = data.conversations.map(conv => ({
+          id: conv.id,
+          name: conv.name,
+          age: conv.age,
+          message: conv.isFromMe ? `You: ${conv.lastMessage}` : conv.lastMessage,
+          time: new Date(conv.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          avatar: conv.name.charAt(0),
+          profilePhoto: conv.profilePhoto,
+          unread: conv.unreadCount > 0,
+          unreadCount: conv.unreadCount
+        }));
+        setChats(formattedChats);
+        refreshUnreadCount();
+      }
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderChatItem = ({ item }) => (
     <TouchableOpacity 
-      onPress={() => navigation.navigate('Chat', { profile: { name: item.name, age: item.age } })}
+      onPress={() => navigation.navigate('Chat', { profile: { id: item.id, name: item.name, age: item.age, profilePhoto: item.profilePhoto } })}
       activeOpacity={1}
     >
       <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.chatItem}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{item.avatar}</Text>
-        </View>
+        {item.profilePhoto ? (
+          <View style={styles.avatar}>
+            <Image source={{ uri: item.profilePhoto }} style={styles.avatarImage} />
+          </View>
+        ) : (
+          <View style={[styles.avatar, { backgroundColor: getAvatarColor(item.id, item.name)[0] }]}>
+            <Text style={styles.avatarText}>{item.avatar}</Text>
+          </View>
+        )}
         <View style={styles.chatInfo}>
           <View style={styles.chatHeader}>
             <Text style={styles.chatName}>{item.name}, {item.age}</Text>
@@ -29,7 +78,14 @@ export default function ChatListScreen({ navigation }) {
               <Text style={styles.checkmark}>✓✓</Text>
             </View>
           </View>
-          <Text style={styles.chatMessage}>{item.message}</Text>
+          <View style={styles.messageRow}>
+            <Text style={[styles.chatMessage, item.unread && styles.unreadMessage]} numberOfLines={1}>{item.message}</Text>
+            {item.unread && item.unreadCount > 0 && (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadCount}>{item.unreadCount}</Text>
+              </View>
+            )}
+          </View>
         </View>
       </BlurView>
     </TouchableOpacity>
@@ -109,6 +165,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     marginBottom: 12,
   },
   avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F70776', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  avatarImage: { width: 56, height: 56, borderRadius: 28 },
   avatarText: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
   chatInfo: { flex: 1 },
   chatHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
@@ -117,6 +174,10 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   chatTime: { fontSize: 13, color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' },
   checkmark: { fontSize: 12, color: '#03C8F0' },
   chatMessage: { fontSize: 14, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' },
+  messageRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  unreadMessage: { fontWeight: '600', color: theme.text },
+  unreadBadge: { backgroundColor: '#FF3B30', borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 6 },
+  unreadCount: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
   separator: { height: 12 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
   emptyText: { fontSize: 18, fontWeight: '600', color: theme.text, marginBottom: 8 },

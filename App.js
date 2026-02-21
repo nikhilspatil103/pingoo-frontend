@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { UnreadProvider, useUnread } from './context/UnreadContext';
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import ProfileSetupScreen from './screens/ProfileSetupScreen';
@@ -26,17 +27,23 @@ import { BlurView } from 'expo-blur';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const TabIcon = ({ focused, icon, isDark }) => (
+const TabIcon = ({ focused, icon, isDark, showBadge, badgeCount }) => (
   <View style={[
     styles.iconContainer,
     focused && { backgroundColor: isDark ? '#2A1F35' : '#E8D5E0' }
   ]}>
     <Ionicons name={icon} size={24} color={focused ? (isDark ? '#F70776' : '#FF6B9D') : (isDark ? '#8E8E93' : '#999')} />
+    {showBadge && badgeCount > 0 && (
+      <View style={styles.badge}>
+        <Text style={styles.badgeText}>{badgeCount > 99 ? '99+' : badgeCount}</Text>
+      </View>
+    )}
   </View>
 );
 
 function MainTabs() {
   const { theme, isDark } = useTheme();
+  const { totalUnread } = useUnread();
   
   return (
     <Tab.Navigator
@@ -80,7 +87,7 @@ function MainTabs() {
         name="Chats" 
         component={ChatListScreen}
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="chatbubble-outline" isDark={isDark} />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="chatbubble-outline" isDark={isDark} showBadge={true} badgeCount={totalUnread} />,
         }}
       />
       <Tab.Screen 
@@ -141,7 +148,9 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <AppNavigator />
+        <UnreadProvider>
+          <AppNavigator />
+        </UnreadProvider>
       </AuthProvider>
     </ThemeProvider>
   );
@@ -155,5 +164,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

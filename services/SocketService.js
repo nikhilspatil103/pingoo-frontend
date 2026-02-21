@@ -13,12 +13,14 @@ class SocketService {
     }
 
     const socketUrl = API_URL.replace('/api', '');
+    console.log('Connecting to WebSocket:', socketUrl);
     this.socket = io(socketUrl);
 
     this.socket.on('connect', () => {
       console.log('Connected to server');
       this.isConnected = true;
       this.socket.emit('join', userId);
+      console.log('Joined with userId:', userId);
     });
 
     this.socket.on('disconnect', () => {
@@ -53,9 +55,13 @@ class SocketService {
     }
   }
 
-  offReceiveMessage() {
+  offReceiveMessage(callback) {
     if (this.socket) {
-      this.socket.off('receiveMessage');
+      if (callback) {
+        this.socket.off('receiveMessage', callback);
+      } else {
+        this.socket.off('receiveMessage');
+      }
     }
   }
 }

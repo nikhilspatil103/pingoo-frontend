@@ -7,6 +7,8 @@ import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/urlConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAvatarColor } from '../utils/avatarColors';
+import { useFocusEffect } from '@react-navigation/native';
+import PingooLogo from '../components/PingooLogo';
 
 export default function HomeScreen({ navigation }) {
   const { theme, isDark, toggleTheme } = useTheme();
@@ -17,6 +19,18 @@ export default function HomeScreen({ navigation }) {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchUsers();
+      // Set up interval to refresh users every 30 seconds while on screen
+      const interval = setInterval(() => {
+        fetchUsers();
+      }, 30000);
+      
+      return () => clearInterval(interval);
+    }, [])
+  );
+
   useEffect(() => {
     fadeAnim.setValue(0);
     slideAnim.setValue(30);
@@ -24,8 +38,6 @@ export default function HomeScreen({ navigation }) {
       Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
       Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
     ]).start();
-    
-    fetchUsers();
   }, [isDark]);
 
   const fetchUsers = async () => {
@@ -35,7 +47,7 @@ export default function HomeScreen({ navigation }) {
       
       if (!token) {
         console.error('No token found in storage');
-        setLoading(false);
+        logout(); // Auto logout if no token
         return;
       }
       
@@ -48,6 +60,13 @@ export default function HomeScreen({ navigation }) {
       });
       
       console.log('Response status:', response.status);
+      
+      if (response.status === 401) {
+        // Token is invalid, clear it and logout
+        await AsyncStorage.removeItem('token');
+        logout();
+        return;
+      }
       
       if (response.ok) {
         const data = await response.json();
@@ -89,7 +108,7 @@ export default function HomeScreen({ navigation }) {
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
             {loading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={theme.text} />
+                <PingooLogo size={100} animated={true} />
                 <Text style={styles.loadingText}>Loading users...</Text>
               </View>
             ) : profiles.length === 0 ? (
@@ -102,22 +121,33 @@ export default function HomeScreen({ navigation }) {
                   <TouchableOpacity key={profile.id} style={isListView ? styles.listCard : styles.profileCardWrapper} onPress={() => navigation.navigate('ProfileView', { profile })} activeOpacity={1}>
                     {isListView ? (
                       <View style={styles.listCardContent}>
-                        {profile.profilePhoto ? (
-                          <ImageBackground source={{ uri: profile.profilePhoto }} style={styles.listImage} imageStyle={styles.listImageStyle} />
-                        ) : (
-                          <View style={[styles.listImage, { backgroundColor: getAvatarColor(profile.id, profile.name)[0] }]}>
-                            <Text style={styles.listAvatarLetter}>{profile.name.charAt(0)}</Text>
-                          </View>
-                        )}
+                        <View style={styles.listImageContainer}>
+                          {profile.profilePhoto ? (
+                            <ImageBackground source={{ uri: profile.profilePhoto }} style={styles.listImage} imageStyle={styles.listImageStyle} />
+                          ) : (
+                            <View style={[styles.listImage, { backgroundColor: getAvatarColor(profile.id, profile.name)[0] }]}>
+                              <Text style={styles.listAvatarLetter}>{profile.name.charAt(0)}</Text>
+                            </View>
+                          )}
+                          {profile.isOnline && (
+                            <View style={styles.listOnlineBadge}>
+                              <Text style={styles.listOnlineBadgeText}>🟢</Text>
+                            </View>
+                          )}
+                        </View>
                         <View style={styles.listInfo}>
-                          <Text style={styles.listName}>{profile.name}, {profile.age || 'N/A'}</Text>
+                          <View style={styles.listNameRow}>
+                            <Text style={styles.listName}>{profile.name}, {profile.age || 'N/A'}</Text>
+                            {profile.likesCount > 0 && (
+                              <Text style={styles.listLikes}>❤️ {profile.likesCount}</Text>
+                            )}
+                          </View>
                           <Text style={styles.listLocation}>📍 {profile.location || 'Unknown'}</Text>
                           <View style={styles.listTagRow}>
                             <Text style={[styles.listGenderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>
                               {profile.gender === 'female' ? '♀' : '♂'}
                             </Text>
-                            <Text style={styles.listTag}>{profile.lookingFor || 'Not specified'}</Text>
-                            {profile.isOnline && <Text style={styles.onlineIndicator}>🟢</Text>}
+                            <Text style={styles.listTag} numberOfLines={2} ellipsizeMode="tail">{profile?.lookingFor || 'Looking for friends'}</Text>
                           </View>
                         </View>
                       </View>
@@ -125,15 +155,26 @@ export default function HomeScreen({ navigation }) {
                       <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.glassCard}>
                         {profile.profilePhoto ? (
                           <ImageBackground source={{ uri: profile.profilePhoto }} style={styles.cardImage} imageStyle={styles.cardImageStyle}>
+                            {profile.isOnline && (
+                              <View style={styles.onlineBadge}>
+                                <Text style={styles.onlineBadgeText}>🟢</Text>
+                              </View>
+                            )}
                             <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} style={styles.cardGradient}>
                               <BlurView intensity={15} tint="dark" style={styles.cardOverlay}>
                                 <View style={styles.cardInfo}>
-                                  <Text style={styles.profileName}>{profile.name}, {profile.age || 'N/A'}</Text>
+                                  <View style={styles.nameRow}>
+                                    <Text style={styles.profileName}>{profile.name}, {profile.age || 'N/A'}</Text>
+                                    {profile.likesCount > 0 && (
+                                      <View style={styles.likesBadge}>
+                                        <Text style={styles.likesText}>❤️ {profile.likesCount}</Text>
+                                      </View>
+                                    )}
+                                  </View>
                                   <Text style={styles.profileLocation}>📍 {profile.location || 'Unknown'}</Text>
                                   <BlurView intensity={10} tint="dark" style={styles.tagBadge}>
                                     <Text style={[styles.genderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>{profile.gender === 'female' ? '♀' : '♂'}</Text>
-                                    <Text style={styles.tagText}>{profile.lookingFor || 'Not specified'}</Text>
-                                    {profile.isOnline && <Text style={styles.onlineIndicator}>🟢</Text>}
+                                    <Text style={styles.tagText} numberOfLines={2} ellipsizeMode="tail">{profile.lookingFor || 'Looking for friends'}</Text>
                                   </BlurView>
                                 </View>
                               </BlurView>
@@ -153,11 +194,18 @@ export default function HomeScreen({ navigation }) {
                             </View>
                             <BlurView intensity={15} tint="dark" style={styles.cardOverlay}>
                               <View style={styles.cardInfo}>
-                                <Text style={styles.profileName}>{profile.name}, {profile.age || 'N/A'}</Text>
+                                <View style={styles.nameRow}>
+                                  <Text style={styles.profileName}>{profile.name}, {profile.age || 'N/A'}</Text>
+                                  {profile.likesCount > 0 && (
+                                    <View style={styles.likesBadge}>
+                                      <Text style={styles.likesText}>❤️ {profile.likesCount}</Text>
+                                    </View>
+                                  )}
+                                </View>
                                 <Text style={styles.profileLocation}>📍 {profile.location || 'Unknown'}</Text>
                                 <BlurView intensity={10} tint="dark" style={styles.tagBadge}>
                                   <Text style={[styles.genderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>{profile.gender === 'female' ? '♀' : '♂'}</Text>
-                                  <Text style={styles.tagText}>{profile.lookingFor || 'Not specified'}</Text>
+                                  <Text style={styles.tagText} numberOfLines={2} ellipsizeMode="tail">{profile.lookingFor || 'Looking for friends'}</Text>
                                 </BlurView>
                               </View>
                             </BlurView>
@@ -226,10 +274,15 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   listCard: { width: '100%', backgroundColor: isDark ? '#1a1a1a' : '#fff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
   listCardContent: { flexDirection: 'row', padding: 12 },
   listImage: { width: 80, height: 80, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  listImageContainer: { position: 'relative' },
+  listOnlineBadge: { position: 'absolute', top: 2, right: 2, width: 10, height: 10, borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
+  listOnlineBadgeText: { fontSize: 8 },
   listImageStyle: { borderRadius: 12 },
   listAvatarLetter: { fontSize: 36, fontWeight: 'bold', color: '#fff' },
   listInfo: { flex: 1, marginLeft: 15, justifyContent: 'center' },
-  listName: { fontSize: 18, fontWeight: 'bold', color: theme.text, marginBottom: 8 },
+  listNameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  listName: { fontSize: 18, fontWeight: 'bold', color: theme.text },
+  listLikes: { fontSize: 12, color: theme.text, fontWeight: 'bold' },
   listLocation: { fontSize: 12, color: theme.textSecondary, marginBottom: 6 },
   listTagRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   listGenderIcon: { fontSize: 16, fontWeight: 'bold' },
@@ -277,6 +330,20 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   },
   cardInfo: {
     gap: 4,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  likesBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  likesText: {
+    fontSize: 10,
+    color: '#fff',
+    fontWeight: 'bold',
   },
   profileName: { 
     fontSize: 16, 
@@ -376,16 +443,16 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   },
   onlineBadge: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    top: 8,
+    right: 8,
+    width: 10,
+    height: 10,
+    borderRadius: 8,
     backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   onlineBadgeText: {
-    fontSize: 16,
+    fontSize: 8,
   },
 });

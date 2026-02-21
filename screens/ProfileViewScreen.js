@@ -6,6 +6,8 @@ import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
 
+const { width } = Dimensions.get('window');
+
 export default function ProfileViewScreen({ route, navigation }) {
   const { theme, isDark } = useTheme();
   const { profile: initialProfile, isMyProfile } = route.params;
@@ -14,18 +16,42 @@ export default function ProfileViewScreen({ route, navigation }) {
   const [showFullImage, setShowFullImage] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  
+  const getAllImages = () => {
+    const images = [];
+    if (profile.profilePhoto) images.push(profile.profilePhoto);
+    if (profile.additionalPhotos) images.push(...profile.additionalPhotos);
+    return images;
+  };
+  
+  const allImages = getAllImages();
 
   useEffect(() => {
     checkIfStarred();
-    if (!isMyProfile && initialProfile?.id) {
+    if (initialProfile?.id) {
       fetchProfileDetails();
     }
-  }, []);
+  }, [initialProfile?.id]);
+
+  // Refresh profile when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (initialProfile?.id) {
+        fetchProfileDetails();
+      }
+    });
+    return unsubscribe;
+  }, [navigation, initialProfile?.id]);
 
   const fetchProfileDetails = async () => {
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem('token');
+      
+      // Fetch profile details
       const response = await fetch(`${API_URL}/user/${initialProfile.id}`, {
         method: 'GET',
         headers: {
@@ -36,11 +62,23 @@ export default function ProfileViewScreen({ route, navigation }) {
       
       if (response.ok) {
         const data = await response.json();
-        setProfile({
-          ...data.user,
-          image: data.user.profilePhoto,
-          borderColor: initialProfile.borderColor
+        setProfile(data.user);
+        setLikeCount(data.user.likes ? data.user.likes.length : 0);
+        
+        // Fetch like status
+        const likeStatusResponse = await fetch(`${API_URL}/like-status/${initialProfile.id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
         });
+        
+        if (likeStatusResponse.ok) {
+          const likeData = await likeStatusResponse.json();
+          setIsLiked(likeData.isLiked);
+          setLikeCount(likeData.likeCount);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch profile details:', error);
@@ -71,6 +109,33 @@ export default function ProfileViewScreen({ route, navigation }) {
     setIsStarred(!isStarred);
   };
 
+  const toggleLike = async () => {
+    try {
+      console.log('Toggling like for profile:', profile.id);
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/like/${profile.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('Like API response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Like API response data:', data);
+        setIsLiked(data.isLiked);
+        setLikeCount(data.likeCount);
+      } else {
+        console.error('Like API failed:', response.status);
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
+  };
+
   const styles = getStyles(theme, isDark);
 
   return (
@@ -97,15 +162,48 @@ export default function ProfileViewScreen({ route, navigation }) {
           <Text style={styles.headerTitle}>{profile.name}, {profile.age}</Text>
 
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            <TouchableOpacity onPress={() => profile.image && setShowFullImage(true)}>
-              {profile.image ? (
-                <ImageBackground source={{ uri: profile.image }} style={styles.profileImage} imageStyle={styles.imageStyle} />
-              ) : (
+            {allImages.length > 0 ? (
+              <View style={styles.imageContainer}>
+                <ScrollView 
+                  horizontal 
+                  pagingEnabled 
+                  showsHorizontalScrollIndicator={false}
+                  onMomentumScrollEnd={(event) => {
+                    const index = Math.round(event.nativeEvent.contentOffset.x / width);
+                    setCurrentImageIndex(index);
+                  }}
+                >
+                  {allImages.map((imageUri, index) => (
+                    <TouchableOpacity key={index} onPress={() => setShowFullImage(true)}>
+                      <ImageBackground 
+                        source={{ uri: imageUri }} 
+                        style={[styles.profileImage, { width: width - 40 }]} 
+                        imageStyle={styles.imageStyle} 
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                {allImages.length > 1 && (
+                  <View style={styles.imageIndicators}>
+                    {allImages.map((_, index) => (
+                      <View 
+                        key={index} 
+                        style={[
+                          styles.indicator, 
+                          { backgroundColor: index === currentImageIndex ? '#fff' : 'rgba(255,255,255,0.5)' }
+                        ]} 
+                      />
+                    ))}
+                  </View>
+                )}
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => setShowFullImage(true)}>
                 <LinearGradient colors={profile.borderColor || ['#F70776', '#FF88C5']} style={styles.profileImage}>
                   <Text style={styles.avatarLetter}>{profile.name.charAt(0)}</Text>
                 </LinearGradient>
-              )}
-            </TouchableOpacity>
+              </TouchableOpacity>
+            )}
 
             <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
               <View style={styles.infoRow}>
@@ -311,9 +409,9 @@ export default function ProfileViewScreen({ route, navigation }) {
                   <Text style={styles.chatButtonText}>💬 Start Chat</Text>
                 </View>
               </TouchableOpacity>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={toggleLike}>
                 <View style={styles.actionButton}>
-                  <Text style={styles.actionIcon}>❤️</Text>
+                  <Text style={styles.actionIcon}>{isLiked ? '❤️' : '🤍'}</Text>
                 </View>
               </TouchableOpacity>
               <TouchableOpacity onPress={toggleStar}>
@@ -330,7 +428,7 @@ export default function ProfileViewScreen({ route, navigation }) {
             <TouchableOpacity style={styles.closeButton} onPress={() => setShowFullImage(false)}>
               <Text style={styles.closeIcon}>✕</Text>
             </TouchableOpacity>
-            <Image source={{ uri: profile.image }} style={styles.fullScreenImage} resizeMode="contain" />
+            <Image source={{ uri: allImages[currentImageIndex] }} style={styles.fullScreenImage} resizeMode="contain" />
           </View>
         </Modal>
 
@@ -397,6 +495,9 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   menuIcon: { fontSize: 16, color: '#fff', fontWeight: '500' },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: theme.text, textAlign: 'center', marginTop: 50, marginBottom: 20 },
   content: { flex: 1, paddingHorizontal: 20, paddingBottom: 100 },
+  imageContainer: { position: 'relative', marginBottom: 20 },
+  imageIndicators: { position: 'absolute', bottom: 15, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 8 },
+  indicator: { width: 8, height: 8, borderRadius: 4 },
   profileImage: { width: '100%', height: 450, borderRadius: 24, marginBottom: 20, justifyContent: 'center', alignItems: 'center' },
   imageStyle: { borderRadius: 24 },
   avatarLetter: { fontSize: 120, fontWeight: 'bold', color: '#fff' },
@@ -421,6 +522,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   actionButtons: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingBottom: 20, backgroundColor: 'transparent' },
   actionButton: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', backgroundColor: isDark ? '#1a1a1a' : '#2a2a2a', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)' },
   actionIcon: { fontSize: 24, color: '#fff' },
+  likeCount: { fontSize: 10, color: '#fff', marginTop: 2 },
   chatButton: { paddingVertical: 14, borderRadius: 28, alignItems: 'center', backgroundColor: isDark ? '#1a1a1a' : '#2a2a2a', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)' },
   chatButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
   fullScreenModal: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },

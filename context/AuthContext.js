@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import SocketService from '../services/SocketService';
 
 const AuthContext = createContext();
 
@@ -40,6 +41,10 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       console.log('AuthContext - Logging out...');
+      
+      // Disconnect socket first to trigger offline status
+      SocketService.disconnect();
+      
       await AsyncStorage.removeItem('token');
       await AsyncStorage.removeItem('user');
       await AsyncStorage.removeItem('userName');

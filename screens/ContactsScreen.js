@@ -4,14 +4,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function ContactsScreen({ navigation }) {
   const { theme, isDark } = useTheme();
   const [contacts, setContacts] = useState([]);
 
-  useEffect(() => {
-    loadContacts();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadContacts();
+    }, [])
+  );
 
   const loadContacts = async () => {
     const saved = await AsyncStorage.getItem('contacts');

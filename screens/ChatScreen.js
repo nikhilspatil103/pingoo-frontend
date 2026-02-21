@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform ,StatusBar } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, StatusBar, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useUnread } from '../context/UnreadContext';
 import { getAvatarColor } from '../utils/avatarColors';
 import SocketService from '../services/SocketService';
+import { API_URL } from '../config/urlConfig';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ChatScreen({ route, navigation }) {
   const { theme, isDark } = useTheme();
   const { user } = useAuth();
+  const { refreshUnreadCount, setActiveChat, clearActiveChat } = useUnread();
   const { profile } = route.params;
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
@@ -17,9 +21,12 @@ export default function ChatScreen({ route, navigation }) {
   const styles = getStyles(theme, isDark);
 
   useEffect(() => {
-    SocketService.connect(user.userId);
+    // Set this chat as active
+    setActiveChat(profile.id);
     
-    SocketService.onReceiveMessage((data) => {
+    loadChatHistory();
+    
+    const handleMessage = (data) => {
       if (data.senderId === profile.id) {
         const newMessage = {
           id: Date.now(),
@@ -29,12 +36,52 @@ export default function ChatScreen({ route, navigation }) {
         };
         setMessages(prev => [...prev, newMessage]);
       }
-    });
+    };
+    
+    SocketService.onReceiveMessage(handleMessage);
 
     return () => {
-      SocketService.offReceiveMessage();
+      // Clear active chat when leaving
+      clearActiveChat();
+      SocketService.offReceiveMessage(handleMessage);
     };
   }, [profile.id, user.userId]);
+
+  const loadChatHistory = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${API_URL}/messages/${profile.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data.messages || []);
+        
+        // Mark messages as read
+        await fetch(`${API_URL}/messages/read/${profile.id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        refreshUnreadCount();
+        
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+    }
+  };
 
   const sendMessage = () => {
     if (message.trim()) {
@@ -77,9 +124,13 @@ export default function ChatScreen({ route, navigation }) {
                 <Text style={styles.headerTitle}>{profile.name}, {profile.age}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => navigation.navigate('ProfileView', { profile })} activeOpacity={1}>
-                <LinearGradient colors={getAvatarColor(profile.name, profile.email)} style={styles.avatar}>
-                  <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
-                </LinearGradient>
+                {profile.profilePhoto ? (
+                  <Image source={{ uri: profile.profilePhoto }} style={styles.avatar} />
+                ) : (
+                  <LinearGradient colors={getAvatarColor(profile.name, profile.email)} style={styles.avatar}>
+                    <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
+                  </LinearGradient>
+                )}
               </TouchableOpacity>
             </BlurView>
 
@@ -94,20 +145,33 @@ export default function ChatScreen({ route, navigation }) {
                 </View>
               ) : (
                 messages.map((msg) => (
-                  <View key={msg.id}>
-                    <BlurView 
-                      intensity={isDark ? 40 : 20} 
-                      tint={msg.sent ? (isDark ? 'dark' : 'light') : 'light'} 
-                      style={[styles.messageBubble, msg.sent ? styles.sentBubble : styles.receivedBubble]}
-                    >
-                      <Text style={[styles.messageText, msg.sent ? styles.sentText : styles.receivedText]}>{msg.text}</Text>
-                      <Text style={[styles.messageTime, msg.sent ? styles.sentTime : styles.receivedTime]}>{msg.time} ✓✓</Text>
-                    </BlurView>
-                    {msg.sent && (
-                      <View style={styles.sentLabel}>
-                        <Text style={styles.sentLabelText}>✓✓ Sent</Text>
+                  <View key={msg.id} style={styles.messageRow}>
+                    {!msg.sent && (
+                      <View style={styles.messageAvatar}>
+                        {profile.profilePhoto ? (
+                          <Image source={{ uri: profile.profilePhoto }} style={styles.smallAvatar} />
+                        ) : (
+                          <LinearGradient colors={getAvatarColor(profile.name, profile.email)} style={styles.smallAvatar}>
+                            <Text style={styles.smallAvatarText}>{profile.name.charAt(0)}</Text>
+                          </LinearGradient>
+                        )}
                       </View>
                     )}
+                    <View style={[styles.messageContainer, msg.sent ? styles.sentContainer : styles.receivedContainer]}>
+                      <BlurView 
+                        intensity={isDark ? 40 : 20} 
+                        tint={msg.sent ? (isDark ? 'dark' : 'light') : 'light'} 
+                        style={[styles.messageBubble, msg.sent ? styles.sentBubble : styles.receivedBubble]}
+                      >
+                        <Text style={[styles.messageText, msg.sent ? styles.sentText : styles.receivedText]}>{msg.text}</Text>
+                        <Text style={[styles.messageTime, msg.sent ? styles.sentTime : styles.receivedTime]}>{msg.time} ✓✓</Text>
+                      </BlurView>
+                      {msg.sent && (
+                        <View style={styles.sentLabel}>
+                          <Text style={styles.sentLabelText}>✓✓ Sent</Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
                 ))
               )}
@@ -181,6 +245,13 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '600', color: theme.text },
   avatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+  messageRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 4 },
+  messageAvatar: { marginRight: 8, marginBottom: 20 },
+  smallAvatar: { width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  smallAvatarText: { fontSize: 12, fontWeight: 'bold', color: '#fff' },
+  messageContainer: { flex: 1 },
+  sentContainer: { alignItems: 'flex-end' },
+  receivedContainer: { alignItems: 'flex-start' },
   messagesContainer: { flex: 1 },
   messagesContent: { padding: 20, gap: 4, flexGrow: 1 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
