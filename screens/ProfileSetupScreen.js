@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/urlConfig';
 import { uploadImageToCloudinary } from '../utils/imageUpload';
+import PingooLogo from '../components/PingooLogo';
 
 export default function ProfileSetupScreen({ route, navigation }) {
   const { name, email, password } = route.params;
@@ -40,7 +41,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
 
     if (!result.canceled && result.assets[0]) {
       setLoading(true);
-      const uploadResult = await uploadImageToCloudinary(result.assets[0].uri);
+      const uploadResult = await uploadImageToCloudinary(result.assets[0].uri, true);
       if (uploadResult.success) {
         setProfilePhoto(uploadResult.imageUrl);
         showPopup('success', 'Photo Uploaded', 'Your profile photo has been uploaded successfully!');
@@ -131,7 +132,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="light-content" backgroundColor="#1C0F2A" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
@@ -144,13 +145,18 @@ export default function ProfileSetupScreen({ route, navigation }) {
         <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
           <View style={styles.content}>
             <View style={styles.welcomeSection}>
+              <Text style={styles.logo}>◎</Text>
               <Text style={styles.title}>Almost there!</Text>
               <Text style={styles.subtitle}>Complete your profile to get started</Text>
             </View>
 
             <View style={styles.photoCard}>
-              <TouchableOpacity style={styles.photoWrapper} onPress={pickImage}>
-                {profilePhoto ? (
+              <TouchableOpacity style={styles.photoWrapper} onPress={pickImage} disabled={loading}>
+                {loading ? (
+                  <View style={styles.photoPlaceholder}>
+                    <PingooLogo size={60} animated={true} />
+                  </View>
+                ) : profilePhoto ? (
                   <Image source={{ uri: profilePhoto }} style={styles.profilePhoto} />
                 ) : (
                   <View style={styles.photoPlaceholder}>
@@ -158,9 +164,11 @@ export default function ProfileSetupScreen({ route, navigation }) {
                     <Text style={styles.photoHint}>Add your photo</Text>
                   </View>
                 )}
-                <View style={styles.editIcon}>
-                  <Text style={styles.editText}>✏️</Text>
-                </View>
+                {!loading && (
+                  <View style={styles.editIcon}>
+                    <Text style={styles.editText}>✏️</Text>
+                  </View>
+                )}
               </TouchableOpacity>
             </View>
 
@@ -171,7 +179,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
                   <TextInput
                     style={styles.ageInput}
                     placeholder="Enter your age"
-                    placeholderTextColor="#999"
+                    placeholderTextColor="rgba(255,255,255,0.5)"
                     value={age}
                     onChangeText={setAge}
                     keyboardType="numeric"
@@ -222,7 +230,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
                   <TextInput
                     style={styles.textAreaInput}
                     placeholder="What are you looking for? (e.g., serious relationship, friendship, casual dating)"
-                    placeholderTextColor="#999"
+                    placeholderTextColor="rgba(255,255,255,0.5)"
                     value={lookingFor}
                     onChangeText={setLookingFor}
                     multiline
@@ -270,7 +278,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  container: { flex: 1, backgroundColor: '#1C0F2A' },
   safeArea: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -278,38 +286,34 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(147,147,147,0.2)'
+    borderBottomColor: 'rgba(255,255,255,0.1)'
   },
   backBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center'
   },
-  backIcon: { fontSize: 18, color: '#333', fontWeight: '600' },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#333' },
+  backIcon: { fontSize: 18, color: '#fff', fontWeight: '600' },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: '#fff' },
   scrollView: { flex: 1 },
   content: { padding: 20 },
   welcomeSection: { alignItems: 'center', marginBottom: 30 },
-  title: { fontSize: 24, fontWeight: '700', color: '#333', marginBottom: 8 },
-  subtitle: { fontSize: 16, color: '#666', textAlign: 'center' },
+  logo: { fontSize: 64, color: '#FF6B9D', marginBottom: 16 },
+  title: { fontSize: 24, fontWeight: '700', color: '#fff', marginBottom: 8 },
+  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.6)', textAlign: 'center' },
   photoCard: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(147,147,147,0.2)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3
+    borderColor: 'rgba(255,255,255,0.1)'
   },
   photoWrapper: { position: 'relative' },
   profilePhoto: { width: 120, height: 120, borderRadius: 60 },
@@ -317,15 +321,15 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(147,147,147,0.3)',
+    borderColor: 'rgba(255,255,255,0.2)',
     borderStyle: 'dashed'
   },
   cameraIcon: { fontSize: 32, marginBottom: 8 },
-  photoHint: { fontSize: 12, color: '#666', fontWeight: '500' },
+  photoHint: { fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: '500' },
   editIcon: {
     position: 'absolute',
     bottom: 0,
@@ -333,75 +337,70 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FF6B9D',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#fff'
+    borderColor: '#1C0F2A'
   },
   editText: { fontSize: 14 },
   formCard: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(147,147,147,0.2)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3
+    borderColor: 'rgba(255,255,255,0.1)'
   },
   fieldGroup: { marginBottom: 24 },
-  fieldLabel: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 12 },
+  fieldLabel: { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 12 },
   inputWrapper: { marginBottom: 8 },
   ageInput: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#333',
+    color: '#fff',
     borderWidth: 1,
-    borderColor: 'rgba(147,147,147,0.3)',
+    borderColor: 'rgba(255,255,255,0.2)',
     textAlign: 'center'
   },
   textAreaInput: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#333',
+    color: '#fff',
     borderWidth: 1,
-    borderColor: 'rgba(147,147,147,0.3)',
+    borderColor: 'rgba(255,255,255,0.2)',
     minHeight: 80,
     textAlignVertical: 'top'
   },
-  charCounter: { fontSize: 12, color: '#999', textAlign: 'right', marginTop: 4 },
+  charCounter: { fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'right', marginTop: 4 },
   optionsGrid: { flexDirection: 'row', gap: 12 },
   optionCard: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(147,147,147,0.3)'
+    borderColor: 'rgba(255,255,255,0.2)'
   },
-  selectedCard: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
+  selectedCard: { backgroundColor: '#FF6B9D', borderColor: '#FF6B9D' },
   optionIcon: { fontSize: 24, marginBottom: 8 },
-  optionLabel: { fontSize: 14, fontWeight: '500', color: '#666' },
+  optionLabel: { fontSize: 14, fontWeight: '500', color: 'rgba(255,255,255,0.6)' },
   selectedLabel: { color: '#fff', fontWeight: '600' },
   bottomSection: {
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(147,147,147,0.2)'
+    borderTopColor: 'rgba(255,255,255,0.1)'
   },
   continueBtn: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FF6B9D',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center'

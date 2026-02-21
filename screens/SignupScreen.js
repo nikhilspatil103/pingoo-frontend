@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, SafeAreaView, StatusBar } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, SafeAreaView, StatusBar, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/urlConfig';
 
@@ -34,73 +34,84 @@ export default function SignupScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1C0F2A" />
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.logo}>◎</Text>
-          <Text style={styles.title}>Pingoo</Text>
-          <Text style={styles.subtitle}>Connect. Chat. Meet.</Text>
-        </View>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <Text style={styles.logo}>◎</Text>
+              <Text style={styles.title}>Pingoo</Text>
+              <Text style={styles.subtitle}>Connect. Chat. Meet.</Text>
+            </View>
 
-        <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Full Name"
-            placeholderTextColor="rgba(255, 255, 255, 0.5)"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-          />
+            <View style={styles.form}>
+              <TextInput
+                style={styles.input}
+                placeholder="Full Name"
+                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+              />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="rgba(255, 255, 255, 0.5)"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="rgba(255, 255, 255, 0.5)"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm Password"
-            placeholderTextColor="rgba(255, 255, 255, 0.5)"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-          />
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm Password"
+                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+              />
 
-          <TouchableOpacity 
-            style={[styles.button, loading && styles.buttonDisabled]} 
-            onPress={handleNext}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>Next</Text>
-          </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.button, loading && styles.buttonDisabled]} 
+                onPress={handleNext}
+                disabled={loading}
+              >
+                <Text style={styles.buttonText}>Next</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.linkText}>
-              Already have an account? <Text style={styles.linkBold}>Login</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={styles.linkText}>
+                  Already have an account? <Text style={styles.linkBold}>Login</Text>
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1C0F2A', paddingTop: StatusBar.currentHeight || 0 },
-  content: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
+  scrollContent: { flexGrow: 1 },
+  content: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 40 },
   header: { alignItems: 'center', marginBottom: 48 },
   logo: { fontSize: 64, color: '#FF6B9D', marginBottom: 8 },
   title: { fontSize: 42, fontWeight: 'bold', color: '#fff', marginBottom: 8 },

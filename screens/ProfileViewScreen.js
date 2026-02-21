@@ -38,12 +38,14 @@ export default function ProfileViewScreen({ route, navigation }) {
 
   // Refresh profile when screen comes into focus
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      if (initialProfile?.id) {
-        fetchProfileDetails();
-      }
-    });
-    return unsubscribe;
+    if (navigation?.addListener) {
+      const unsubscribe = navigation.addListener('focus', () => {
+        if (initialProfile?.id) {
+          fetchProfileDetails();
+        }
+      });
+      return unsubscribe;
+    }
   }, [navigation, initialProfile?.id]);
 
   const fetchProfileDetails = async () => {

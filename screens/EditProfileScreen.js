@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { API_URL } from '../config/urlConfig';
 import { uploadImageToCloudinary } from '../utils/imageUpload';
+import PingooLogo from '../components/PingooLogo';
 
 export default function EditProfileScreen({ navigation }) {
   const { theme, isDark } = useTheme();
@@ -245,7 +246,7 @@ export default function EditProfileScreen({ navigation }) {
           <TouchableOpacity style={styles.photoContainer} onPress={() => !uploading && (profilePhoto ? showPhotoOptions(profilePhoto, true) : pickImage(true))} disabled={uploading}>
             {uploading ? (
               <View style={styles.profileImage}>
-                <ActivityIndicator size="large" color="#F70776" />
+                <PingooLogo size={60} animated={true} />
               </View>
             ) : profilePhoto ? (
               <Image source={{ uri: profilePhoto }} style={styles.profileImage} />

@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
 
-export const uploadImageToCloudinary = async (imageUri) => {
+export const uploadImageToCloudinary = async (imageUri, isPublic = false) => {
   try {
     const token = await AsyncStorage.getItem('token');
     
@@ -17,12 +17,18 @@ export const uploadImageToCloudinary = async (imageUri) => {
           
           console.log('Uploading base64 image');
           
-          const uploadResponse = await fetch(`${API_URL}/upload-image-base64`, {
+          const endpoint = isPublic ? '/upload-image-public' : '/upload-image-base64';
+          const headers = {
+            'Content-Type': 'application/json',
+          };
+          
+          if (!isPublic && token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+          
+          const uploadResponse = await fetch(`${API_URL}${endpoint}`, {
             method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
+            headers,
             body: JSON.stringify({
               image: base64data,
               filename: 'profile.jpg'

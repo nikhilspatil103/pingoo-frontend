@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
 import ProfileViewScreen from './ProfileViewScreen';
 import { getAvatarColor } from '../utils/avatarColors';
+import PingooLogo from '../components/PingooLogo';
 
 export default function MyProfileScreen({ navigation }) {
   const { theme, isDark } = useTheme();
@@ -33,7 +34,6 @@ export default function MyProfileScreen({ navigation }) {
 
   const loadProfile = async () => {
     try {
-      setImageLoading(true);
       const token = await AsyncStorage.getItem('token');
       const response = await fetch(`${API_URL}/profile`, {
         method: 'GET',
@@ -83,8 +83,6 @@ export default function MyProfileScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Failed to load profile:', error);
-    } finally {
-      setImageLoading(false);
     }
   };
 
@@ -112,7 +110,9 @@ export default function MyProfileScreen({ navigation }) {
   if (!profile) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={[styles.loading, { color: theme.text }]}>Loading...</Text>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <PingooLogo size={100} animated={true} />
+        </View>
       </SafeAreaView>
     );
   }
@@ -137,11 +137,7 @@ export default function MyProfileScreen({ navigation }) {
           <ScrollView showsVerticalScrollIndicator={false}>
             <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.profileCard}>
               <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate('EditProfile')}>
-                {imageLoading ? (
-                  <View style={styles.avatar}>
-                    <ActivityIndicator size="large" color="#F70776" />
-                  </View>
-                ) : profile.profilePhoto ? (
+                {profile.profilePhoto ? (
                   <Image 
                     source={{ uri: profile.profilePhoto }} 
                     style={styles.avatar}
