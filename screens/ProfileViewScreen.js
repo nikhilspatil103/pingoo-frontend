@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, ImageBackground, Modal, Image, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
+import OptimizedImage from '../components/OptimizedImage';
+
+let FastImage;
+if (Platform.OS !== 'web') {
+  FastImage = require('react-native-fast-image');
+}
 
 const { width } = Dimensions.get('window');
 
@@ -177,10 +183,12 @@ export default function ProfileViewScreen({ route, navigation }) {
                 >
                   {allImages.map((imageUri, index) => (
                     <TouchableOpacity key={index} onPress={() => setShowFullImage(true)}>
-                      <ImageBackground 
-                        source={{ uri: imageUri }} 
-                        style={[styles.profileImage, { width: width - 40 }]} 
-                        imageStyle={styles.imageStyle} 
+                      <OptimizedImage
+                        uri={imageUri}
+                        style={[styles.profileImage, { width: width - 40 }]}
+                        userId={profile.id}
+                        userName={profile.name}
+                        priority={Platform.OS !== 'web' ? (index === 0 ? FastImage?.priority?.high : FastImage?.priority?.normal) : undefined}
                       />
                     </TouchableOpacity>
                   ))}
@@ -430,7 +438,15 @@ export default function ProfileViewScreen({ route, navigation }) {
             <TouchableOpacity style={styles.closeButton} onPress={() => setShowFullImage(false)}>
               <Text style={styles.closeIcon}>✕</Text>
             </TouchableOpacity>
-            <Image source={{ uri: allImages[currentImageIndex] }} style={styles.fullScreenImage} resizeMode="contain" />
+            {Platform.OS === 'web' ? (
+              <OptimizedImage uri={allImages[currentImageIndex]} style={styles.fullScreenImage} />
+            ) : (
+              <FastImage 
+                source={{ uri: allImages[currentImageIndex], priority: FastImage.priority.high }} 
+                style={styles.fullScreenImage} 
+                resizeMode={FastImage.resizeMode.contain} 
+              />
+            )}
           </View>
         </Modal>
 

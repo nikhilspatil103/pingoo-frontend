@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, ImageBackground, Animated, StatusBar, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, FlatList, SafeAreaView, Animated, StatusBar, RefreshControl, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { API_URL } from '../config/urlConfig';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getAvatarColor } from '../utils/avatarColors';
 import { useFocusEffect } from '@react-navigation/native';
 import PingooLogo from '../components/PingooLogo';
+import { ProfileCard, ListCard } from '../components/ProfileCard';
+import useProfileStore from '../store/profileStore';
+import ProfileSocketService from '../services/ProfileSocketService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen({ navigation }) {
   const { theme, isDark, toggleTheme } = useTheme();
@@ -16,18 +17,44 @@ export default function HomeScreen({ navigation }) {
   const [isListView, setIsListView] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(1));
   const [slideAnim] = useState(new Animated.Value(0));
-  const [profiles, setProfiles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  
+  const { profiles, page, hasMore, initialLoading, loadingMore, refreshing, fetchProfiles, setPage, updateUserOnlineStatus } = useProfileStore();
 
   useFocusEffect(
     React.useCallback(() => {
-      fetchUsers();
-      // Set up interval to refresh users every 30 seconds while on screen
-      const interval = setInterval(() => {
-        fetchUsers();
-      }, 30000);
+      fetchProfiles(1, false);
       
-      return () => clearInterval(interval);
+      // Setup WebSocket for real-time updates
+      const setupSocket = async () => {
+        const token = await AsyncStorage.getItem('token');
+        if (token) {
+          ProfileSocketService.connect(token);
+          
+          const handleUserOnline = (data) => {
+            updateUserOnlineStatus(data.userId, true);
+          };
+          
+          const handleUserOffline = (data) => {
+            updateUserOnlineStatus(data.userId, false);
+          };
+          
+          ProfileSocketService.on('user-online', handleUserOnline);
+          ProfileSocketService.on('user-offline', handleUserOffline);
+          
+          // Cleanup function
+          return () => {
+            ProfileSocketService.off('user-online', handleUserOnline);
+            ProfileSocketService.off('user-offline', handleUserOffline);
+          };
+        }
+      };
+      
+      const cleanup = setupSocket();
+      
+      return () => {
+        // Unsubscribe from socket events on unmount
+        if (cleanup) cleanup.then(fn => fn && fn());
+      };
     }, [])
   );
 
@@ -40,48 +67,35 @@ export default function HomeScreen({ navigation }) {
     ]).start();
   }, [isDark]);
 
-  const fetchUsers = async () => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      console.log('Token from storage:', token);
-      
-      if (!token) {
-        console.error('No token found in storage');
-        logout(); // Auto logout if no token
-        return;
-      }
-      
-      const response = await fetch(`${API_URL}/users`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      
-      console.log('Response status:', response.status);
-      
-      if (response.status === 401) {
-        // Token is invalid, clear it and logout
-        await AsyncStorage.removeItem('token');
-        logout();
-        return;
-      }
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Users data:', data);
-        setProfiles(data.users || []);
-      } else {
-        const errorData = await response.json();
-        console.error('Failed to fetch users:', errorData);
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    } finally {
-      setLoading(false);
+  const onRefresh = useCallback(() => {
+    fetchProfiles(1, true);
+  }, [fetchProfiles]);
+
+  const loadMore = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchProfiles(nextPage, false);
     }
+  }, [page, loadingMore, hasMore, fetchProfiles, setPage]);
+
+  const renderItem = useCallback(({ item }) => {
+    if (isListView) {
+      return <ListCard profile={item} onPress={() => navigation.navigate('ProfileView', { profile: item })} isDark={isDark} theme={theme} />;
+    }
+    return <ProfileCard profile={item} onPress={() => navigation.navigate('ProfileView', { profile: item })} isDark={isDark} theme={theme} />;
+  }, [isListView, isDark, theme, navigation]);
+
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={theme.text} />
+      </View>
+    );
   };
+
+  const keyExtractor = useCallback((item) => item.id.toString(), []);
 
   const styles = getStyles(theme, isDark);
 
@@ -105,132 +119,32 @@ export default function HomeScreen({ navigation }) {
             </View>
           </BlurView>
 
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {loading ? (
-              <View style={styles.loadingContainer}>
-                <PingooLogo size={100} animated={true} />
-                <Text style={styles.loadingText}>Loading users...</Text>
-              </View>
-            ) : profiles.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No users found</Text>
-              </View>
-            ) : (
-              <Animated.View style={[isListView ? styles.listContainer : styles.gridContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-                {profiles.map((profile) => (
-                  <TouchableOpacity key={profile.id} style={isListView ? styles.listCard : styles.profileCardWrapper} onPress={() => navigation.navigate('ProfileView', { profile })} activeOpacity={1}>
-                    {isListView ? (
-                      <View style={styles.listCardContent}>
-                        <View style={styles.listImageContainer}>
-                          {profile.profilePhoto ? (
-                            <ImageBackground source={{ uri: profile.profilePhoto }} style={styles.listImage} imageStyle={styles.listImageStyle} />
-                          ) : (
-                            <View style={[styles.listImage, { backgroundColor: getAvatarColor(profile.id, profile.name)[0] }]}>
-                              <Text style={styles.listAvatarLetter}>{profile.name.charAt(0)}</Text>
-                            </View>
-                          )}
-                          {profile.isOnline && (
-                            <View style={styles.listOnlineBadge}>
-                              <Text style={styles.listOnlineBadgeText}>🟢</Text>
-                            </View>
-                          )}
-                        </View>
-                        <View style={styles.listInfo}>
-                          <View style={styles.listNameRow}>
-                            <Text style={styles.listName}>{profile.name}, {profile.age || 'N/A'}</Text>
-                            {profile.likesCount > 0 && (
-                              <Text style={styles.listLikes}>❤️ {profile.likesCount}</Text>
-                            )}
-                          </View>
-                          <Text style={styles.listLocation}>📍 {profile.location || 'Unknown'}</Text>
-                          <View style={styles.listTagRow}>
-                            <Text style={[styles.listGenderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>
-                              {profile.gender === 'female' ? '♀' : '♂'}
-                            </Text>
-                            <Text style={styles.listTag} numberOfLines={2} ellipsizeMode="tail">{profile?.lookingFor || 'Looking for friends'}</Text>
-                          </View>
-                        </View>
-                      </View>
-                    ) : (
-                      <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.glassCard}>
-                        {profile.profilePhoto ? (
-                          <ImageBackground source={{ uri: profile.profilePhoto }} style={styles.cardImage} imageStyle={styles.cardImageStyle}>
-                            {profile.isOnline && (
-                              <View style={styles.onlineBadge}>
-                                <Text style={styles.onlineBadgeText}>🟢</Text>
-                              </View>
-                            )}
-                            <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} style={styles.cardGradient}>
-                              <BlurView intensity={15} tint="dark" style={styles.cardOverlay}>
-                                <View style={styles.cardInfo}>
-                                  <View style={styles.nameRow}>
-                                    <Text style={styles.profileName}>{profile.name}, {profile.age || 'N/A'}</Text>
-                                    {profile.likesCount > 0 && (
-                                      <View style={styles.likesBadge}>
-                                        <Text style={styles.likesText}>❤️ {profile.likesCount}</Text>
-                                      </View>
-                                    )}
-                                  </View>
-                                  <Text style={styles.profileLocation}>📍 {profile.location || 'Unknown'}</Text>
-                                  <BlurView intensity={10} tint="dark" style={styles.tagBadge}>
-                                    <Text style={[styles.genderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>{profile.gender === 'female' ? '♀' : '♂'}</Text>
-                                    <Text style={styles.tagText} numberOfLines={2} ellipsizeMode="tail">{profile.lookingFor || 'Looking for friends'}</Text>
-                                  </BlurView>
-                                </View>
-                              </BlurView>
-                            </LinearGradient>
-                          </ImageBackground>
-                        ) : (
-                          <LinearGradient colors={getAvatarColor(profile.id, profile.name)} style={styles.cardImage}>
-                            <View style={styles.avatarContainer}>
-                              <View style={styles.avatarCircle}>
-                                <Text style={styles.avatarLetter}>{profile.name.charAt(0)}</Text>
-                              </View>
-                              {profile.isOnline && (
-                                <View style={styles.onlineBadge}>
-                                  <Text style={styles.onlineBadgeText}>🟢</Text>
-                                </View>
-                              )}
-                            </View>
-                            <BlurView intensity={15} tint="dark" style={styles.cardOverlay}>
-                              <View style={styles.cardInfo}>
-                                <View style={styles.nameRow}>
-                                  <Text style={styles.profileName}>{profile.name}, {profile.age || 'N/A'}</Text>
-                                  {profile.likesCount > 0 && (
-                                    <View style={styles.likesBadge}>
-                                      <Text style={styles.likesText}>❤️ {profile.likesCount}</Text>
-                                    </View>
-                                  )}
-                                </View>
-                                <Text style={styles.profileLocation}>📍 {profile.location || 'Unknown'}</Text>
-                                <BlurView intensity={10} tint="dark" style={styles.tagBadge}>
-                                  <Text style={[styles.genderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>{profile.gender === 'female' ? '♀' : '♂'}</Text>
-                                  <Text style={styles.tagText} numberOfLines={2} ellipsizeMode="tail">{profile.lookingFor || 'Looking for friends'}</Text>
-                                </BlurView>
-                              </View>
-                            </BlurView>
-                          </LinearGradient>
-                        )}
-                      </BlurView>
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </Animated.View>
-            )}
-
-            <View style={styles.sortContainer}>
-              <TouchableOpacity activeOpacity={1}>
-                <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.sortButton}>
-                  <Text style={styles.sortButtonText}>Sort by location</Text>
-                </BlurView>
-              </TouchableOpacity>
-              <TouchableOpacity activeOpacity={1}>
-                <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.sortButtonOutline}>
-                  <Text style={styles.sortButtonTextOutline}>Sort by tags</Text>
-                </BlurView>
-              </TouchableOpacity>
+          {initialLoading ? (
+            <View style={styles.loadingContainer}>
+              <PingooLogo size={100} animated={true} />
+              <Text style={styles.loadingText}>Loading users...</Text>
             </View>
-          </ScrollView>
+          ) : (
+            <FlatList
+              data={profiles}
+              renderItem={renderItem}
+              keyExtractor={keyExtractor}
+              numColumns={isListView ? 1 : 2}
+              key={isListView ? 'list' : 'grid'}
+              columnWrapperStyle={!isListView ? styles.gridRow : null}
+              contentContainerStyle={isListView ? styles.listContainer : styles.gridContainer}
+              showsVerticalScrollIndicator={false}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}
+              onEndReached={loadMore}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={renderFooter}
+              ListEmptyComponent={<View style={styles.emptyContainer}><Text style={styles.emptyText}>No users found</Text></View>}
+              windowSize={5}
+              maxToRenderPerBatch={10}
+              removeClippedSubviews={true}
+              initialNumToRender={10}
+            />
+          )}
         </SafeAreaView>
       </LinearGradient>
     </View>
@@ -265,20 +179,24 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   themeIcon: { fontSize: 20 },
   content: { flex: 1 },
   gridContainer: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
     padding: 15,
-    gap: 15,
   },
-  listContainer: { padding: 15, gap: 15 },
+  gridRow: {
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  listContainer: { padding: 15 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
+  loadingText: { marginTop: 20, fontSize: 16, color: theme.text },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
+  emptyText: { fontSize: 16, color: theme.textSecondary },
+  footerLoader: { paddingVertical: 20, alignItems: 'center' },
   listCard: { width: '100%', backgroundColor: isDark ? '#1a1a1a' : '#fff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
   listCardContent: { flexDirection: 'row', padding: 12 },
-  listImage: { width: 80, height: 80, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  listImage: { width: 80, height: 80, borderRadius: 12, overflow: 'hidden' },
   listImageContainer: { position: 'relative' },
   listOnlineBadge: { position: 'absolute', top: 2, right: 2, width: 10, height: 10, borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
   listOnlineBadgeText: { fontSize: 8 },
-  listImageStyle: { borderRadius: 12 },
-  listAvatarLetter: { fontSize: 36, fontWeight: 'bold', color: '#fff' },
   listInfo: { flex: 1, marginLeft: 15, justifyContent: 'center' },
   listNameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   listName: { fontSize: 18, fontWeight: 'bold', color: theme.text },

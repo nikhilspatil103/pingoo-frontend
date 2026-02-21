@@ -7,6 +7,7 @@ import { useUnread } from '../context/UnreadContext';
 import { API_URL } from '../config/urlConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAvatarColor } from '../utils/avatarColors';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function ChatListScreen({ navigation }) {
   const { theme, isDark } = useTheme();
@@ -19,6 +20,12 @@ export default function ChatListScreen({ navigation }) {
   useEffect(() => {
     fetchConversations();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchConversations();
+    }, [])
+  );
 
   const fetchConversations = async () => {
     try {

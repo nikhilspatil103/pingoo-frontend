@@ -1,10 +1,12 @@
-import React from 'react';
+import './utils/disableConsole';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { UnreadProvider, useUnread } from './context/UnreadContext';
+import MemoryManager from './utils/memoryManager';
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import ProfileSetupScreen from './screens/ProfileSetupScreen';
@@ -145,6 +147,16 @@ function AppNavigator() {
 }
 
 export default function App() {
+  useEffect(() => {
+    // Start periodic cache cleanup
+    MemoryManager.startPeriodicCleanup();
+    
+    return () => {
+      // Cleanup on app unmount
+      MemoryManager.cleanup();
+    };
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>

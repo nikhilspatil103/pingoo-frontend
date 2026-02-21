@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppState } from 'react-native';
 import { API_URL } from '../config/urlConfig';
 import SocketService from '../services/SocketService';
 import { useAuth } from './AuthContext';
@@ -88,21 +89,14 @@ export const UnreadProvider = ({ children }) => {
 
   useEffect(() => {
     if (user?.userId) {
-      // Connect to WebSocket
       SocketService.connect(user.userId);
-      
-      // Initial fetch
       fetchUnreadCount();
       
-      // Listen for incoming messages globally
       const handleGlobalMessage = (data) => {
         console.log('Global message received:', data);
         console.log('Active chat user ID:', activeChatUserId);
         console.log('Is on chat list screen:', isOnChatListScreen);
         
-        // Only increment if:
-        // 1. Message is not from currently active chat AND
-        // 2. User is not on any chat-related screen
         if (data.senderId !== activeChatUserId && !isOnChatListScreen && !isOnChatScreen) {
           incrementUnread();
         }
@@ -110,12 +104,15 @@ export const UnreadProvider = ({ children }) => {
       
       SocketService.onReceiveMessage(handleGlobalMessage);
       
-      // Periodic refresh
-      const interval = setInterval(fetchUnreadCount, 30000);
+      const appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
+        if (nextAppState === 'active') {
+          fetchUnreadCount();
+        }
+      });
       
       return () => {
-        clearInterval(interval);
         SocketService.offReceiveMessage(handleGlobalMessage);
+        appStateSubscription?.remove();
       };
     }
   }, [user?.userId, activeChatUserId, isOnChatListScreen, isOnChatScreen]);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Alert, StatusBar, Image, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Alert, StatusBar, ActivityIndicator, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -7,8 +7,13 @@ import { useAuth } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
 import ProfileViewScreen from './ProfileViewScreen';
-import { getAvatarColor } from '../utils/avatarColors';
 import PingooLogo from '../components/PingooLogo';
+import OptimizedImage from '../components/OptimizedImage';
+
+let FastImage;
+if (Platform.OS !== 'web') {
+  FastImage = require('react-native-fast-image');
+}
 
 export default function MyProfileScreen({ navigation }) {
   const { theme, isDark } = useTheme();
@@ -137,16 +142,13 @@ export default function MyProfileScreen({ navigation }) {
           <ScrollView showsVerticalScrollIndicator={false}>
             <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.profileCard}>
               <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate('EditProfile')}>
-                {profile.profilePhoto ? (
-                  <Image 
-                    source={{ uri: profile.profilePhoto }} 
-                    style={styles.avatar}
-                  />
-                ) : (
-                  <LinearGradient colors={getAvatarColor(profile.email, profile.name)} style={styles.avatar}>
-                    <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
-                  </LinearGradient>
-                )}
+                <OptimizedImage
+                  uri={profile.profilePhoto}
+                  style={styles.avatar}
+                  userId={profile.email}
+                  userName={profile.name}
+                  priority={Platform.OS !== 'web' ? FastImage?.priority?.high : undefined}
+                />
                 <View style={styles.editBadge}>
                   <Text style={styles.editIcon}>✏️</Text>
                 </View>
