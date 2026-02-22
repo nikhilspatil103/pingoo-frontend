@@ -232,13 +232,13 @@ export default function EditProfileScreen({ navigation }) {
         style={styles.gradientBackground}
       >
         <SafeAreaView style={styles.safeArea}>
-          <View style={styles.header}>
+          <BlurView intensity={isDark ? 15 : 10} tint={isDark ? 'dark' : 'light'} style={styles.header}>
             <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
               <Text style={styles.backIcon}>←</Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Edit Profile</Text>
             <View style={{ width: 40 }} />
-          </View>
+          </BlurView>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.photoSection}>
@@ -290,7 +290,7 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
 
           <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
             <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowBioEdit(true)}>
@@ -303,7 +303,7 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
 
           <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
             <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowRelationshipEdit(true)}>
@@ -316,7 +316,7 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
 
           <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
             <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowHeightEdit(true)}>
@@ -329,7 +329,7 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
 
         <View style={styles.section}>
@@ -345,7 +345,7 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
 
           <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
             <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowLifestyleEdit(true)}>
@@ -358,7 +358,7 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
 
         <View style={styles.section}>
@@ -374,7 +374,7 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
 
         <View style={styles.section}>
@@ -390,7 +390,7 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
 
         <View style={styles.section}>
@@ -406,7 +406,7 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
 
         <View style={{ height: 40 }} />
@@ -434,7 +434,7 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
       </Modal>
 
@@ -463,7 +463,7 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
       </Modal>
 
@@ -483,7 +483,7 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
       </Modal>
 
@@ -505,7 +505,7 @@ export default function EditProfileScreen({ navigation }) {
                 <Text style={styles.optionText}>{type}</Text>
               </TouchableOpacity>
             ))}
-          </View>
+          </BlurView>
         </View>
       </Modal>
 
@@ -556,7 +556,7 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
       </Modal>
 
@@ -579,7 +579,7 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
       </Modal>
 
@@ -600,7 +600,7 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
       </Modal>
 
@@ -629,7 +629,7 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
       </Modal>
 

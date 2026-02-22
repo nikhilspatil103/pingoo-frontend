@@ -34,20 +34,20 @@ export default function DeleteAccountScreen({ navigation }) {
     <View style={styles.container}>
       <LinearGradient colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']} style={styles.gradientBackground}>
         <SafeAreaView style={styles.safeArea}>
-          <View style={styles.header}>
+          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Text style={styles.backIcon}>←</Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Delete Account</Text>
             <View style={{ width: 40 }} />
-          </View>
+          </BlurView>
 
           <ScrollView showsVerticalScrollIndicator={false}>
             <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.warningCard}>
               <Text style={styles.warningIcon}>⚠️</Text>
               <Text style={styles.warningTitle}>Warning</Text>
               <Text style={styles.warningText}>Deleting your account is permanent and cannot be undone.</Text>
-            </View>
+            </BlurView>
 
             <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.card}>
               <Text style={styles.title}>What will be deleted:</Text>
@@ -71,14 +71,14 @@ export default function DeleteAccountScreen({ navigation }) {
                 <Text style={styles.itemIcon}>◎</Text>
                 <Text style={styles.itemText}>All remaining coins</Text>
               </View>
-            </View>
+            </BlurView>
 
             <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.confirmCard}>
               <TouchableOpacity style={styles.checkbox} onPress={() => setConfirmed(!confirmed)}>
                 <Text style={styles.checkboxIcon}>{confirmed ? '☑' : '☐'}</Text>
                 <Text style={styles.checkboxText}>I understand this action is permanent</Text>
               </TouchableOpacity>
-            </View>
+            </BlurView>
 
             <TouchableOpacity 
               style={[styles.deleteBtn, !confirmed && styles.deleteBtnDisabled]} 

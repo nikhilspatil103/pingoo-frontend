@@ -38,22 +38,22 @@ export default function DiscoverScreen({ navigation }) {
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
-      </View>
+      </BlurView>
 
       {/* Categories */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categories}>
         <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.categoryChip}>
           <Text style={styles.categoryText}>All</Text>
-        </View>
+        </BlurView>
         <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.categoryChipOutline}>
           <Text style={styles.categoryTextOutline}>Sports</Text>
-        </View>
+        </BlurView>
         <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.categoryChipOutline}>
           <Text style={styles.categoryTextOutline}>Food</Text>
-        </View>
+        </BlurView>
         <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.categoryChipOutline}>
           <Text style={styles.categoryTextOutline}>Entertainment</Text>
-        </View>
+        </BlurView>
       </ScrollView>
 
       {/* Groups List */}
@@ -71,7 +71,7 @@ export default function DiscoverScreen({ navigation }) {
             <TouchableOpacity style={[styles.joinButton, { backgroundColor: group.color }]}>
               <Text style={styles.joinButtonText}>Join</Text>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         ))}
       </ScrollView>
 

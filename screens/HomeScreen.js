@@ -107,7 +107,7 @@ export default function HomeScreen({ navigation }) {
         style={styles.gradientBackground}
       >
         <SafeAreaView style={styles.safeArea}>
-          <View style={styles.header}>
+          <BlurView intensity={isDark ? 15 : 10} tint={isDark ? 'dark' : 'light'} style={styles.header}>
             <Text style={styles.headerTitle}>Pingoo</Text>
             <View style={styles.headerRight}>
               <TouchableOpacity style={styles.viewToggle} onPress={() => setIsListView(!isListView)} activeOpacity={1}>
@@ -117,7 +117,7 @@ export default function HomeScreen({ navigation }) {
                 <Text style={styles.themeIcon}>{isDark ? '☀️' : '🌙'}</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </BlurView>
 
           {initialLoading ? (
             <View style={styles.loadingContainer}>
@@ -167,9 +167,8 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     alignItems: 'center', 
     paddingHorizontal: 20, 
     paddingVertical: 15,
-    backgroundColor: isDark ? 'rgba(26,26,26,0.95)' : 'rgba(255,255,255,0.95)',
-    borderBottomWidth: 1,
-    borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+    borderRadius: 0,
+    overflow: 'hidden',
   },
   headerRight: { flexDirection: 'row', gap: 10 },
   viewToggle: { width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', justifyContent: 'center', alignItems: 'center' },
