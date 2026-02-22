@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, Platform, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Platform, Image, ActivityIndicator } from 'react-native';
 import { getAvatarColor } from '../utils/avatarColors';
+import { useTheme } from '../context/ThemeContext';
 
 let FastImage;
 if (Platform.OS !== 'web') {
@@ -8,6 +9,8 @@ if (Platform.OS !== 'web') {
 }
 
 const OptimizedImage = ({ uri, style, userId, userName, priority, resizeMode }) => {
+  const { theme } = useTheme();
+  const [loading, setLoading] = useState(true);
   if (!uri) {
     const [bgColor] = getAvatarColor(userId, userName);
     return (
@@ -18,19 +21,41 @@ const OptimizedImage = ({ uri, style, userId, userName, priority, resizeMode }) 
   }
 
   if (Platform.OS === 'web') {
-    return <Image source={{ uri }} style={style} resizeMode="cover" />;
+    return (
+      <View style={style}>
+        {loading && (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+            <ActivityIndicator size="small" color={theme.primary} />
+          </View>
+        )}
+        <Image 
+          source={{ uri }} 
+          style={style} 
+          resizeMode="cover"
+          onLoadEnd={() => setLoading(false)}
+        />
+      </View>
+    );
   }
 
   return (
-    <FastImage
-      style={style}
-      source={{
-        uri,
-        priority: priority || FastImage.priority.normal,
-        cache: FastImage.cacheControl.immutable,
-      }}
-      resizeMode={resizeMode || FastImage.resizeMode.cover}
-    />
+    <View style={style}>
+      {loading && (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="small" color={theme.primary} />
+        </View>
+      )}
+      <FastImage
+        style={style}
+        source={{
+          uri,
+          priority: priority || FastImage.priority.normal,
+          cache: FastImage.cacheControl.immutable,
+        }}
+        resizeMode={resizeMode || FastImage.resizeMode.cover}
+        onLoadEnd={() => setLoading(false)}
+      />
+    </View>
   );
 };
 

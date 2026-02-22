@@ -100,7 +100,7 @@ const ListCard = React.memo(({ profile, onPress, isDark, theme }) => {
 });
 
 const styles = StyleSheet.create({
-  wrapper: { width: '47%', marginBottom: 15 },
+  wrapper: { width: '48%', marginBottom: 12 },
   glassCard: (isDark) => ({
     borderRadius: 24,
     overflow: 'hidden',

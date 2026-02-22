@@ -114,11 +114,18 @@ export default function MyProfileScreen({ navigation }) {
 
   if (!profile) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <PingooLogo size={100} animated={true} />
-        </View>
-      </SafeAreaView>
+      <View style={styles.container}>
+        <LinearGradient
+          colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']}
+          style={styles.gradientBackground}
+        >
+          <SafeAreaView style={styles.safeArea}>
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <PingooLogo size={100} animated={true} />
+            </View>
+          </SafeAreaView>
+        </LinearGradient>
+      </View>
     );
   }
 

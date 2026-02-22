@@ -9,6 +9,7 @@ import PingooLogo from '../components/PingooLogo';
 export default function ProfileSetupScreen({ route, navigation }) {
   const { name, email, password } = route.params;
   const { login } = useAuth();
+  const [step, setStep] = useState(1);
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
   const [interestedIn, setInterestedIn] = useState('');
@@ -49,6 +50,45 @@ export default function ProfileSetupScreen({ route, navigation }) {
         showPopup('error', 'Upload Failed', 'Failed to upload image. Please try again.');
       }
       setLoading(false);
+    }
+  };
+
+  const handleNext = () => {
+    if (step === 1) {
+      setStep(2);
+    } else if (step === 2) {
+      if (!age.trim()) {
+        showPopup('error', 'Age Required', 'Please enter your age to continue');
+        return;
+      }
+      const ageNum = parseInt(age);
+      if (isNaN(ageNum) || ageNum < 18) {
+        showPopup('error', 'Age Restriction', 'You must be at least 18 years old');
+        return;
+      }
+      if (ageNum > 100) {
+        showPopup('error', 'Invalid Age', 'Please enter a valid age');
+        return;
+      }
+      setStep(3);
+    } else if (step === 3) {
+      if (!gender) {
+        showPopup('error', 'Gender Required', 'Please select your gender');
+        return;
+      }
+      setStep(4);
+    } else if (step === 4) {
+      if (!interestedIn) {
+        showPopup('error', 'Interest Required', 'Please select who you are interested in');
+        return;
+      }
+      setStep(5);
+    } else if (step === 5) {
+      if (!lookingFor.trim()) {
+        showPopup('error', 'Looking For Required', 'Please tell us what you are looking for');
+        return;
+      }
+      handleSignup();
     }
   };
 
@@ -135,69 +175,76 @@ export default function ProfileSetupScreen({ route, navigation }) {
       <StatusBar barStyle="light-content" backgroundColor="#1C0F2A" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => step > 1 ? setStep(step - 1) : navigation.goBack()} style={styles.backBtn}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Complete Profile</Text>
+          <Text style={styles.headerTitle}>Step {step} of 5</Text>
           <View style={{ width: 40 }} />
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
           <View style={styles.content}>
             <View style={styles.welcomeSection}>
-              <Text style={styles.logo}>◎</Text>
-              <Text style={styles.title}>Almost there!</Text>
-              <Text style={styles.subtitle}>Complete your profile to get started</Text>
+              <PingooLogo size={64} animated={true} />
+              <Text style={styles.title}>
+                {step === 1 ? 'Add Your Photo' : step === 2 ? 'How old are you?' : step === 3 ? 'Your Gender' : step === 4 ? 'Interested in' : 'What are you looking for?'}
+              </Text>
+              <Text style={styles.subtitle}>
+                {step === 1 ? 'Optional - You can skip this' : step === 2 ? 'You must be 18 or older' : step === 3 ? 'Select your gender' : step === 4 ? 'Who would you like to meet?' : 'Tell us your preferences'}
+              </Text>
             </View>
 
-            <View style={styles.photoCard}>
-              <TouchableOpacity style={styles.photoWrapper} onPress={pickImage} disabled={loading}>
-                {loading ? (
-                  <View style={styles.photoPlaceholder}>
-                    <PingooLogo size={60} animated={true} />
-                  </View>
-                ) : profilePhoto ? (
-                  <Image source={{ uri: profilePhoto }} style={styles.profilePhoto} />
-                ) : (
-                  <View style={styles.photoPlaceholder}>
-                    <Text style={styles.cameraIcon}>📷</Text>
-                    <Text style={styles.photoHint}>Add your photo</Text>
-                  </View>
-                )}
-                {!loading && (
-                  <View style={styles.editIcon}>
-                    <Text style={styles.editText}>✏️</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
+            {step === 1 && (
+              <View style={styles.photoCard}>
+                <TouchableOpacity style={styles.photoWrapper} onPress={pickImage} disabled={loading}>
+                  {loading ? (
+                    <View style={styles.photoPlaceholder}>
+                      <PingooLogo size={60} animated={true} />
+                    </View>
+                  ) : profilePhoto ? (
+                    <Image source={{ uri: profilePhoto }} style={styles.profilePhoto} />
+                  ) : (
+                    <View style={styles.photoPlaceholder}>
+                      <Text style={styles.cameraIcon}>📷</Text>
+                      <Text style={styles.photoHint}>Add your photo</Text>
+                    </View>
+                  )}
+                  {!loading && (
+                    <View style={styles.editIcon}>
+                      <Text style={styles.editText}>✏️</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
 
-            <View style={styles.formCard}>
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Age</Text>
-                <View style={styles.inputWrapper}>
+            {step === 2 && (
+              <View style={styles.formCard}>
+                <View style={styles.fieldGroup}>
                   <TextInput
-                    style={styles.ageInput}
+                    style={styles.ageInputLarge}
                     placeholder="Enter your age"
                     placeholderTextColor="rgba(255,255,255,0.5)"
                     value={age}
                     onChangeText={setAge}
                     keyboardType="numeric"
                     maxLength={2}
+                    autoFocus
                   />
                 </View>
               </View>
+            )}
 
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Gender</Text>
+            {step === 3 && (
+              <View style={styles.formCard}>
                 <View style={styles.optionsGrid}>
-                  {[{key: 'male', label: 'Male', icon: '👨'}, {key: 'female', label: 'Female', icon: '👩'}, {key: 'other', label: 'Other', icon: '🧑'}].map((option) => (
+                  {[{key: 'male', label: 'Male', icon: '♂'}, {key: 'female', label: 'Female', icon: '♀'}, {key: 'other', label: 'Other', icon: '⚥'}].map((option) => (
                     <TouchableOpacity
                       key={option.key}
-                      style={[styles.optionCard, gender === option.key && styles.selectedCard]}
+                      style={[styles.optionCardLarge, gender === option.key && styles.selectedCard]}
                       onPress={() => setGender(option.key)}
                     >
-                      <Text style={styles.optionIcon}>{option.icon}</Text>
+                      <Text style={[styles.optionIconLarge, { color: '#fff' }]}>{option.icon}</Text>
                       <Text style={[styles.optionLabel, gender === option.key && styles.selectedLabel]}>
                         {option.label}
                       </Text>
@@ -205,17 +252,18 @@ export default function ProfileSetupScreen({ route, navigation }) {
                   ))}
                 </View>
               </View>
+            )}
 
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Interested in</Text>
+            {step === 4 && (
+              <View style={styles.formCard}>
                 <View style={styles.optionsGrid}>
-                  {[{key: 'male', label: 'Men', icon: '👨'}, {key: 'female', label: 'Women', icon: '👩'}, {key: 'both', label: 'Both', icon: '👫'}].map((option) => (
+                  {[{key: 'male', label: 'Men', icon: '♂'}, {key: 'female', label: 'Women', icon: '♀'}, {key: 'both', label: 'Both', icon: '⚥'}].map((option) => (
                     <TouchableOpacity
                       key={option.key}
-                      style={[styles.optionCard, interestedIn === option.key && styles.selectedCard]}
+                      style={[styles.optionCardLarge, interestedIn === option.key && styles.selectedCard]}
                       onPress={() => setInterestedIn(option.key)}
                     >
-                      <Text style={styles.optionIcon}>{option.icon}</Text>
+                      <Text style={[styles.optionIconLarge, { color: '#fff' }]}>{option.icon}</Text>
                       <Text style={[styles.optionLabel, interestedIn === option.key && styles.selectedLabel]}>
                         {option.label}
                       </Text>
@@ -223,37 +271,36 @@ export default function ProfileSetupScreen({ route, navigation }) {
                   ))}
                 </View>
               </View>
+            )}
 
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Looking for</Text>
-                <View style={styles.inputWrapper}>
+            {step === 5 && (
+              <View style={styles.formCard}>
+                <View style={styles.fieldGroup}>
                   <TextInput
-                    style={styles.textAreaInput}
-                    placeholder="What are you looking for? (e.g., serious relationship, friendship, casual dating)"
+                    style={styles.textAreaInputLarge}
+                    placeholder="e.g., serious relationship, friendship, casual dating"
                     placeholderTextColor="rgba(255,255,255,0.5)"
                     value={lookingFor}
                     onChangeText={setLookingFor}
                     multiline
                     maxLength={100}
+                    autoFocus
                   />
+                  <Text style={styles.charCounter}>{lookingFor.length}/100</Text>
                 </View>
-                <Text style={styles.charCounter}>{lookingFor.length}/100</Text>
               </View>
-            </View>
+            )}
           </View>
         </ScrollView>
 
         <View style={styles.bottomSection}>
           <TouchableOpacity 
             style={[styles.continueBtn, loading && styles.btnDisabled]} 
-            onPress={() => {
-              console.log('Button pressed');
-              handleSignup();
-            }}
+            onPress={handleNext}
             disabled={loading}
           >
             <Text style={styles.continueBtnText}>
-              {loading ? 'Creating Account...' : 'Complete Setup'}
+              {loading ? 'Uploading...' : step === 5 ? 'Complete Setup' : step === 1 ? (profilePhoto ? 'Next' : 'Skip') : 'Next'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -365,6 +412,18 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.2)',
     textAlign: 'center'
   },
+  ageInputLarge: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+    fontSize: 36,
+    color: '#fff',
+    borderWidth: 2,
+    borderColor: '#FF6B9D',
+    textAlign: 'center',
+    fontWeight: 'bold'
+  },
   textAreaInput: {
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 12,
@@ -375,6 +434,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
     minHeight: 80,
+    textAlignVertical: 'top'
+  },
+  textAreaInputLarge: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    fontSize: 18,
+    color: '#fff',
+    borderWidth: 2,
+    borderColor: '#FF6B9D',
+    minHeight: 150,
     textAlignVertical: 'top'
   },
   charCounter: { fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'right', marginTop: 4 },
@@ -389,8 +460,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)'
   },
+  optionCardLarge: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16,
+    paddingVertical: 32,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.2)'
+  },
   selectedCard: { backgroundColor: '#FF6B9D', borderColor: '#FF6B9D' },
   optionIcon: { fontSize: 24, marginBottom: 8 },
+  optionIconLarge: { fontSize: 48, marginBottom: 12 },
   optionLabel: { fontSize: 14, fontWeight: '500', color: 'rgba(255,255,255,0.6)' },
   selectedLabel: { color: '#fff', fontWeight: '600' },
   bottomSection: {

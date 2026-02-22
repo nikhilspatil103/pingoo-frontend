@@ -5,10 +5,12 @@ import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import PingooLogo from '../components/PingooLogo';
 
 export default function ContactsScreen({ navigation }) {
   const { theme, isDark } = useTheme();
   const [contacts, setContacts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -17,8 +19,10 @@ export default function ContactsScreen({ navigation }) {
   );
 
   const loadContacts = async () => {
+    setLoading(true);
     const saved = await AsyncStorage.getItem('contacts');
     if (saved) setContacts(JSON.parse(saved));
+    setLoading(false);
   };
 
   const removeContact = async (id) => {
@@ -42,6 +46,11 @@ export default function ContactsScreen({ navigation }) {
             <Text style={styles.contactCount}>{contacts.length}</Text>
           </View>
 
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <PingooLogo size={100} animated={true} />
+            </View>
+          ) : (
           <ScrollView showsVerticalScrollIndicator={false}>
             {contacts.length === 0 ? (
               <View  tint={isDark ? 'dark' : 'light'} style={styles.emptyCard}>
@@ -80,6 +89,7 @@ export default function ContactsScreen({ navigation }) {
             )}
             <View style={{ height: 100 }} />
           </ScrollView>
+          )}
         </SafeAreaView>
       </LinearGradient>
     </View>
@@ -110,6 +120,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
   },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyCard: { 
     margin: 40, 
     borderRadius: 24, 

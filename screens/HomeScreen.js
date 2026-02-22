@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, FlatList, SafeAreaView, Animated, StatusBar, RefreshControl, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, FlatList, SafeAreaView, Animated, StatusBar, RefreshControl, ActivityIndicator, Modal } from 'react-native';
+import RangeSlider from '../components/RangeSlider';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -15,6 +16,10 @@ export default function HomeScreen({ navigation }) {
   const { theme, isDark, toggleTheme } = useTheme();
   const { logout } = useAuth();
   const [isListView, setIsListView] = useState(false);
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [filterType, setFilterType] = useState('all');
+  const [ageRange, setAgeRange] = useState({ min: 18, max: 80 });
+  const [genderFilter, setGenderFilter] = useState('both');
   const [fadeAnim] = useState(new Animated.Value(1));
   const [slideAnim] = useState(new Animated.Value(0));
   
@@ -97,6 +102,28 @@ export default function HomeScreen({ navigation }) {
 
   const keyExtractor = useCallback((item) => item.id.toString(), []);
 
+  const filteredProfiles = profiles.filter(profile => {
+    if (filterType === 'online' && !profile.isOnline) return false;
+    if (filterType === 'age' && profile.age && (profile.age < ageRange.min || profile.age > ageRange.max)) return false;
+    if (genderFilter !== 'both' && profile.gender !== genderFilter) return false;
+    return true;
+  }).sort((a, b) => {
+    if (filterType === 'age') return a.age - b.age;
+    if (filterType === 'mostLiked') return (b.likesCount || 0) - (a.likesCount || 0);
+    return 0;
+  });
+
+  const applyFilter = (type) => {
+    setFilterType(type);
+    setFilterVisible(false);
+  };
+
+  const clearFilters = () => {
+    setFilterType('all');
+    setGenderFilter('both');
+    setAgeRange({ min: 18, max: 80 });
+  };
+
   const styles = getStyles(theme, isDark);
 
   return (
@@ -110,6 +137,9 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Pingoo</Text>
             <View style={styles.headerRight}>
+              <TouchableOpacity style={styles.viewToggle} onPress={() => setFilterVisible(true)} activeOpacity={1}>
+                <Text style={styles.viewToggleIcon}>⚡</Text>
+              </TouchableOpacity>
               <TouchableOpacity style={styles.viewToggle} onPress={() => setIsListView(!isListView)} activeOpacity={1}>
                 <Text style={styles.viewToggleIcon}>{isListView ? '⊞' : '☰'}</Text>
               </TouchableOpacity>
@@ -126,7 +156,7 @@ export default function HomeScreen({ navigation }) {
             </View>
           ) : (
             <FlatList
-              data={profiles}
+              data={filteredProfiles}
               renderItem={renderItem}
               keyExtractor={keyExtractor}
               numColumns={isListView ? 1 : 2}
@@ -144,14 +174,76 @@ export default function HomeScreen({ navigation }) {
               removeClippedSubviews={true}
               initialNumToRender={6}
               updateCellsBatchingPeriod={50}
-              getItemLayout={(data, index) => ({
-                length: isListView ? 100 : 260,
-                offset: (isListView ? 100 : 260) * index,
-                index,
-              })}
             />
           )}
         </SafeAreaView>
+
+        <Modal visible={filterVisible} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={styles.blurView}>
+              <View style={[styles.modalContent, { backgroundColor: isDark ? 'rgba(26,10,46,0.95)' : 'rgba(255,238,248,0.95)' }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={[styles.modalTitle, { color: theme.text }]}>Filters</Text>
+                  <TouchableOpacity onPress={() => setFilterVisible(false)} style={styles.closeButton}>
+                    <Text style={styles.closeButtonText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.filterSection}>
+                  <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>SHOW</Text>
+                  <TouchableOpacity style={[styles.filterCard, filterType === 'online' && styles.filterCardActive]} onPress={() => applyFilter('online')}>
+                    <Text style={styles.filterEmoji}>🟢</Text>
+                    <Text style={[styles.filterCardText, { color: filterType === 'online' ? '#fff' : theme.text }]}>Online Only</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.filterCard, filterType === 'mostLiked' && styles.filterCardActive]} onPress={() => applyFilter('mostLiked')}>
+                    <Text style={styles.filterEmoji}>❤️</Text>
+                    <Text style={[styles.filterCardText, { color: filterType === 'mostLiked' ? '#fff' : theme.text }]}>Most Liked</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.filterSection}>
+                  <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>GENDER</Text>
+                  <View style={styles.genderButtons}>
+                    <TouchableOpacity style={[styles.genderCard, genderFilter === 'male' && styles.genderCardActive]} onPress={() => setGenderFilter('male')}>
+                      <Text style={[styles.genderEmoji, { color: genderFilter === 'male' ? '#fff' : (isDark ? '#fff' : '#000') }]}>♂</Text>
+                      <Text style={[styles.genderCardText, { color: genderFilter === 'male' ? '#fff' : theme.text }]}>Male</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.genderCard, genderFilter === 'female' && styles.genderCardActive]} onPress={() => setGenderFilter('female')}>
+                      <Text style={[styles.genderEmoji, { color: genderFilter === 'female' ? '#fff' : (isDark ? '#fff' : '#000') }]}>♀</Text>
+                      <Text style={[styles.genderCardText, { color: genderFilter === 'female' ? '#fff' : theme.text }]}>Female</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.genderCard, genderFilter === 'both' && styles.genderCardActive]} onPress={() => setGenderFilter('both')}>
+                      <Text style={[styles.genderEmoji, { color: genderFilter === 'both' ? '#fff' : (isDark ? '#fff' : '#000') }]}>⚥</Text>
+                      <Text style={[styles.genderCardText, { color: genderFilter === 'both' ? '#fff' : theme.text }]}>Both</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.filterSection}>
+                  <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>AGE RANGE</Text>
+                  <View style={[styles.ageCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+                    <RangeSlider
+                      min={18}
+                      max={80}
+                      low={ageRange.min}
+                      high={ageRange.max}
+                      theme={theme}
+                      isDark={isDark}
+                      onValueChanged={(low, high) => {
+                        setAgeRange({ min: low, max: high });
+                        setFilterType('age');
+                      }}
+                    />
+                  </View>
+                </View>
+
+                <TouchableOpacity style={styles.clearButton} onPress={clearFilters}>
+                  <Text style={styles.clearButtonText}>Clear All Filters</Text>
+                </TouchableOpacity>
+              </View>
+            </BlurView>
+          </View>
+        </Modal>
       </LinearGradient>
     </View>
   );
@@ -167,7 +259,6 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     alignItems: 'center', 
     paddingHorizontal: 20, 
     paddingVertical: 15,
-    backgroundColor: isDark ? 'rgba(26,26,26,0.95)' : 'rgba(255,255,255,0.95)',
     borderBottomWidth: 1,
     borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
   },
@@ -189,8 +280,9 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     padding: 15,
   },
   gridRow: {
-    justifyContent: 'space-between',
-    marginBottom: 15,
+    justifyContent: 'flex-start',
+    gap: 20,
+    marginBottom: 12,
   },
   listContainer: { padding: 15 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
@@ -198,6 +290,27 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
   emptyText: { fontSize: 16, color: theme.textSecondary },
   footerLoader: { paddingVertical: 20, alignItems: 'center' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  blurView: { borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
+  modalContent: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  modalTitle: { fontSize: 24, fontWeight: 'bold' },
+  closeButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,107,157,0.2)', justifyContent: 'center', alignItems: 'center' },
+  closeButtonText: { fontSize: 20, color: '#FF6B9D', fontWeight: 'bold' },
+  filterSection: { marginBottom: 24 },
+  sectionLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 12 },
+  filterCard: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 20, borderRadius: 16, marginBottom: 8, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', borderWidth: 2, borderColor: 'transparent' },
+  filterCardActive: { backgroundColor: '#FF6B9D', borderColor: '#FF6B9D' },
+  filterEmoji: { fontSize: 20, marginRight: 12 },
+  filterCardText: { fontSize: 16, fontWeight: '600' },
+  genderButtons: { flexDirection: 'row', gap: 10 },
+  genderCard: { flex: 1, alignItems: 'center', paddingVertical: 16, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', borderWidth: 2, borderColor: 'transparent' },
+  genderCardActive: { backgroundColor: '#FF6B9D', borderColor: '#FF6B9D' },
+  genderEmoji: { fontSize: 24, marginBottom: 6 },
+  genderCardText: { fontSize: 14, fontWeight: '600' },
+  ageCard: { borderRadius: 16, paddingHorizontal: 12 },
+  clearButton: { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', paddingVertical: 16, borderRadius: 16, alignItems: 'center', marginTop: 8 },
+  clearButtonText: { fontSize: 16, fontWeight: '600', color: '#FF6B9D' },
   listCard: { width: '100%', backgroundColor: isDark ? '#1a1a1a' : '#fff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
   listCardContent: { flexDirection: 'row', padding: 12 },
   listImage: { width: 80, height: 80, borderRadius: 12, overflow: 'hidden' },

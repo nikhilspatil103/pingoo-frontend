@@ -7,6 +7,7 @@ import { useUnread } from '../context/UnreadContext';
 import { API_URL } from '../config/urlConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAvatarColor } from '../utils/avatarColors';
+import PingooLogo from '../components/PingooLogo';
 import { useFocusEffect } from '@react-navigation/native';
 
 export default function ChatListScreen({ navigation }) {
@@ -28,6 +29,7 @@ export default function ChatListScreen({ navigation }) {
   );
 
   const fetchConversations = async () => {
+    setLoading(true);
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) return;
@@ -120,7 +122,11 @@ export default function ChatListScreen({ navigation }) {
             </View>
           </View>
 
-          {chats.length === 0 ? (
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <PingooLogo size={100} animated={true} />
+            </View>
+          ) : chats.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>No conversations yet</Text>
               <Text style={styles.emptySubtext}>Start chatting with someone!</Text>
@@ -186,7 +192,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   unreadBadge: { backgroundColor: '#FF3B30', borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 6 },
   unreadCount: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
   separator: { height: 12 },
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { fontSize: 18, fontWeight: '600', color: theme.text, marginBottom: 8 },
   emptySubtext: { fontSize: 14, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' },
 });
