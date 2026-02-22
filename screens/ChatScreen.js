@@ -192,14 +192,14 @@ export default function ChatScreen({ route, navigation }) {
                   onChangeText={setMessage}
                 />
               </View>
-              <TouchableOpacity onPress={sendMessage}>
-                <View  tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
-                  <Text style={styles.icon}>➤</Text>
-                </View>
-              </TouchableOpacity>
               <TouchableOpacity>
                 <View tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>🎤</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={sendMessage}>
+                <View  tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
+                  <Text style={styles.icon}>➤</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -263,10 +263,10 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     marginBottom: 4,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)',
+    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
   },
-  sentBubble: { alignSelf: 'flex-end', borderBottomRightRadius: 6 },
-  receivedBubble: { alignSelf: 'flex-start', borderBottomLeftRadius: 6 },
+  sentBubble: { alignSelf: 'flex-end', borderBottomRightRadius: 6, backgroundColor: isDark ? 'rgba(255,107,157,0.2)' : 'rgba(255,107,157,0.15)' },
+  receivedBubble: { alignSelf: 'flex-start', borderBottomLeftRadius: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.8)' },
   messageText: { fontSize: 15, lineHeight: 20, marginBottom: 6 },
   sentText: { color: theme.text },
   receivedText: { color: theme.text },

@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAvatarColor } from '../utils/avatarColors';
 import PingooLogo from '../components/PingooLogo';
 import { useFocusEffect } from '@react-navigation/native';
+import SocketService from '../services/SocketService';
 
 export default function ChatListScreen({ navigation }) {
   const { theme, isDark } = useTheme();
@@ -16,20 +17,31 @@ export default function ChatListScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const styles = getStyles(theme, isDark);
 
   useEffect(() => {
-    fetchConversations();
+    fetchConversations(true);
+    
+    const handleNewMessage = () => {
+      fetchConversations(false);
+    };
+    
+    SocketService.onReceiveMessage(handleNewMessage);
+    
+    return () => {
+      SocketService.offReceiveMessage(handleNewMessage);
+    };
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
-      fetchConversations();
+      fetchConversations(false);
     }, [])
   );
 
-  const fetchConversations = async () => {
-    setLoading(true);
+  const fetchConversations = async (showLoader = false) => {
+    if (showLoader) setLoading(true);
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) return;
@@ -56,11 +68,12 @@ export default function ChatListScreen({ navigation }) {
         }));
         setChats(formattedChats);
         refreshUnreadCount();
+        if (initialLoad) setInitialLoad(false);
       }
     } catch (error) {
       console.error('Error fetching conversations:', error);
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   };
 
