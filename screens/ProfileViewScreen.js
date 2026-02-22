@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Dimensions, Platform, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+import { View } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
@@ -122,9 +122,9 @@ export default function ProfileViewScreen({ route, navigation }) {
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <LinearGradient colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']} style={styles.gradient}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <BlurView intensity={20} tint="dark" style={styles.blurBtn}>
+          <View  tint="dark" style={styles.blurBtn}>
             <Text style={styles.backIcon}>←</Text>
-          </BlurView>
+          </View>
         </TouchableOpacity>
         
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -179,14 +179,14 @@ export default function ProfileViewScreen({ route, navigation }) {
 
             {/* About */}
             {profile.bio && profile.bio !== 'Not added' && (
-              <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.section}>
+              <View  tint={isDark ? 'dark' : 'light'} style={styles.section}>
                 <Text style={styles.sectionTitle}>About</Text>
                 <Text style={styles.bioText}>{profile.bio}</Text>
-              </BlurView>
+              </View>
             )}
 
             {/* Quick Info */}
-            <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.section}>
+            <View  tint={isDark ? 'dark' : 'light'} style={styles.section}>
               <Text style={styles.sectionTitle}>Info</Text>
               <View style={styles.infoGrid}>
                 <InfoCard icon="♂️" label="Gender" value={profile.gender === 'female' ? 'Female' : 'Male'} />
@@ -197,10 +197,10 @@ export default function ProfileViewScreen({ route, navigation }) {
                 <Text style={styles.fullWidthLabel}>💑 Looking for</Text>
                 <Text style={[styles.fullWidthValue, (profile.lookingFor === 'Not added' || !profile.lookingFor) && styles.notAdded]}>{profile.lookingFor || 'Not added'}</Text>
               </View>
-            </BlurView>
+            </View>
 
             {/* Lifestyle */}
-            <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.section}>
+            <View tint={isDark ? 'dark' : 'light'} style={styles.section}>
               <Text style={styles.sectionTitle}>Lifestyle</Text>
               <View style={styles.infoGrid}>
                 <InfoCard icon="🚬" label="Smoking" value={profile.smoking || 'Not added'} />
@@ -208,11 +208,11 @@ export default function ProfileViewScreen({ route, navigation }) {
                 <InfoCard icon="🏃" label="Exercise" value={profile.exercise || 'Not added'} />
                 <InfoCard icon="🥗" label="Diet" value={profile.diet || 'Not added'} />
               </View>
-            </BlurView>
+            </View>
 
             {/* Interests */}
             {profile.interests && profile.interests.length > 0 && (
-              <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.section}>
+              <View  tint={isDark ? 'dark' : 'light'} style={styles.section}>
                 <Text style={styles.sectionTitle}>Interests</Text>
                 <View style={styles.tags}>
                   {profile.interests.map((interest, i) => (
@@ -221,20 +221,20 @@ export default function ProfileViewScreen({ route, navigation }) {
                     </View>
                   ))}
                 </View>
-              </BlurView>
+              </View>
             )}
 
             {/* Relationship */}
-            <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.section}>
+            <View  tint={isDark ? 'dark' : 'light'} style={styles.section}>
               <Text style={styles.sectionTitle}>Relationship</Text>
               <View style={styles.infoGrid}>
                 <InfoCard icon="💑" label="Status" value={profile.relationshipStatus || 'Not added'} />
                 <InfoCard icon="👶" label="Kids" value={profile.kids || 'Not added'} />
               </View>
-            </BlurView>
+            </View>
 
             {/* Work & Education */}
-            <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.section}>
+            <View  tint={isDark ? 'dark' : 'light'} style={styles.section}>
               <Text style={styles.sectionTitle}>Work & Education</Text>
               <View style={styles.infoGrid}>
                 <InfoCard icon="💼" label="Occupation" value={profile.occupation || 'Not added'} />
@@ -242,20 +242,20 @@ export default function ProfileViewScreen({ route, navigation }) {
                 <InfoCard icon="🎓" label="Education" value={profile.graduation || 'Not added'} />
                 <InfoCard icon="🏫" label="School" value={profile.school || 'Not added'} />
               </View>
-            </BlurView>
+            </View>
 
             {/* Location */}
-            <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.section}>
+            <View tint={isDark ? 'dark' : 'light'} style={styles.section}>
               <Text style={styles.sectionTitle}>Location</Text>
               <View style={styles.infoGrid}>
                 <InfoCard icon="🏠" label="Hometown" value={profile.hometown || 'Not added'} />
                 <InfoCard icon="📍" label="Lives in" value={profile.currentCity || 'Not added'} />
               </View>
-            </BlurView>
+            </View>
 
             {/* Languages */}
             {profile.languages && profile.languages.length > 0 && profile.languages[0] !== 'Not added' && (
-              <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.section}>
+              <View  tint={isDark ? 'dark' : 'light'} style={styles.section}>
                 <Text style={styles.sectionTitle}>Languages</Text>
                 <View style={styles.tags}>
                   {profile.languages.map((lang, i) => (
@@ -264,7 +264,7 @@ export default function ProfileViewScreen({ route, navigation }) {
                     </View>
                   ))}
                 </View>
-              </BlurView>
+              </View>
             )}
 
             <View style={{ height: 100 }} />
@@ -298,9 +298,9 @@ export default function ProfileViewScreen({ route, navigation }) {
             <SafeAreaView style={styles.fullModalSafe}>
               <View style={styles.fullModalHeader}>
                 <TouchableOpacity style={styles.fullModalCloseBtn} onPress={() => setShowFullImage(false)}>
-                  <BlurView intensity={30} tint="dark" style={styles.fullModalCloseBtnInner}>
+                  <View  tint="dark" style={styles.fullModalCloseBtnInner}>
                     <Text style={styles.fullModalCloseIcon}>✕</Text>
-                  </BlurView>
+                  </View>
                 </TouchableOpacity>
               </View>
               <View style={styles.fullModalImageContainer}>
