@@ -133,14 +133,14 @@ export default function MyProfileScreen({ navigation }) {
           <View style={styles.header}>
             <Text style={styles.headerTitle}>My Profile</Text>
             <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(true)} activeOpacity={1}>
-              <BlurView intensity={10} tint="dark" style={styles.menuButtonInner}>
+              <View style={styles.menuButtonInner}>
                 <Text style={styles.menuIcon}>⋮</Text>
               </View>
             </TouchableOpacity>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.profileCard}>
+            <View style={styles.profileCard}>
               <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate('EditProfile')}>
                 <OptimizedImage
                   uri={profile.profilePhoto}
@@ -162,12 +162,12 @@ export default function MyProfileScreen({ navigation }) {
             </View>
 
             <View style={styles.statsRow}>
-              <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.statCard}>
+              <View style={styles.statCard}>
                 <Text style={styles.statIcon}>◎</Text>
                 <Text style={styles.statValue}>{coins}</Text>
                 <Text style={styles.statLabel}>Coins</Text>
               </View>
-              <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.statCard}>
+              <View style={styles.statCard}>
                 <Text style={styles.statIcon}>♥</Text>
                 <Text style={styles.statValue}>{likesCount}</Text>
                 <Text style={styles.statLabel}>Likes</Text>
@@ -176,7 +176,7 @@ export default function MyProfileScreen({ navigation }) {
                 await loadProfile();
                 setShowFullProfile(true);
               }} activeOpacity={1}>
-                <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.statCard}>
+                <View style={styles.statCard}>
                   <Text style={styles.statIcon}>○</Text>
                   <Text style={styles.statValue}>View</Text>
                   <Text style={styles.statLabel}>My Profile</Text>
@@ -187,7 +187,7 @@ export default function MyProfileScreen({ navigation }) {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Quick Actions</Text>
               <TouchableOpacity onPress={() => navigation.navigate('EditProfile')} activeOpacity={1}>
-                <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.actionCard}>
+                <View style={styles.actionCard}>
                   <View style={styles.actionIconContainer}>
                     <Text style={styles.actionIcon}>✎</Text>
                   </View>
@@ -199,7 +199,7 @@ export default function MyProfileScreen({ navigation }) {
                 </View>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => navigation.navigate('MyCoins')} activeOpacity={1}>
-                <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.actionCard}>
+                <View style={styles.actionCard}>
                   <View style={styles.actionIconContainer}>
                     <Text style={styles.actionIcon}>◎</Text>
                   </View>
@@ -211,7 +211,7 @@ export default function MyProfileScreen({ navigation }) {
                 </View>
               </TouchableOpacity>
               <TouchableOpacity activeOpacity={1}>
-                <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.actionCard}>
+                <View style={styles.actionCard}>
                   <View style={styles.actionIconContainer}>
                     <Text style={styles.actionIcon}>⊕</Text>
                   </View>
@@ -223,7 +223,7 @@ export default function MyProfileScreen({ navigation }) {
                 </View>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleLogout} activeOpacity={1}>
-                <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.actionCard}>
+                <View style={styles.actionCard}>
                   <View style={styles.actionIconContainer}>
                     <Text style={styles.actionIcon}>⎋</Text>
                   </View>
@@ -296,7 +296,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.2)',
   },
   menuIcon: { fontSize: 16, color: '#fff', fontWeight: '500' },
-  profileCard: { margin: 20, borderRadius: 24, padding: 30, alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(147,147,147,0.5)' },
+  profileCard: { margin: 20, borderRadius: 24, padding: 30, alignItems: 'center', backgroundColor: isDark ? 'rgba(26,26,26,0.9)' : 'rgba(255,255,255,0.9)', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(147,147,147,0.5)' },
   avatarContainer: { position: 'relative', marginBottom: 16 },
   avatar: { width: 120, height: 120, borderRadius: 60, justifyContent: 'center', alignItems: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' },
   avatarText: { fontSize: 48, fontWeight: 'bold', color: '#fff' },
@@ -308,13 +308,13 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   progressFill: { height: '100%', backgroundColor: '#F70776' },
   progressText: { fontSize: 12, color: theme.textSecondary },
   statsRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 12, marginBottom: 20 },
-  statCard: { flex: 1, borderRadius: 16, padding: 16, alignItems: 'center', gap: 6, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(147,147,147,0.5)' },
+  statCard: { flex: 1, borderRadius: 16, padding: 16, alignItems: 'center', gap: 6, backgroundColor: isDark ? 'rgba(26,26,26,0.9)' : 'rgba(255,255,255,0.9)', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(147,147,147,0.5)' },
   statIcon: { fontSize: 28, color: theme.text },
   statValue: { fontSize: 20, fontWeight: 'bold', color: theme.text },
   statLabel: { fontSize: 12, color: theme.textSecondary },
   section: { paddingHorizontal: 20, marginBottom: 20 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: theme.text, marginBottom: 16 },
-  actionCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 16, marginBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(147,147,147,0.5)' },
+  actionCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 16, marginBottom: 12, backgroundColor: isDark ? 'rgba(26,26,26,0.9)' : 'rgba(255,255,255,0.9)', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(147,147,147,0.5)' },
   actionIconContainer: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginRight: 12, backgroundColor: 'transparent', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' },
   actionIcon: { fontSize: 24, color: theme.text, fontWeight: '300' },
   actionInfo: { flex: 1 },

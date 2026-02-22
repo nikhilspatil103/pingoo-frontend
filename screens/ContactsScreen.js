@@ -44,7 +44,7 @@ export default function ContactsScreen({ navigation }) {
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {contacts.length === 0 ? (
-              <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.emptyCard}>
+              <View  tint={isDark ? 'dark' : 'light'} style={styles.emptyCard}>
                 <Text style={styles.emptyIcon}>⭐</Text>
                 <Text style={styles.emptyTitle}>No Contacts Yet</Text>
                 <Text style={styles.emptyText}>Star profiles to add them to your contacts</Text>
@@ -52,7 +52,7 @@ export default function ContactsScreen({ navigation }) {
             ) : (
               <View style={styles.content}>
                 {contacts.map((contact) => (
-                  <BlurView key={contact.id} intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.contactCard}>
+                  <View key={contact.id} tint={isDark ? 'dark' : 'light'} style={styles.contactCard}>
                     <TouchableOpacity 
                       style={styles.contactInner}
                       onPress={() => navigation.navigate('ProfileView', { profile: contact })}
