@@ -144,7 +144,7 @@ export default function ChatListScreen({ navigation }) {
 const getStyles = (theme, isDark) => StyleSheet.create({
   container: { flex: 1 },
   gradientBackground: { flex: 1 },
-  safeArea: { flex: 1, paddingTop: StatusBar.currentHeight || 0 },
+  safeArea: { flex: 1 },
   title: { fontSize: 24, fontWeight: '600', color: theme.text, textAlign: 'center', marginTop: 20, marginBottom: 20 },
   searchContainer: { paddingHorizontal: 20, marginBottom: 20 },
   searchWrapper: {

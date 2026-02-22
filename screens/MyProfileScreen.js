@@ -277,7 +277,7 @@ export default function MyProfileScreen({ navigation }) {
 const getStyles = (theme, isDark) => StyleSheet.create({
   container: { flex: 1 },
   gradientBackground: { flex: 1 },
-  safeArea: { flex: 1, paddingTop: StatusBar.currentHeight || 0 },
+  safeArea: { flex: 1 },
   loading: { flex: 1, textAlign: 'center', marginTop: 100, fontSize: 18 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)' },
   headerTitle: { fontSize: 24, fontWeight: '600', color: theme.text, textAlign: 'center' },

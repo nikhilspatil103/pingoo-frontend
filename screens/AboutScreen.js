@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+// import { View } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 
 export default function AboutScreen({ navigation }) {
@@ -12,16 +12,16 @@ export default function AboutScreen({ navigation }) {
     <View style={styles.container}>
       <LinearGradient colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']} style={styles.gradientBackground}>
         <SafeAreaView style={styles.safeArea}>
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.header}>
+          <View  tint={isDark ? 'dark' : 'light'} style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Text style={styles.backIcon}>←</Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>About Pingoo</Text>
             <View style={{ width: 40 }} />
-          </BlurView>
+          </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.card}>
+            <View  tint={isDark ? 'dark' : 'light'} style={styles.card}>
               <Text style={styles.logo}>🔮</Text>
               <Text style={styles.title}>Pingoo</Text>
               <Text style={styles.version}>Version 1.0.0</Text>
@@ -37,7 +37,7 @@ export default function AboutScreen({ navigation }) {
               
               <Text style={styles.subtitle}>Contact Us</Text>
               <Text style={styles.text}>Email: support@pingoo.com{'\n'}Website: www.pingoo.com</Text>
-            </BlurView>
+            </View>
             <View style={{ height: 40 }} />
           </ScrollView>
         </SafeAreaView>

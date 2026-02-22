@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, Modal, Image, StatusBar, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+// import { View } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
@@ -232,13 +232,13 @@ export default function EditProfileScreen({ navigation }) {
         style={styles.gradientBackground}
       >
         <SafeAreaView style={styles.safeArea}>
-          <BlurView intensity={isDark ? 15 : 10} tint={isDark ? 'dark' : 'light'} style={styles.header}>
+          <View  tint={isDark ? 'dark' : 'light'} style={styles.header}>
             <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
               <Text style={styles.backIcon}>←</Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Edit Profile</Text>
             <View style={{ width: 40 }} />
-          </BlurView>
+          </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.photoSection}>
@@ -279,7 +279,7 @@ export default function EditProfileScreen({ navigation }) {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Basic Information</Text>
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+          <View  tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
             <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowNameEdit(true)}>
               <View style={styles.infoIcon}>
                 <Text style={styles.infoEmoji}>👤</Text>
@@ -290,9 +290,9 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
 
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+          <View tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
             <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowBioEdit(true)}>
               <View style={styles.infoIcon}>
                 <Text style={styles.infoEmoji}>📝</Text>
@@ -303,9 +303,9 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
 
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+          <View tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
             <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowRelationshipEdit(true)}>
               <View style={styles.infoIcon}>
                 <Text style={styles.infoEmoji}>🔍</Text>
@@ -316,9 +316,9 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
 
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+          <View tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
             <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowHeightEdit(true)}>
               <View style={styles.infoIcon}>
                 <Text style={styles.infoEmoji}>📏</Text>
@@ -329,12 +329,12 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Lifestyle</Text>
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+          <View  tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
             <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowBodyTypeEdit(true)}>
               <View style={styles.infoIcon}>
                 <Text style={styles.infoEmoji}>💪</Text>
@@ -345,9 +345,9 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
 
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+          <View  tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
             <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowLifestyleEdit(true)}>
               <View style={styles.infoIcon}>
                 <Text style={styles.infoEmoji}>🌟</Text>
@@ -358,12 +358,12 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Work & Education</Text>
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+          <View  tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
             <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowWorkEdit(true)}>
               <View style={styles.infoIcon}>
                 <Text style={styles.infoEmoji}>💼</Text>
@@ -374,12 +374,12 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Location</Text>
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+          <View tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
             <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowLocationEdit(true)}>
               <View style={styles.infoIcon}>
                 <Text style={styles.infoEmoji}>📍</Text>
@@ -390,12 +390,12 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Relationship</Text>
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+          <View tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
             <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowRelationshipEdit(true)}>
               <View style={styles.infoIcon}>
                 <Text style={styles.infoEmoji}>💕</Text>
@@ -406,7 +406,7 @@ export default function EditProfileScreen({ navigation }) {
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
         </View>
 
         <View style={{ height: 40 }} />
@@ -414,7 +414,7 @@ export default function EditProfileScreen({ navigation }) {
 
       <Modal visible={showNameEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
+          <View  tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Edit Name</Text>
               <TouchableOpacity onPress={() => setShowNameEdit(false)}>
@@ -434,13 +434,13 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
         </View>
       </Modal>
 
       <Modal visible={showBioEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
+          <View  tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Edit Bio</Text>
               <TouchableOpacity onPress={() => setShowBioEdit(false)}>
@@ -463,13 +463,13 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
         </View>
       </Modal>
 
       <Modal visible={showHeightEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
+          <View  tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Edit Height</Text>
               <TouchableOpacity onPress={() => setShowHeightEdit(false)}>
@@ -483,13 +483,13 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
         </View>
       </Modal>
 
       <Modal visible={showBodyTypeEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
+          <View  tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Body Type</Text>
               <TouchableOpacity onPress={() => setShowBodyTypeEdit(false)}>
@@ -505,13 +505,13 @@ export default function EditProfileScreen({ navigation }) {
                 <Text style={styles.optionText}>{type}</Text>
               </TouchableOpacity>
             ))}
-          </BlurView>
+          </View>
         </View>
       </Modal>
 
       <Modal visible={showLifestyleEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
+          <View tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Lifestyle</Text>
               <TouchableOpacity onPress={() => setShowLifestyleEdit(false)}>
@@ -556,13 +556,13 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
         </View>
       </Modal>
 
       <Modal visible={showWorkEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
+          <View tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Work & Education</Text>
               <TouchableOpacity onPress={() => setShowWorkEdit(false)}>
@@ -579,13 +579,13 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
         </View>
       </Modal>
 
       <Modal visible={showLocationEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
+          <View  tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Location</Text>
               <TouchableOpacity onPress={() => setShowLocationEdit(false)}>
@@ -600,13 +600,13 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
         </View>
       </Modal>
 
       <Modal visible={showRelationshipEdit} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <BlurView intensity={isDark ? 80 : 60} tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
+          <View  tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Looking For</Text>
               <TouchableOpacity onPress={() => setShowRelationshipEdit(false)}>
@@ -629,7 +629,7 @@ export default function EditProfileScreen({ navigation }) {
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
         </View>
       </Modal>
 
@@ -677,7 +677,7 @@ export default function EditProfileScreen({ navigation }) {
 const getStyles = (theme, isDark) => StyleSheet.create({
   container: { flex: 1 },
   gradientBackground: { flex: 1 },
-  safeArea: { flex: 1, paddingTop: StatusBar.currentHeight || 0 },
+  safeArea: { flex: 1 },
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 

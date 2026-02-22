@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+// import { View } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -30,25 +30,25 @@ export default function BlockListScreen({ navigation }) {
     <View style={styles.container}>
       <LinearGradient colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']} style={styles.gradientBackground}>
         <SafeAreaView style={styles.safeArea}>
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.header}>
+          <View tint={isDark ? 'dark' : 'light'} style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Text style={styles.backIcon}>←</Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Blocked Users</Text>
             <Text style={styles.count}>{blockedUsers.length}</Text>
-          </BlurView>
+          </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {blockedUsers.length === 0 ? (
-              <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.emptyCard}>
+              <View  tint={isDark ? 'dark' : 'light'} style={styles.emptyCard}>
                 <Text style={styles.emptyIcon}>🚫</Text>
                 <Text style={styles.emptyTitle}>No Blocked Users</Text>
                 <Text style={styles.emptyText}>You haven't blocked anyone yet</Text>
-              </BlurView>
+              </View>
             ) : (
               <View style={styles.content}>
                 {blockedUsers.map((user) => (
-                  <BlurView key={user.id} intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.userCard}>
+                  <View key={user.id} tint={isDark ? 'dark' : 'light'} style={styles.userCard}>
                     <View style={styles.userInner}>
                       <View style={[styles.avatar, { backgroundColor: '#999' }]}>
                         <Text style={styles.avatarText}>{user.name.charAt(0)}</Text>
@@ -61,7 +61,7 @@ export default function BlockListScreen({ navigation }) {
                         <Text style={styles.unblockText}>Unblock</Text>
                       </TouchableOpacity>
                     </View>
-                  </BlurView>
+                  </View>
                 ))}
               </View>
             )}

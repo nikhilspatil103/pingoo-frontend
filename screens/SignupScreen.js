@@ -109,7 +109,7 @@ export default function SignupScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1C0F2A', paddingTop: StatusBar.currentHeight || 0 },
+  container: { flex: 1, backgroundColor: '#1C0F2A' },
   scrollContent: { flexGrow: 1 },
   content: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 40 },
   header: { alignItems: 'center', marginBottom: 48 },

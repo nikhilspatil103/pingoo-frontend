@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
-import { BlurView } from 'expo-blur';
+// import { View } from 'expo-blur';
 
 export default function DiscoverScreen({ navigation }) {
   const { theme, isDark, toggleTheme } = useTheme();
@@ -29,7 +29,7 @@ export default function DiscoverScreen({ navigation }) {
       </View>
 
       {/* Search Bar */}
-      <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.searchContainer}>
+      <View  tint={isDark ? 'dark' : 'light'} style={styles.searchContainer}>
         <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
           style={styles.searchInput}
@@ -38,28 +38,28 @@ export default function DiscoverScreen({ navigation }) {
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
-      </BlurView>
+      </View>
 
       {/* Categories */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categories}>
-        <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.categoryChip}>
+        <View  tint={isDark ? 'dark' : 'light'} style={styles.categoryChip}>
           <Text style={styles.categoryText}>All</Text>
-        </BlurView>
-        <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.categoryChipOutline}>
+        </View>
+        <View  tint={isDark ? 'dark' : 'light'} style={styles.categoryChipOutline}>
           <Text style={styles.categoryTextOutline}>Sports</Text>
-        </BlurView>
-        <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.categoryChipOutline}>
+        </View>
+        <View  tint={isDark ? 'dark' : 'light'} style={styles.categoryChipOutline}>
           <Text style={styles.categoryTextOutline}>Food</Text>
-        </BlurView>
-        <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.categoryChipOutline}>
+        </View>
+        <View tint={isDark ? 'dark' : 'light'} style={styles.categoryChipOutline}>
           <Text style={styles.categoryTextOutline}>Entertainment</Text>
-        </BlurView>
+        </View>
       </ScrollView>
 
       {/* Groups List */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {groups.map((group) => (
-          <BlurView key={group.id} intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.groupCard}>
+          <View key={group.id}  tint={isDark ? 'dark' : 'light'} style={styles.groupCard}>
             <View style={[styles.groupIcon, { backgroundColor: group.color + '20' }]}>
               <Text style={styles.groupEmoji}>{group.icon}</Text>
             </View>
@@ -71,7 +71,7 @@ export default function DiscoverScreen({ navigation }) {
             <TouchableOpacity style={[styles.joinButton, { backgroundColor: group.color }]}>
               <Text style={styles.joinButtonText}>Join</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
         ))}
       </ScrollView>
 

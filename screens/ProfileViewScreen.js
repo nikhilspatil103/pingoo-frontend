@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+// import { View } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
@@ -153,17 +153,17 @@ export default function ProfileViewScreen({ route, navigation }) {
         style={styles.gradientBackground}
       >
         <SafeAreaView style={styles.safeArea}>
-          <BlurView intensity={10} tint="dark" style={styles.backButton}>
+          <View tint="dark" style={styles.backButton}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Text style={styles.backIcon}>←</Text>
             </TouchableOpacity>
-          </BlurView>
+          </View>
 
           {!isMyProfile && (
             <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(true)} activeOpacity={1}>
-              <BlurView intensity={10} tint="dark" style={styles.menuButtonInner}>
+              <View tint="dark" style={styles.menuButtonInner}>
                 <Text style={styles.menuIcon}>⋮</Text>
-              </BlurView>
+              </View>
             </TouchableOpacity>
           )}
 
@@ -215,7 +215,7 @@ export default function ProfileViewScreen({ route, navigation }) {
               </TouchableOpacity>
             )}
 
-            <BlurView intensity={isDark ? 20 : 15} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+            <View tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Age:</Text>
                 <Text style={styles.infoValue}>{profile.age}</Text>
@@ -250,18 +250,18 @@ export default function ProfileViewScreen({ route, navigation }) {
               <View style={styles.tagsContainer}>
                 {profile.interests && profile.interests.length > 0 ? (
                   profile.interests.map((interest, index) => (
-                    <BlurView key={index} intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.tag}>
+                    <View key={index} tint={isDark ? 'dark' : 'light'} style={styles.tag}>
                       <Text style={styles.tagText}>{interest}</Text>
-                    </BlurView>
+                    </View>
                   ))
                 ) : (
                   <>
-                    <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.tag}>
+                    <View tint={isDark ? 'dark' : 'light'} style={styles.tag}>
                       <Text style={styles.tagText}>{profile.tag}</Text>
-                    </BlurView>
-                    <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.tag}>
+                    </View>
+                    <View tint={isDark ? 'dark' : 'light'} style={styles.tag}>
                       <Text style={styles.tagText}>Art & Culture</Text>
-                    </BlurView>
+                    </View>
                   </>
                 )}
               </View>
@@ -394,22 +394,22 @@ export default function ProfileViewScreen({ route, navigation }) {
               <View style={styles.tagsContainer}>
                 {profile.languages && profile.languages.length > 0 ? (
                   profile.languages.map((lang, index) => (
-                    <BlurView key={index} intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.tagOutline}>
+                    <View key={index} tint={isDark ? 'dark' : 'light'} style={styles.tagOutline}>
                       <Text style={styles.tagOutlineText}>{lang}</Text>
-                    </BlurView>
+                    </View>
                   ))
                 ) : (
                   <>
-                    <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.tagOutline}>
+                    <View tint={isDark ? 'dark' : 'light'} style={styles.tagOutline}>
                       <Text style={styles.tagOutlineText}>English</Text>
-                    </BlurView>
-                    <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.tagOutline}>
+                    </View>
+                    <View tint={isDark ? 'dark' : 'light'} style={styles.tagOutline}>
                       <Text style={styles.tagOutlineText}>Spanish</Text>
-                    </BlurView>
+                    </View>
                   </>
                 )}
               </View>
-            </BlurView>
+            </View>
           </ScrollView>
 
           {!isMyProfile && (

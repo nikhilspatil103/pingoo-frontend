@@ -89,7 +89,7 @@ export default function ContactsScreen({ navigation }) {
 const getStyles = (theme, isDark) => StyleSheet.create({
   container: { flex: 1 },
   gradientBackground: { flex: 1 },
-  safeArea: { flex: 1, paddingTop: StatusBar.currentHeight || 0 },
+  safeArea: { flex: 1 },
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, StatusBar, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+// import { View } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useUnread } from '../context/UnreadContext';
@@ -114,11 +114,11 @@ export default function ChatScreen({ route, navigation }) {
           style={styles.keyboardView}
         >
           <SafeAreaView style={styles.safeArea}>
-            <BlurView intensity={isDark ? 15 : 10} tint={isDark ? 'dark' : 'light'} style={styles.header}>
+            <View tint={isDark ? 'dark' : 'light'} style={styles.header}>
               <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={1}>
-                <BlurView intensity={isDark ? 40 : 25} tint={isDark ? 'dark' : 'light'} style={styles.backButton}>
+                <View  tint={isDark ? 'dark' : 'light'} style={styles.backButton}>
                   <Text style={styles.backIcon}>←</Text>
-                </BlurView>
+                </View>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => navigation.navigate('ProfileView', { profile })} activeOpacity={1}>
                 <Text style={styles.headerTitle}>{profile.name}, {profile.age}</Text>
@@ -132,7 +132,7 @@ export default function ChatScreen({ route, navigation }) {
                   </LinearGradient>
                 )}
               </TouchableOpacity>
-            </BlurView>
+            </View>
 
             <ScrollView 
               ref={scrollViewRef}
@@ -158,14 +158,14 @@ export default function ChatScreen({ route, navigation }) {
                       </View>
                     )}
                     <View style={[styles.messageContainer, msg.sent ? styles.sentContainer : styles.receivedContainer]}>
-                      <BlurView 
-                        intensity={isDark ? 40 : 20} 
+                      <View 
+                        
                         tint={msg.sent ? (isDark ? 'dark' : 'light') : 'light'} 
                         style={[styles.messageBubble, msg.sent ? styles.sentBubble : styles.receivedBubble]}
                       >
                         <Text style={[styles.messageText, msg.sent ? styles.sentText : styles.receivedText]}>{msg.text}</Text>
                         <Text style={[styles.messageTime, msg.sent ? styles.sentTime : styles.receivedTime]}>{msg.time} ✓✓</Text>
-                      </BlurView>
+                      </View>
                       {msg.sent && (
                         <View style={styles.sentLabel}>
                           <Text style={styles.sentLabelText}>✓✓ Sent</Text>
@@ -177,13 +177,13 @@ export default function ChatScreen({ route, navigation }) {
               )}
             </ScrollView>
 
-            <BlurView intensity={isDark ? 15 : 10} tint={isDark ? 'dark' : 'light'} style={styles.inputContainer}>
+            <View tint={isDark ? 'dark' : 'light'} style={styles.inputContainer}>
               <TouchableOpacity>
-                <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
+                <View tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>🔗</Text>
-                </BlurView>
+                </View>
               </TouchableOpacity>
-              <BlurView intensity={8} tint={isDark ? 'dark' : 'light'} style={styles.inputWrapper}>
+              <View tint={isDark ? 'dark' : 'light'} style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
                   placeholder="Message"
@@ -191,18 +191,18 @@ export default function ChatScreen({ route, navigation }) {
                   value={message}
                   onChangeText={setMessage}
                 />
-              </BlurView>
+              </View>
               <TouchableOpacity onPress={sendMessage}>
-                <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
+                <View  tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>➤</Text>
-                </BlurView>
+                </View>
               </TouchableOpacity>
               <TouchableOpacity>
-                <BlurView intensity={10} tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
+                <View tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>🎤</Text>
-                </BlurView>
+                </View>
               </TouchableOpacity>
-            </BlurView>
+            </View>
           </SafeAreaView>
         </KeyboardAvoidingView>
       </LinearGradient>
@@ -214,7 +214,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   container: { flex: 1 }, 
   gradientBackground: { flex: 1 },
   keyboardView: { flex: 1 },
-  safeArea: { flex: 1, paddingTop: StatusBar.currentHeight || 0 },
+  safeArea: { flex: 1 },
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between',
