@@ -37,10 +37,10 @@ export default function ContactsScreen({ navigation }) {
         style={styles.gradientBackground}
       >
         <SafeAreaView style={styles.safeArea}>
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.header}>
+          <View style={styles.header}>
             <Text style={styles.headerTitle}>Contacts</Text>
             <Text style={styles.contactCount}>{contacts.length}</Text>
-          </BlurView>
+          </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {contacts.length === 0 ? (
@@ -48,7 +48,7 @@ export default function ContactsScreen({ navigation }) {
                 <Text style={styles.emptyIcon}>⭐</Text>
                 <Text style={styles.emptyTitle}>No Contacts Yet</Text>
                 <Text style={styles.emptyText}>Star profiles to add them to your contacts</Text>
-              </BlurView>
+              </View>
             ) : (
               <View style={styles.content}>
                 {contacts.map((contact) => (
@@ -74,7 +74,7 @@ export default function ContactsScreen({ navigation }) {
                         <Text style={styles.removeIcon}>✕</Text>
                       </TouchableOpacity>
                     </TouchableOpacity>
-                  </BlurView>
+                  </View>
                 ))}
               </View>
             )}

@@ -94,7 +94,7 @@ export default function ChatListScreen({ navigation }) {
             )}
           </View>
         </View>
-      </BlurView>
+      </View>
     </TouchableOpacity>
   );
 
@@ -117,7 +117,7 @@ export default function ChatListScreen({ navigation }) {
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
-            </BlurView>
+            </View>
           </View>
 
           {chats.length === 0 ? (

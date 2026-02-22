@@ -41,13 +41,13 @@ export default function MyCoinsScreen({ navigation }) {
         style={styles.gradientBackground}
       >
         <SafeAreaView style={styles.safeArea}>
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.header}>
+          <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Text style={styles.backIcon}>←</Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>My Coins</Text>
             <View style={{ width: 40 }} />
-          </BlurView>
+          </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
             <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.balanceCard}>
@@ -57,7 +57,7 @@ export default function MyCoinsScreen({ navigation }) {
                 <Text style={styles.balanceAmount}>{coins}</Text>
               </View>
               <Text style={styles.balanceDesc}>Coins</Text>
-            </BlurView>
+            </View>
 
             <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
               <Text style={styles.infoIcon}>💬</Text>
@@ -65,7 +65,7 @@ export default function MyCoinsScreen({ navigation }) {
               <Text style={styles.infoText}>• First message costs 10 coins</Text>
               <Text style={styles.infoText}>• Chat free for 24 hours</Text>
               <Text style={styles.infoText}>• After 24h, pay 10 coins to continue</Text>
-            </BlurView>
+            </View>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Earn Free Coins</Text>
@@ -83,7 +83,7 @@ export default function MyCoinsScreen({ navigation }) {
                       <Text style={styles.coinBadgeText}>+{option.coins}</Text>
                     </View>
                   </TouchableOpacity>
-                </BlurView>
+                </View>
               ))}
             </View>
 
@@ -102,7 +102,7 @@ export default function MyCoinsScreen({ navigation }) {
                       <Text style={styles.buyCoinAmount}>{option.coins}</Text>
                       <Text style={styles.buyPrice}>{option.price}</Text>
                     </TouchableOpacity>
-                  </BlurView>
+                  </View>
                 ))}
               </View>
             </View>

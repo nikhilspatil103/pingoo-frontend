@@ -130,14 +130,14 @@ export default function MyProfileScreen({ navigation }) {
         style={styles.gradientBackground}
       >
         <SafeAreaView style={styles.safeArea}>
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.header}>
+          <View style={styles.header}>
             <Text style={styles.headerTitle}>My Profile</Text>
             <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(true)} activeOpacity={1}>
               <BlurView intensity={10} tint="dark" style={styles.menuButtonInner}>
                 <Text style={styles.menuIcon}>⋮</Text>
-              </BlurView>
+              </View>
             </TouchableOpacity>
-          </BlurView>
+          </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
             <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.profileCard}>
@@ -159,19 +159,19 @@ export default function MyProfileScreen({ navigation }) {
                 <View style={[styles.progressFill, { width: `${profileCompletion}%` }]} />
               </View>
               <Text style={styles.progressText}>{profileCompletion}% Profile Completed</Text>
-            </BlurView>
+            </View>
 
             <View style={styles.statsRow}>
               <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.statCard}>
                 <Text style={styles.statIcon}>◎</Text>
                 <Text style={styles.statValue}>{coins}</Text>
                 <Text style={styles.statLabel}>Coins</Text>
-              </BlurView>
+              </View>
               <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.statCard}>
                 <Text style={styles.statIcon}>♥</Text>
                 <Text style={styles.statValue}>{likesCount}</Text>
                 <Text style={styles.statLabel}>Likes</Text>
-              </BlurView>
+              </View>
               <TouchableOpacity onPress={async () => {
                 await loadProfile();
                 setShowFullProfile(true);
@@ -180,7 +180,7 @@ export default function MyProfileScreen({ navigation }) {
                   <Text style={styles.statIcon}>○</Text>
                   <Text style={styles.statValue}>View</Text>
                   <Text style={styles.statLabel}>My Profile</Text>
-                </BlurView>
+                </View>
               </TouchableOpacity>
             </View>
 
@@ -196,7 +196,7 @@ export default function MyProfileScreen({ navigation }) {
                     <Text style={styles.actionDesc}>Update your information</Text>
                   </View>
                   <Text style={styles.actionArrow}>›</Text>
-                </BlurView>
+                </View>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => navigation.navigate('MyCoins')} activeOpacity={1}>
                 <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.actionCard}>
@@ -208,7 +208,7 @@ export default function MyProfileScreen({ navigation }) {
                     <Text style={styles.actionDesc}>{coins} coins available</Text>
                   </View>
                   <Text style={styles.actionArrow}>›</Text>
-                </BlurView>
+                </View>
               </TouchableOpacity>
               <TouchableOpacity activeOpacity={1}>
                 <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.actionCard}>
@@ -220,7 +220,7 @@ export default function MyProfileScreen({ navigation }) {
                     <Text style={styles.actionDesc}>Get more coins to chat</Text>
                   </View>
                   <Text style={styles.actionArrow}>›</Text>
-                </BlurView>
+                </View>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleLogout} activeOpacity={1}>
                 <BlurView intensity={isDark ? 40 : 20} tint={isDark ? 'dark' : 'light'} style={styles.actionCard}>
@@ -232,7 +232,7 @@ export default function MyProfileScreen({ navigation }) {
                     <Text style={styles.actionDesc}>Sign out of your account</Text>
                   </View>
                   <Text style={styles.actionArrow}>›</Text>
-                </BlurView>
+                </View>
               </TouchableOpacity>
             </View>
 

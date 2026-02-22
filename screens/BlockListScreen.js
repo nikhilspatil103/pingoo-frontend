@@ -30,13 +30,13 @@ export default function BlockListScreen({ navigation }) {
     <View style={styles.container}>
       <LinearGradient colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']} style={styles.gradientBackground}>
         <SafeAreaView style={styles.safeArea}>
-          <BlurView intensity={isDark ? 60 : 40} tint={isDark ? 'dark' : 'light'} style={styles.header}>
+          <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Text style={styles.backIcon}>←</Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Blocked Users</Text>
             <Text style={styles.count}>{blockedUsers.length}</Text>
-          </BlurView>
+          </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {blockedUsers.length === 0 ? (
@@ -44,7 +44,7 @@ export default function BlockListScreen({ navigation }) {
                 <Text style={styles.emptyIcon}>🚫</Text>
                 <Text style={styles.emptyTitle}>No Blocked Users</Text>
                 <Text style={styles.emptyText}>You haven't blocked anyone yet</Text>
-              </BlurView>
+              </View>
             ) : (
               <View style={styles.content}>
                 {blockedUsers.map((user) => (
@@ -61,7 +61,7 @@ export default function BlockListScreen({ navigation }) {
                         <Text style={styles.unblockText}>Unblock</Text>
                       </TouchableOpacity>
                     </View>
-                  </BlurView>
+                  </View>
                 ))}
               </View>
             )}
