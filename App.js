@@ -14,7 +14,7 @@ import HomeScreen from './screens/HomeScreen';
 import ContactsScreen from './screens/ContactsScreen';
 import ProfileViewScreen from './screens/ProfileViewScreen';
 import MyProfileScreen from './screens/MyProfileScreen';
-import EditProfileScreen from './screens/EditProfileScreen';
+import EditProfileScreenV2 from './screens/EditProfileScreenV2';
 import MyCoinsScreen from './screens/MyCoinsScreen';
 import TermsScreen from './screens/TermsScreen';
 import AboutScreen from './screens/AboutScreen';
@@ -132,7 +132,7 @@ function AppNavigator() {
           <>
             <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen name="ProfileView" component={ProfileViewScreen} options={{ presentation: 'card' }} />
-            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreenV2} />
             <Stack.Screen name="MyCoins" component={MyCoinsScreen} />
             <Stack.Screen name="Terms" component={TermsScreen} />
             <Stack.Screen name="About" component={AboutScreen} />
