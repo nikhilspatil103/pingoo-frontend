@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, StatusBar, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, StatusBar, Image, Modal, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 // import { View } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -17,6 +17,13 @@ export default function ChatScreen({ route, navigation }) {
   const { profile } = route.params;
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [showUnblockConfirm, setShowUnblockConfirm] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [selectedReportOption, setSelectedReportOption] = useState('');
   const scrollViewRef = useRef();
   const styles = getStyles(theme, isDark);
 
@@ -25,6 +32,7 @@ export default function ChatScreen({ route, navigation }) {
     setActiveChat(profile.id);
     
     loadChatHistory();
+    checkIfBlocked();
     
     const handleMessage = (data) => {
       if (data.senderId === profile.id) {
@@ -83,7 +91,29 @@ export default function ChatScreen({ route, navigation }) {
     }
   };
 
+  const checkIfBlocked = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/blocked-users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const blocked = data.blockedUsers.some(u => u._id === profile.id);
+        setIsBlocked(blocked);
+      }
+    } catch (error) {
+      console.error('Error checking block status:', error);
+    }
+  };
+
   const sendMessage = () => {
+    if (isBlocked) {
+      setShowUnblockConfirm(true);
+      return;
+    }
+    
     if (message.trim()) {
       const newMessage = {
         id: Date.now(),
@@ -99,6 +129,82 @@ export default function ChatScreen({ route, navigation }) {
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
+    }
+  };
+
+  const handleBlock = async () => {
+    setShowBlockConfirm(false);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/block/${profile.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        setIsBlocked(true);
+        Alert.alert('Blocked', 'User has been blocked');
+      } else {
+        Alert.alert('Error', 'Failed to block user');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to block user');
+    }
+  };
+
+  const handleUnblock = async () => {
+    setShowUnblockConfirm(false);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/unblock/${profile.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        setIsBlocked(false);
+        Alert.alert('Unblocked', 'User has been unblocked');
+      } else {
+        Alert.alert('Error', 'Failed to unblock user');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to unblock user');
+    }
+  };
+
+  const handleReport = async () => {
+    const reason = selectedReportOption === 'Other' ? reportReason : selectedReportOption;
+    
+    if (!reason || !reason.trim()) {
+      Alert.alert('Error', 'Please select or enter a reason');
+      return;
+    }
+    
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/report/${profile.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason })
+      });
+      
+      if (response.ok) {
+        setShowReportModal(false);
+        setReportReason('');
+        setSelectedReportOption('');
+        Alert.alert('Reported', 'User has been reported');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to report user');
     }
   };
 
@@ -123,15 +229,22 @@ export default function ChatScreen({ route, navigation }) {
               <TouchableOpacity onPress={() => navigation.navigate('ProfileView', { profile })} activeOpacity={1}>
                 <Text style={styles.headerTitle}>{profile.name}, {profile.age}</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => navigation.navigate('ProfileView', { profile })} activeOpacity={1}>
-                {profile.profilePhoto ? (
-                  <Image source={{ uri: profile.profilePhoto }} style={styles.avatar} />
-                ) : (
-                  <LinearGradient colors={getAvatarColor(profile.name, profile.email)} style={styles.avatar}>
-                    <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
-                  </LinearGradient>
-                )}
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TouchableOpacity onPress={() => setShowMenu(!showMenu)}>
+                  <View style={styles.menuButton}>
+                    <Text style={styles.menuIcon}>⋮</Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate('ProfileView', { profile })} activeOpacity={1}>
+                  {profile.profilePhoto ? (
+                    <Image source={{ uri: profile.profilePhoto }} style={styles.avatar} />
+                  ) : (
+                    <LinearGradient colors={getAvatarColor(profile.name, profile.email)} style={styles.avatar}>
+                      <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
+                    </LinearGradient>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
 
             <ScrollView 
@@ -203,6 +316,102 @@ export default function ChatScreen({ route, navigation }) {
                 </View>
               </TouchableOpacity>
             </View>
+
+            {showMenu && (
+              <View style={styles.menuOverlay}>
+                <TouchableOpacity style={styles.menuBackdrop} onPress={() => setShowMenu(false)} />
+                <View style={styles.menuDropdown}>
+                  <TouchableOpacity onPress={() => { setShowMenu(false); setShowReportModal(true); }} style={styles.menuItem}>
+                    <Text style={styles.menuItemText}>🚨 Report User</Text>
+                  </TouchableOpacity>
+                  {isBlocked ? (
+                    <TouchableOpacity onPress={() => { setShowMenu(false); setShowUnblockConfirm(true); }} style={styles.menuItem}>
+                      <Text style={styles.menuItemText}>✅ Unblock User</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity onPress={() => { setShowMenu(false); setShowBlockConfirm(true); }} style={styles.menuItem}>
+                      <Text style={[styles.menuItemText, styles.menuItemDanger]}>🚫 Block User</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            )}
+
+            <Modal visible={showReportModal} animationType="slide" transparent>
+              <View style={styles.reportOverlay}>
+                <View style={styles.reportBox}>
+                  <Text style={styles.reportTitle}>Report User</Text>
+                  <Text style={styles.reportText}>Why are you reporting?</Text>
+                  
+                  <View style={styles.reportOptions}>
+                    {['Harassment', 'Spam', 'Inappropriate Content', 'Fake Profile', 'Other'].map((option) => (
+                      <TouchableOpacity
+                        key={option}
+                        onPress={() => setSelectedReportOption(option)}
+                        style={[styles.reportOption, selectedReportOption === option && styles.reportOptionSelected]}
+                      >
+                        <Text style={[styles.reportOptionText, selectedReportOption === option && styles.reportOptionTextSelected]}>
+                          {option}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  
+                  {selectedReportOption === 'Other' && (
+                    <TextInput
+                      style={styles.reportInput}
+                      placeholder="Enter reason..."
+                      placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
+                      value={reportReason}
+                      onChangeText={setReportReason}
+                      multiline
+                    />
+                  )}
+                  
+                  <TouchableOpacity onPress={handleReport}>
+                    <View style={styles.reportButton}>
+                      <Text style={styles.reportButtonText}>Submit</Text>
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => { setShowReportModal(false); setReportReason(''); setSelectedReportOption(''); }}>
+                    <Text style={styles.reportCancel}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+
+            <Modal visible={showBlockConfirm} animationType="slide" transparent>
+              <View style={styles.reportOverlay}>
+                <View style={styles.reportBox}>
+                  <Text style={styles.reportTitle}>Block User</Text>
+                  <Text style={styles.reportText}>Block {profile.name}?</Text>
+                  <TouchableOpacity onPress={handleBlock}>
+                    <View style={styles.reportButton}>
+                      <Text style={styles.reportButtonText}>Yes, Block</Text>
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setShowBlockConfirm(false)}>
+                    <Text style={styles.reportCancel}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+            <Modal visible={showUnblockConfirm} animationType="slide" transparent>
+              <View style={styles.reportOverlay}>
+                <View style={styles.reportBox}>
+                  <Text style={styles.reportTitle}>User Blocked</Text>
+                  <Text style={styles.reportText}>You have blocked {profile.name}. Unblock to send messages.</Text>
+                  <TouchableOpacity onPress={handleUnblock}>
+                    <View style={styles.reportButton}>
+                      <Text style={styles.reportButtonText}>Unblock</Text>
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setShowUnblockConfirm(false)}>
+                    <Text style={styles.reportCancel}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
           </SafeAreaView>
         </KeyboardAvoidingView>
       </LinearGradient>
@@ -243,6 +452,27 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   },
   backIcon: { fontSize: 18, color: theme.text, fontWeight: '600' },
   headerTitle: { fontSize: 18, fontWeight: '600', color: theme.text },
+  menuButton: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' },
+  menuIcon: { fontSize: 20, color: theme.text, fontWeight: 'bold' },
+  menuOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 },
+  menuBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  menuDropdown: { position: 'absolute', top: 70, right: 20, backgroundColor: isDark ? '#1a0a2e' : '#fff', borderRadius: 12, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 5 },
+  menuItem: { paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' },
+  menuItemText: { fontSize: 15, color: theme.text },
+  menuItemDanger: { color: '#F70776' },
+  reportOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' },
+  reportBox: { backgroundColor: isDark ? '#1a0a2e' : '#fff', borderRadius: 20, padding: 24, width: '80%', maxHeight: '80%' },
+  reportTitle: { fontSize: 20, fontWeight: 'bold', color: theme.text, marginBottom: 12, textAlign: 'center' },
+  reportText: { fontSize: 15, color: theme.textSecondary, textAlign: 'center', marginBottom: 16 },
+  reportOptions: { width: '100%', marginBottom: 16 },
+  reportOption: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)', marginBottom: 8 },
+  reportOptionSelected: { backgroundColor: '#F70776', borderColor: '#F70776' },
+  reportOptionText: { fontSize: 14, color: theme.text, textAlign: 'center' },
+  reportOptionTextSelected: { color: '#fff', fontWeight: '600' },
+  reportInput: { width: '100%', height: 80, borderRadius: 12, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)', padding: 12, fontSize: 15, color: theme.text, marginBottom: 16, textAlignVertical: 'top' },
+  reportButton: { backgroundColor: '#F70776', paddingHorizontal: 32, paddingVertical: 12, borderRadius: 12, marginBottom: 12, alignSelf: 'center' },
+  reportButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  reportCancel: { fontSize: 15, color: theme.textSecondary, textAlign: 'center', marginTop: 8 },
   avatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
   messageRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 4 },

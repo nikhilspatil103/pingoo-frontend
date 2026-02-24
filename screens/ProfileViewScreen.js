@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Dimensions, Platform, StatusBar } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Dimensions, Platform, StatusBar, TextInput, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 // import { View } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -23,6 +23,13 @@ export default function ProfileViewScreen({ route, navigation }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [showUnblockConfirm, setShowUnblockConfirm] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [selectedReportOption, setSelectedReportOption] = useState('');
   
   const getAllImages = () => {
     const images = [];
@@ -35,7 +42,10 @@ export default function ProfileViewScreen({ route, navigation }) {
 
   useEffect(() => {
     checkIfStarred();
-    if (initialProfile?.id) fetchProfileDetails();
+    if (initialProfile?.id) {
+      fetchProfileDetails();
+      checkIfBlocked();
+    }
   }, [initialProfile?.id]);
 
   const fetchProfileDetails = async () => {
@@ -105,6 +115,99 @@ export default function ProfileViewScreen({ route, navigation }) {
     }
   };
 
+  const checkIfBlocked = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/blocked-users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const blocked = data.blockedUsers.some(u => u._id === profile.id);
+        setIsBlocked(blocked);
+      }
+    } catch (error) {
+      console.error('Error checking block status:', error);
+    }
+  };
+
+  const handleBlock = async () => {
+    setShowBlockConfirm(false);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/block/${profile.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        setIsBlocked(true);
+        Alert.alert('Blocked', 'User has been blocked');
+      } else {
+        Alert.alert('Error', 'Failed to block user');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to block user');
+    }
+  };
+
+  const handleUnblock = async () => {
+    setShowUnblockConfirm(false);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/unblock/${profile.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        setIsBlocked(false);
+        Alert.alert('Unblocked', 'User has been unblocked');
+      } else {
+        Alert.alert('Error', 'Failed to unblock user');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to unblock user');
+    }
+  };
+
+  const handleReport = async () => {
+    const reason = selectedReportOption === 'Other' ? reportReason : selectedReportOption;
+    
+    if (!reason || !reason.trim()) {
+      Alert.alert('Error', 'Please select or enter a reason');
+      return;
+    }
+    
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/report/${profile.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason })
+      });
+      
+      if (response.ok) {
+        setShowReportModal(false);
+        setReportReason('');
+        setSelectedReportOption('');
+        Alert.alert('Reported', 'User has been reported');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to report user');
+    }
+  };
+
   const InfoCard = ({ icon, label, value }) => (
     <View style={styles.infoCard}>
       <Text style={styles.infoIcon}>{icon}</Text>
@@ -126,6 +229,14 @@ export default function ProfileViewScreen({ route, navigation }) {
             <Text style={styles.backIcon}>←</Text>
           </View>
         </TouchableOpacity>
+        
+        {!isMyProfile && (
+          <TouchableOpacity style={styles.menuBtn} onPress={() => setShowMenu(!showMenu)}>
+            <View tint="dark" style={styles.blurBtn}>
+              <Text style={styles.menuIcon}>⋮</Text>
+            </View>
+          </TouchableOpacity>
+        )}
         
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* Hero Image Section */}
@@ -313,6 +424,102 @@ export default function ProfileViewScreen({ route, navigation }) {
             </SafeAreaView>
           </View>
         </Modal>
+
+        {showMenu && (
+          <View style={styles.menuOverlay}>
+            <TouchableOpacity style={styles.menuBackdrop} onPress={() => setShowMenu(false)} />
+            <View style={styles.menuDropdown}>
+              <TouchableOpacity onPress={() => { setShowMenu(false); setShowReportModal(true); }} style={styles.menuItem}>
+                <Text style={styles.menuItemText}>🚨 Report User</Text>
+              </TouchableOpacity>
+              {isBlocked ? (
+                <TouchableOpacity onPress={() => { setShowMenu(false); setShowUnblockConfirm(true); }} style={styles.menuItem}>
+                  <Text style={styles.menuItemText}>✅ Unblock User</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity onPress={() => { setShowMenu(false); setShowBlockConfirm(true); }} style={styles.menuItem}>
+                  <Text style={[styles.menuItemText, styles.menuItemDanger]}>🚫 Block User</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+
+        <Modal visible={showReportModal} animationType="slide" transparent>
+          <View style={styles.reportOverlay}>
+            <View style={styles.reportBox}>
+              <Text style={styles.reportTitle}>Report User</Text>
+              <Text style={styles.reportText}>Why are you reporting?</Text>
+              
+              <View style={styles.reportOptions}>
+                {['Harassment', 'Spam', 'Inappropriate Content', 'Fake Profile', 'Other'].map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    onPress={() => setSelectedReportOption(option)}
+                    style={[styles.reportOption, selectedReportOption === option && styles.reportOptionSelected]}
+                  >
+                    <Text style={[styles.reportOptionText, selectedReportOption === option && styles.reportOptionTextSelected]}>
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              
+              {selectedReportOption === 'Other' && (
+                <TextInput
+                  style={styles.reportInput}
+                  placeholder="Enter reason..."
+                  placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
+                  value={reportReason}
+                  onChangeText={setReportReason}
+                  multiline
+                />
+              )}
+              
+              <TouchableOpacity onPress={handleReport}>
+                <View style={styles.reportButton}>
+                  <Text style={styles.reportButtonText}>Submit</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setShowReportModal(false); setReportReason(''); setSelectedReportOption(''); }}>
+                <Text style={styles.reportCancel}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal visible={showBlockConfirm} animationType="slide" transparent>
+          <View style={styles.reportOverlay}>
+            <View style={styles.reportBox}>
+              <Text style={styles.reportTitle}>Block User</Text>
+              <Text style={styles.reportText}>Block {profile.name}?</Text>
+              <TouchableOpacity onPress={handleBlock}>
+                <View style={styles.reportButton}>
+                  <Text style={styles.reportButtonText}>Yes, Block</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowBlockConfirm(false)}>
+                <Text style={styles.reportCancel}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        <Modal visible={showUnblockConfirm} animationType="slide" transparent>
+          <View style={styles.reportOverlay}>
+            <View style={styles.reportBox}>
+              <Text style={styles.reportTitle}>Unblock User</Text>
+              <Text style={styles.reportText}>Unblock {profile.name}?</Text>
+              <TouchableOpacity onPress={handleUnblock}>
+                <View style={styles.reportButton}>
+                  <Text style={styles.reportButtonText}>Yes, Unblock</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowUnblockConfirm(false)}>
+                <Text style={styles.reportCancel}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </LinearGradient>
     </View>
   );
@@ -328,8 +535,29 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   indicator: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.5)' },
   indicatorActive: { backgroundColor: '#fff', width: 20 },
   backBtn: { position: 'absolute', top: 50, left: 20, width: 40, height: 40, borderRadius: 20, overflow: 'hidden', zIndex: 999 },
+  menuBtn: { position: 'absolute', top: 50, right: 20, width: 40, height: 40, borderRadius: 20, overflow: 'hidden', zIndex: 999 },
   blurBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   backIcon: { fontSize: 20, color: '#fff', fontWeight: 'bold' },
+  menuIcon: { fontSize: 24, color: '#fff', fontWeight: 'bold' },
+  menuOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 },
+  menuBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  menuDropdown: { position: 'absolute', top: 100, right: 20, backgroundColor: isDark ? '#1a0a2e' : '#fff', borderRadius: 12, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 5 },
+  menuItem: { paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' },
+  menuItemText: { fontSize: 15, color: theme.text },
+  menuItemDanger: { color: '#F70776' },
+  reportOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', zIndex: 1001 },
+  reportBox: { backgroundColor: isDark ? '#1a0a2e' : '#fff', borderRadius: 20, padding: 24, width: '80%', maxHeight: '80%' },
+  reportTitle: { fontSize: 20, fontWeight: 'bold', color: theme.text, marginBottom: 12, textAlign: 'center' },
+  reportText: { fontSize: 15, color: theme.textSecondary, textAlign: 'center', marginBottom: 16 },
+  reportOptions: { width: '100%', marginBottom: 16 },
+  reportOption: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)', marginBottom: 8 },
+  reportOptionSelected: { backgroundColor: '#F70776', borderColor: '#F70776' },
+  reportOptionText: { fontSize: 14, color: theme.text, textAlign: 'center' },
+  reportOptionTextSelected: { color: '#fff', fontWeight: '600' },
+  reportInput: { width: '100%', height: 80, borderRadius: 12, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)', padding: 12, fontSize: 15, color: theme.text, marginBottom: 16, textAlignVertical: 'top' },
+  reportButton: { backgroundColor: '#F70776', paddingHorizontal: 32, paddingVertical: 12, borderRadius: 12, marginBottom: 12, alignSelf: 'center' },
+  reportButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  reportCancel: { fontSize: 15, color: theme.textSecondary, textAlign: 'center', marginTop: 8 },
   content: { padding: 20, marginTop: -30, borderTopLeftRadius: 30, borderTopRightRadius: 30, backgroundColor: isDark ? '#1a0a2e' : '#ffeef8' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
   name: { fontSize: 28, fontWeight: 'bold', color: theme.text },

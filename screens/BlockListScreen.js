@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Image, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 // import { View } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../config/urlConfig';
 
 export default function BlockListScreen({ navigation }) {
   const { theme, isDark } = useTheme();
@@ -13,15 +14,49 @@ export default function BlockListScreen({ navigation }) {
     loadBlockedUsers();
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadBlockedUsers();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   const loadBlockedUsers = async () => {
-    const blocked = await AsyncStorage.getItem('blockedUsers');
-    if (blocked) setBlockedUsers(JSON.parse(blocked));
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/blocked-users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setBlockedUsers(data.blockedUsers || []);
+      }
+    } catch (error) {
+      console.error('Error loading blocked users:', error);
+    }
   };
 
   const unblockUser = async (id) => {
-    const updated = blockedUsers.filter(u => u.id !== id);
-    setBlockedUsers(updated);
-    await AsyncStorage.setItem('blockedUsers', JSON.stringify(updated));
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/unblock/${id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        setBlockedUsers(blockedUsers.filter(u => u._id !== id));
+        Alert.alert('Success', 'User unblocked');
+      } else {
+        Alert.alert('Error', 'Failed to unblock user');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to unblock user');
+    }
   };
 
   const styles = getStyles(theme, isDark);
@@ -48,16 +83,20 @@ export default function BlockListScreen({ navigation }) {
             ) : (
               <View style={styles.content}>
                 {blockedUsers.map((user) => (
-                  <View key={user.id} tint={isDark ? 'dark' : 'light'} style={styles.userCard}>
+                  <View key={user._id} tint={isDark ? 'dark' : 'light'} style={styles.userCard}>
                     <View style={styles.userInner}>
-                      <View style={[styles.avatar, { backgroundColor: '#999' }]}>
-                        <Text style={styles.avatarText}>{user.name.charAt(0)}</Text>
-                      </View>
+                      {user.profilePhoto ? (
+                        <Image source={{ uri: user.profilePhoto }} style={styles.avatar} />
+                      ) : (
+                        <View style={[styles.avatar, { backgroundColor: '#999' }]}>
+                          <Text style={styles.avatarText}>{user.name.charAt(0)}</Text>
+                        </View>
+                      )}
                       <View style={styles.userInfo}>
                         <Text style={styles.userName}>{user.name}</Text>
-                        <Text style={styles.userDate}>Blocked on {user.blockedDate || 'Unknown'}</Text>
+                        <Text style={styles.userDate}>Blocked</Text>
                       </View>
-                      <TouchableOpacity style={styles.unblockBtn} onPress={() => unblockUser(user.id)}>
+                      <TouchableOpacity style={styles.unblockBtn} onPress={() => unblockUser(user._id)}>
                         <Text style={styles.unblockText}>Unblock</Text>
                       </TouchableOpacity>
                     </View>
