@@ -22,6 +22,7 @@ export default function ChatScreen({ route, navigation }) {
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
   const [showUnblockConfirm, setShowUnblockConfirm] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [isBlockedByUser, setIsBlockedByUser] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [selectedReportOption, setSelectedReportOption] = useState('');
   const scrollViewRef = useRef();
@@ -48,10 +49,15 @@ export default function ChatScreen({ route, navigation }) {
     
     SocketService.onReceiveMessage(handleMessage);
 
+    const unsubscribe = navigation.addListener('focus', () => {
+      checkIfBlocked();
+    });
+
     return () => {
       // Clear active chat when leaving
       clearActiveChat();
       SocketService.offReceiveMessage(handleMessage);
+      unsubscribe();
     };
   }, [profile.id, user.userId]);
 
@@ -103,6 +109,15 @@ export default function ChatScreen({ route, navigation }) {
         const blocked = data.blockedUsers.some(u => u._id === profile.id);
         setIsBlocked(blocked);
       }
+      
+      const blockedByResponse = await fetch(`${API_URL}/blocked-by/${profile.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (blockedByResponse.ok) {
+        const data = await blockedByResponse.json();
+        setIsBlockedByUser(data.isBlockedByUser);
+      }
     } catch (error) {
       console.error('Error checking block status:', error);
     }
@@ -111,6 +126,11 @@ export default function ChatScreen({ route, navigation }) {
   const sendMessage = () => {
     if (isBlocked) {
       setShowUnblockConfirm(true);
+      return;
+    }
+    
+    if (isBlockedByUser) {
+      Alert.alert('Cannot Send Message', `${profile.name} has blocked you. You cannot send messages.`);
       return;
     }
     
@@ -209,7 +229,7 @@ export default function ChatScreen({ route, navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? '#1a0a2e' : '#ffeef8'} />
       <LinearGradient
         colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']}
@@ -219,7 +239,6 @@ export default function ChatScreen({ route, navigation }) {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
         >
-          <SafeAreaView style={styles.safeArea}>
             <View tint={isDark ? 'dark' : 'light'} style={styles.header}>
               <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={1}>
                 <View  tint={isDark ? 'dark' : 'light'} style={styles.backButton}>
@@ -289,6 +308,12 @@ export default function ChatScreen({ route, navigation }) {
                 ))
               )}
             </ScrollView>
+
+            {isBlockedByUser && (
+              <View style={styles.blockedBanner}>
+                <Text style={styles.blockedBannerText}>🚫 {profile.name} has blocked you. You cannot send messages.</Text>
+              </View>
+            )}
 
             <View tint={isDark ? 'dark' : 'light'} style={styles.inputContainer}>
               <TouchableOpacity>
@@ -412,18 +437,16 @@ export default function ChatScreen({ route, navigation }) {
                 </View>
               </View>
             </Modal>
-          </SafeAreaView>
         </KeyboardAvoidingView>
       </LinearGradient>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const getStyles = (theme, isDark) => StyleSheet.create({
-  container: { flex: 1 }, 
+  container: { flex: 1, backgroundColor: isDark ? '#1a0a2e' : '#ffeef8' }, 
   gradientBackground: { flex: 1 },
   keyboardView: { flex: 1 },
-  safeArea: { flex: 1 },
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between',
@@ -486,6 +509,8 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   messagesContent: { padding: 20, gap: 4, flexGrow: 1 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { fontSize: 16, color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' },
+  blockedBanner: { backgroundColor: '#F70776', paddingVertical: 12, paddingHorizontal: 20, alignItems: 'center' },
+  blockedBannerText: { color: '#fff', fontSize: 14, fontWeight: '600', textAlign: 'center' },
   messageBubble: { 
     maxWidth: '80%', 
     padding: 14, 
