@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, StatusBar, Image, Modal, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, StatusBar, Image, Modal, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
 // import { View } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -29,6 +30,9 @@ export default function ChatScreen({ route, navigation }) {
   const [hasAccess, setHasAccess] = useState(true);
   const [userCoins, setUserCoins] = useState(0);
   const [showCoinModal, setShowCoinModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [fullScreenImage, setFullScreenImage] = useState(null);
   const scrollViewRef = useRef();
   const profileIdRef = useRef(profile.id);
   const typingTimeoutRef = useRef(null);
@@ -50,6 +54,8 @@ export default function ChatScreen({ route, navigation }) {
         const newMessage = {
           id: Date.now(),
           text: data.message,
+          mediaUrl: data.mediaUrl,
+          mediaType: data.mediaType,
           sent: false,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
@@ -85,6 +91,7 @@ export default function ChatScreen({ route, navigation }) {
 
   const loadChatHistory = async () => {
     try {
+      setLoading(true);
       const token = await AsyncStorage.getItem('token');
       if (!token) return;
 
@@ -116,6 +123,8 @@ export default function ChatScreen({ route, navigation }) {
       }
     } catch (error) {
       console.error('Error loading chat history:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -224,6 +233,83 @@ export default function ChatScreen({ route, navigation }) {
       }, 1000);
     } else {
       SocketService.emitStopTyping(profile.id, user.userId);
+    }
+  };
+
+  const pickMedia = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow access to your gallery');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        await uploadAndSendMedia(asset);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick media');
+    }
+  };
+
+  const uploadAndSendMedia = async (asset) => {
+    try {
+      setUploading(true);
+      const token = await AsyncStorage.getItem('token');
+      
+      // Convert to base64
+      const response = await fetch(asset.uri);
+      const blob = await response.blob();
+      const reader = new FileReader();
+      
+      reader.onloadend = async () => {
+        const base64data = reader.result;
+        
+        // Upload to Cloudinary
+        const uploadResponse = await fetch(`${API_URL}/upload-image-base64`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ image: base64data })
+        });
+        
+        if (uploadResponse.ok) {
+          const data = await uploadResponse.json();
+          const mediaUrl = data.imageUrl;
+          const mediaType = asset.type === 'video' ? 'video' : 'image';
+          
+          // Send message with media
+          const newMessage = {
+            id: Date.now(),
+            mediaUrl,
+            mediaType,
+            sent: true,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+          
+          setMessages(prev => [...prev, newMessage]);
+          SocketService.sendMessage(profile.id, '', user.userId, mediaUrl, mediaType);
+          setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+        } else {
+          Alert.alert('Error', 'Failed to upload media');
+        }
+        setUploading(false);
+      };
+      
+      reader.readAsDataURL(blob);
+    } catch (error) {
+      setUploading(false);
+      Alert.alert('Error', 'Failed to send media');
     }
   };
 
@@ -383,7 +469,11 @@ export default function ChatScreen({ route, navigation }) {
               style={styles.messagesContainer} 
               contentContainerStyle={styles.messagesContent}
             >
-              {messages.length === 0 ? (
+              {loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#FF6B9D" />
+                </View>
+              ) : messages.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyText}>Start the conversation</Text>
                 </View>
@@ -407,7 +497,17 @@ export default function ChatScreen({ route, navigation }) {
                         tint={msg.sent ? (isDark ? 'dark' : 'light') : 'light'} 
                         style={[styles.messageBubble, msg.sent ? styles.sentBubble : styles.receivedBubble]}
                       >
-                        <Text style={[styles.messageText, msg.sent ? styles.sentText : styles.receivedText]}>{msg.text}</Text>
+                        {msg.mediaType === 'image' && msg.mediaUrl ? (
+                          <TouchableOpacity onPress={() => setFullScreenImage(msg.mediaUrl)}>
+                            <Image source={{ uri: msg.mediaUrl }} style={styles.mediaImage} />
+                          </TouchableOpacity>
+                        ) : msg.mediaType === 'video' && msg.mediaUrl ? (
+                          <View style={styles.videoContainer}>
+                            <Text style={styles.videoText}>🎥 Video</Text>
+                          </View>
+                        ) : (
+                          <Text style={[styles.messageText, msg.sent ? styles.sentText : styles.receivedText]}>{msg.text}</Text>
+                        )}
                         <Text style={[styles.messageTime, msg.sent ? styles.sentTime : styles.receivedTime]}>{msg.time} ✓✓</Text>
                       </View>
                       {msg.sent && (
@@ -443,8 +543,15 @@ export default function ChatScreen({ route, navigation }) {
               </View>
             )}
 
+            {uploading && (
+              <View style={styles.uploadingBanner}>
+                <ActivityIndicator size="small" color="#fff" />
+                <Text style={styles.uploadingText}>Uploading...</Text>
+              </View>
+            )}
+
             <View tint={isDark ? 'dark' : 'light'} style={styles.inputContainer}>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={pickMedia}>
                 <View tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>🔗</Text>
                 </View>
@@ -585,6 +692,15 @@ export default function ChatScreen({ route, navigation }) {
                 </View>
               </View>
             </Modal>
+
+            <Modal visible={fullScreenImage !== null} animationType="fade" transparent onRequestClose={() => setFullScreenImage(null)}>
+              <View style={styles.fullScreenOverlay}>
+                <TouchableOpacity style={styles.fullScreenClose} onPress={() => setFullScreenImage(null)}>
+                  <Text style={styles.fullScreenCloseText}>✕</Text>
+                </TouchableOpacity>
+                <Image source={{ uri: fullScreenImage }} style={styles.fullScreenImage} resizeMode="contain" />
+              </View>
+            </Modal>
         </KeyboardAvoidingView>
       </LinearGradient>
     </SafeAreaView>
@@ -658,10 +774,13 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   receivedContainer: { alignItems: 'flex-start' },
   messagesContainer: { flex: 1 },
   messagesContent: { padding: 20, gap: 4, flexGrow: 1, justifyContent: 'flex-end' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { fontSize: 16, color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' },
   blockedBanner: { backgroundColor: '#F70776', paddingVertical: 12, paddingHorizontal: 20, alignItems: 'center' },
   blockedBannerText: { color: '#fff', fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  uploadingBanner: { backgroundColor: '#03C8F0', paddingVertical: 12, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+  uploadingText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   messageBubble: { 
     maxWidth: '80%', 
     padding: 14, 
@@ -681,6 +800,9 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   receivedTime: { color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)' },
   sentLabel: { alignSelf: 'flex-end', marginBottom: 12, marginTop: 4 },
   sentLabelText: { fontSize: 11, color: '#03C8F0', fontWeight: '500' },
+  mediaImage: { width: 200, height: 200, borderRadius: 12, marginBottom: 8 },
+  videoContainer: { width: 200, height: 150, borderRadius: 12, backgroundColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  videoText: { fontSize: 16, color: theme.text },
   typingContainer: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 20, marginLeft: 0 },
   typingBubble: { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.95)', paddingHorizontal: 18, paddingVertical: 12, borderRadius: 20, borderBottomLeftRadius: 6, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2, minWidth: 80 },
   typingText: { fontSize: 14, color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)', fontStyle: 'italic', fontWeight: '500' },
@@ -721,4 +843,8 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     fontSize: 15, 
     color: theme.text,
   },
+  fullScreenOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
+  fullScreenImage: { width: '100%', height: '100%' },
+  fullScreenClose: { position: 'absolute', top: 50, right: 20, zIndex: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  fullScreenCloseText: { fontSize: 24, color: '#fff', fontWeight: 'bold' },
 });

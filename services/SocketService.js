@@ -74,12 +74,14 @@ class SocketService {
     }
   }
 
-  sendMessage(receiverId, message, senderId) {
+  sendMessage(receiverId, message, senderId, mediaUrl = null, mediaType = 'text') {
     if (this.socket && this.isConnected) {
       this.socket.emit('sendMessage', {
         receiverId,
         message,
-        senderId
+        senderId,
+        mediaUrl,
+        mediaType
       });
     }
   }
