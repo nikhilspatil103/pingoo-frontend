@@ -76,7 +76,8 @@ export default function MyProfileScreen({ navigation }) {
         
         setProfile(profileData);
         
-        // Set likes count from backend
+        // Set coins and likes count from backend
+        setCoins(data.user.coins || 0);
         setLikesCount(data.user.likes?.length || 0);
         
         // Calculate profile completion

@@ -4,18 +4,37 @@ import { LinearGradient } from 'expo-linear-gradient';
 // import { View } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../config/urlConfig';
 
 export default function MyCoinsScreen({ navigation }) {
   const { theme, isDark } = useTheme();
-  const [coins, setCoins] = useState(100);
+  const [coins, setCoins] = useState(0);
 
   useEffect(() => {
     loadCoins();
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadCoins();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   const loadCoins = async () => {
-    const userCoins = await AsyncStorage.getItem('userCoins');
-    if (userCoins) setCoins(parseInt(userCoins));
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/coins`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCoins(data.coins);
+      }
+    } catch (error) {
+      console.error('Error loading coins:', error);
+    }
   };
 
   const earnOptions = [
@@ -63,8 +82,8 @@ export default function MyCoinsScreen({ navigation }) {
               <Text style={styles.infoIcon}>💬</Text>
               <Text style={styles.infoTitle}>How Coins Work</Text>
               <Text style={styles.infoText}>• First message costs 10 coins</Text>
-              <Text style={styles.infoText}>• Chat free for 24 hours</Text>
-              <Text style={styles.infoText}>• After 24h, pay 10 coins to continue</Text>
+              <Text style={styles.infoText}>• Chat free for 6 hours</Text>
+              <Text style={styles.infoText}>• After 6h, pay 10 coins to continue</Text>
             </View>
 
             <View style={styles.section}>

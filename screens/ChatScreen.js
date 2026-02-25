@@ -26,6 +26,9 @@ export default function ChatScreen({ route, navigation }) {
   const [reportReason, setReportReason] = useState('');
   const [selectedReportOption, setSelectedReportOption] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [hasAccess, setHasAccess] = useState(true);
+  const [userCoins, setUserCoins] = useState(0);
+  const [showCoinModal, setShowCoinModal] = useState(false);
   const scrollViewRef = useRef();
   const profileIdRef = useRef(profile.id);
   const typingTimeoutRef = useRef(null);
@@ -38,6 +41,7 @@ export default function ChatScreen({ route, navigation }) {
     setActiveChat(profile.id);
     loadChatHistory();
     checkIfBlocked();
+    checkChatAccess();
   }, [profile.id]);
 
   useEffect(() => {
@@ -141,6 +145,70 @@ export default function ChatScreen({ route, navigation }) {
     }
   };
 
+  const checkChatAccess = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/chat-access/${profile.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setHasAccess(data.hasAccess);
+        setUserCoins(data.coins);
+      }
+    } catch (error) {
+      console.error('Error checking chat access:', error);
+    }
+  };
+
+  const purchaseChatAccess = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/purchase-chat/${profile.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setHasAccess(true);
+        setUserCoins(data.coins);
+        setShowCoinModal(false);
+        Alert.alert('Success', 'Chat access purchased for 6 hours!');
+      } else {
+        const error = await response.json();
+        Alert.alert('Error', error.error || 'Failed to purchase chat access');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to purchase chat access');
+    }
+  };
+
+  const purchaseChatAccessSilently = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/purchase-chat/${profile.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setHasAccess(true);
+        setUserCoins(data.coins);
+      }
+    } catch (error) {
+      console.error('Error purchasing chat access:', error);
+    }
+  };
+
   const handleTyping = (text) => {
     setMessage(text);
     
@@ -171,6 +239,16 @@ export default function ChatScreen({ route, navigation }) {
     }
     
     if (message.trim()) {
+      // Check if we need to purchase access silently
+      if (!hasAccess) {
+        if (userCoins < 10) {
+          setShowCoinModal(true);
+          return;
+        }
+        // Silently purchase access in background
+        purchaseChatAccessSilently();
+      }
+      
       const newMessage = {
         id: Date.now(),
         text: message.trim(),
@@ -487,6 +565,26 @@ export default function ChatScreen({ route, navigation }) {
                 </View>
               </View>
             </Modal>
+
+            <Modal visible={showCoinModal} animationType="slide" transparent>
+              <View style={styles.reportOverlay}>
+                <View style={styles.reportBox}>
+                  <Text style={styles.reportTitle}>💰 Insufficient Coins</Text>
+                  <Text style={styles.reportText}>You need 10 coins to continue chatting with {profile.name}</Text>
+                  <View style={styles.coinInfo}>
+                    <Text style={styles.coinBalance}>Your Balance: {userCoins} coins</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => { setShowCoinModal(false); navigation.navigate('MyCoins'); }}>
+                    <View style={styles.reportButton}>
+                      <Text style={styles.reportButtonText}>Buy Coins</Text>
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setShowCoinModal(false)}>
+                    <Text style={styles.reportCancel}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
         </KeyboardAvoidingView>
       </LinearGradient>
     </SafeAreaView>
@@ -546,6 +644,9 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   reportButton: { backgroundColor: '#F70776', paddingHorizontal: 32, paddingVertical: 12, borderRadius: 12, marginBottom: 12, alignSelf: 'center' },
   reportButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   reportCancel: { fontSize: 15, color: theme.textSecondary, textAlign: 'center', marginTop: 8 },
+  coinInfo: { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', padding: 16, borderRadius: 12, marginBottom: 16 },
+  coinBalance: { fontSize: 16, fontWeight: '600', color: theme.text, textAlign: 'center' },
+  reportButtonDisabled: { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)', opacity: 0.5 },
   avatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
   messageRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 4 },

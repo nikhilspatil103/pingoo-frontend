@@ -257,7 +257,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
             {step === 4 && (
               <View style={styles.formCard}>
                 <View style={styles.optionsGrid}>
-                  {[{key: 'male', label: 'Men', icon: '♂'}, {key: 'female', label: 'Women', icon: '♀'}, {key: 'both', label: 'Both', icon: '⚥'}].map((option) => (
+                  {[{key: 'male', label: 'Men', icon: '♂'}, {key: 'female', label: 'Women', icon: '♀'}].map((option) => (
                     <TouchableOpacity
                       key={option.key}
                       style={[styles.optionCardLarge, interestedIn === option.key && styles.selectedCard]}
