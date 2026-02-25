@@ -5,27 +5,61 @@ class SocketService {
   constructor() {
     this.socket = null;
     this.isConnected = false;
+    this.messageListeners = [];
+    this.typingListeners = [];
+    this.stopTypingListeners = [];
   }
 
   connect(userId) {
+    if (this.socket && this.isConnected) {
+      return this.socket;
+    }
+
     if (this.socket) {
-      this.disconnect();
+      this.socket.disconnect();
+      this.socket = null;
     }
 
     const socketUrl = API_URL.replace('/api', '');
-    console.log('Connecting to WebSocket:', socketUrl);
     this.socket = io(socketUrl);
 
     this.socket.on('connect', () => {
-      console.log('Connected to server');
       this.isConnected = true;
       this.socket.emit('join', userId);
-      console.log('Joined with userId:', userId);
     });
 
     this.socket.on('disconnect', () => {
-      console.log('Disconnected from server');
       this.isConnected = false;
+    });
+    
+    this.socket.on('receiveMessage', (data) => {
+      this.messageListeners.forEach(callback => {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error('Error in message listener:', error);
+        }
+      });
+    });
+    
+    this.socket.on('userTyping', (data) => {
+      this.typingListeners.forEach(callback => {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error('Error in typing listener:', error);
+        }
+      });
+    });
+    
+    this.socket.on('userStopTyping', (data) => {
+      this.stopTypingListeners.forEach(callback => {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error('Error in stop typing listener:', error);
+        }
+      });
     });
 
     return this.socket;
@@ -36,6 +70,7 @@ class SocketService {
       this.socket.disconnect();
       this.socket = null;
       this.isConnected = false;
+      this.messageListeners = [];
     }
   }
 
@@ -49,19 +84,57 @@ class SocketService {
     }
   }
 
+  emitTyping(receiverId, userId) {
+    if (this.socket && this.isConnected) {
+      this.socket.emit('typing', { receiverId, userId });
+    }
+  }
+
+  emitStopTyping(receiverId, userId) {
+    if (this.socket && this.isConnected) {
+      this.socket.emit('stopTyping', { receiverId, userId });
+    }
+  }
+
   onReceiveMessage(callback) {
-    if (this.socket) {
-      this.socket.on('receiveMessage', callback);
+    if (!this.messageListeners.includes(callback)) {
+      this.messageListeners.push(callback);
     }
   }
 
   offReceiveMessage(callback) {
-    if (this.socket) {
-      if (callback) {
-        this.socket.off('receiveMessage', callback);
-      } else {
-        this.socket.off('receiveMessage');
-      }
+    if (callback) {
+      this.messageListeners = this.messageListeners.filter(cb => cb !== callback);
+    } else {
+      this.messageListeners = [];
+    }
+  }
+
+  onTyping(callback) {
+    if (!this.typingListeners.includes(callback)) {
+      this.typingListeners.push(callback);
+    }
+  }
+
+  offTyping(callback) {
+    if (callback) {
+      this.typingListeners = this.typingListeners.filter(cb => cb !== callback);
+    } else {
+      this.typingListeners = [];
+    }
+  }
+
+  onStopTyping(callback) {
+    if (!this.stopTypingListeners.includes(callback)) {
+      this.stopTypingListeners.push(callback);
+    }
+  }
+
+  offStopTyping(callback) {
+    if (callback) {
+      this.stopTypingListeners = this.stopTypingListeners.filter(cb => cb !== callback);
+    } else {
+      this.stopTypingListeners = [];
     }
   }
 }

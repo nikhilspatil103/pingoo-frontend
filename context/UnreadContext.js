@@ -93,10 +93,6 @@ export const UnreadProvider = ({ children }) => {
       fetchUnreadCount();
       
       const handleGlobalMessage = (data) => {
-        console.log('Global message received:', data);
-        console.log('Active chat user ID:', activeChatUserId);
-        console.log('Is on chat list screen:', isOnChatListScreen);
-        
         if (data.senderId !== activeChatUserId && !isOnChatListScreen && !isOnChatScreen) {
           incrementUnread();
         }

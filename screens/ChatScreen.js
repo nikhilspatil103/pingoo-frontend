@@ -25,18 +25,24 @@ export default function ChatScreen({ route, navigation }) {
   const [isBlockedByUser, setIsBlockedByUser] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [selectedReportOption, setSelectedReportOption] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const scrollViewRef = useRef();
+  const profileIdRef = useRef(profile.id);
+  const typingTimeoutRef = useRef(null);
   const styles = getStyles(theme, isDark);
+  
+  // Ensure ref is always in sync with current profile
+  profileIdRef.current = profile.id;
 
   useEffect(() => {
-    // Set this chat as active
     setActiveChat(profile.id);
-    
     loadChatHistory();
     checkIfBlocked();
-    
+  }, [profile.id]);
+
+  useEffect(() => {
     const handleMessage = (data) => {
-      if (data.senderId === profile.id) {
+      if (String(data.senderId) === String(profileIdRef.current)) {
         const newMessage = {
           id: Date.now(),
           text: data.message,
@@ -44,22 +50,34 @@ export default function ChatScreen({ route, navigation }) {
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
         setMessages(prev => [...prev, newMessage]);
+        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+      }
+    };
+    
+    const handleTyping = (data) => {
+      if (String(data.userId) === String(profileIdRef.current)) {
+        setIsTyping(true);
+        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+      }
+    };
+    
+    const handleStopTyping = (data) => {
+      if (String(data.userId) === String(profileIdRef.current)) {
+        setIsTyping(false);
       }
     };
     
     SocketService.onReceiveMessage(handleMessage);
-
-    const unsubscribe = navigation.addListener('focus', () => {
-      checkIfBlocked();
-    });
+    SocketService.onTyping(handleTyping);
+    SocketService.onStopTyping(handleStopTyping);
 
     return () => {
-      // Clear active chat when leaving
       clearActiveChat();
       SocketService.offReceiveMessage(handleMessage);
-      unsubscribe();
+      SocketService.offTyping(handleTyping);
+      SocketService.offStopTyping(handleStopTyping);
     };
-  }, [profile.id, user.userId]);
+  }, []);
 
   const loadChatHistory = async () => {
     try {
@@ -123,6 +141,24 @@ export default function ChatScreen({ route, navigation }) {
     }
   };
 
+  const handleTyping = (text) => {
+    setMessage(text);
+    
+    if (text.trim()) {
+      SocketService.emitTyping(profile.id, user.userId);
+      
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      typingTimeoutRef.current = setTimeout(() => {
+        SocketService.emitStopTyping(profile.id, user.userId);
+      }, 1000);
+    } else {
+      SocketService.emitStopTyping(profile.id, user.userId);
+    }
+  };
+
   const sendMessage = () => {
     if (isBlocked) {
       setShowUnblockConfirm(true);
@@ -144,11 +180,9 @@ export default function ChatScreen({ route, navigation }) {
       
       setMessages(prev => [...prev, newMessage]);
       SocketService.sendMessage(profile.id, message.trim(), user.userId);
+      SocketService.emitStopTyping(profile.id, user.userId);
       setMessage('');
-      
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
     }
   };
 
@@ -249,11 +283,6 @@ export default function ChatScreen({ route, navigation }) {
                 <Text style={styles.headerTitle}>{profile.name}, {profile.age}</Text>
               </TouchableOpacity>
               <View style={{ flexDirection: 'row', gap: 10 }}>
-                <TouchableOpacity onPress={() => setShowMenu(!showMenu)}>
-                  <View style={styles.menuButton}>
-                    <Text style={styles.menuIcon}>⋮</Text>
-                  </View>
-                </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.navigate('ProfileView', { profile })} activeOpacity={1}>
                   {profile.profilePhoto ? (
                     <Image source={{ uri: profile.profilePhoto }} style={styles.avatar} />
@@ -262,6 +291,11 @@ export default function ChatScreen({ route, navigation }) {
                       <Text style={styles.avatarText}>{profile.name.charAt(0)}</Text>
                     </LinearGradient>
                   )}
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowMenu(!showMenu)}>
+                  <View style={styles.menuButton}>
+                    <Text style={styles.menuIcon}>⋮</Text>
+                  </View>
                 </TouchableOpacity>
               </View>
             </View>
@@ -307,6 +341,22 @@ export default function ChatScreen({ route, navigation }) {
                   </View>
                 ))
               )}
+              {isTyping && (
+                <View style={styles.typingContainer}>
+                  <View style={styles.messageAvatar}>
+                    {profile.profilePhoto ? (
+                      <Image source={{ uri: profile.profilePhoto }} style={styles.smallAvatar} />
+                    ) : (
+                      <LinearGradient colors={getAvatarColor(profile.name, profile.email)} style={styles.smallAvatar}>
+                        <Text style={styles.smallAvatarText}>{profile.name.charAt(0)}</Text>
+                      </LinearGradient>
+                    )}
+                  </View>
+                  <View style={styles.typingBubble}>
+                    <Text style={styles.typingText}>typing...</Text>
+                  </View>
+                </View>
+              )}
             </ScrollView>
 
             {isBlockedByUser && (
@@ -327,7 +377,7 @@ export default function ChatScreen({ route, navigation }) {
                   placeholder="Message"
                   placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                   value={message}
-                  onChangeText={setMessage}
+                  onChangeText={handleTyping}
                 />
               </View>
               <TouchableOpacity>
@@ -506,7 +556,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   sentContainer: { alignItems: 'flex-end' },
   receivedContainer: { alignItems: 'flex-start' },
   messagesContainer: { flex: 1 },
-  messagesContent: { padding: 20, gap: 4, flexGrow: 1 },
+  messagesContent: { padding: 20, gap: 4, flexGrow: 1, justifyContent: 'flex-end' },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { fontSize: 16, color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' },
   blockedBanner: { backgroundColor: '#F70776', paddingVertical: 12, paddingHorizontal: 20, alignItems: 'center' },
@@ -530,6 +580,9 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   receivedTime: { color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)' },
   sentLabel: { alignSelf: 'flex-end', marginBottom: 12, marginTop: 4 },
   sentLabelText: { fontSize: 11, color: '#03C8F0', fontWeight: '500' },
+  typingContainer: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 20, marginLeft: 0 },
+  typingBubble: { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.95)', paddingHorizontal: 18, paddingVertical: 12, borderRadius: 20, borderBottomLeftRadius: 6, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2, minWidth: 80 },
+  typingText: { fontSize: 14, color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)', fontStyle: 'italic', fontWeight: '500' },
   inputContainer: { 
     flexDirection: 'row', 
     alignItems: 'center', 
