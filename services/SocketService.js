@@ -8,6 +8,7 @@ class SocketService {
     this.messageListeners = [];
     this.typingListeners = [];
     this.stopTypingListeners = [];
+    this.deleteMessageListeners = [];
   }
 
   connect(userId) {
@@ -61,6 +62,26 @@ class SocketService {
         }
       });
     });
+    
+    this.socket.on('messageDeleted', (data) => {
+      this.deleteMessageListeners.forEach(callback => {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error('Error in delete message listener:', error);
+        }
+      });
+    });
+    
+    this.socket.on('messageRecalled', (data) => {
+      this.deleteMessageListeners.forEach(callback => {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error('Error in recall message listener:', error);
+        }
+      });
+    });
 
     return this.socket;
   }
@@ -74,14 +95,15 @@ class SocketService {
     }
   }
 
-  sendMessage(receiverId, message, senderId, mediaUrl = null, mediaType = 'text') {
+  sendMessage(receiverId, message, senderId, mediaUrl = null, mediaType = 'text', tempId = null) {
     if (this.socket && this.isConnected) {
       this.socket.emit('sendMessage', {
         receiverId,
         message,
         senderId,
         mediaUrl,
-        mediaType
+        mediaType,
+        tempId
       });
     }
   }
@@ -95,6 +117,12 @@ class SocketService {
   emitStopTyping(receiverId, userId) {
     if (this.socket && this.isConnected) {
       this.socket.emit('stopTyping', { receiverId, userId });
+    }
+  }
+
+  emit(event, data) {
+    if (this.socket && this.isConnected) {
+      this.socket.emit(event, data);
     }
   }
 
@@ -137,6 +165,32 @@ class SocketService {
       this.stopTypingListeners = this.stopTypingListeners.filter(cb => cb !== callback);
     } else {
       this.stopTypingListeners = [];
+    }
+  }
+
+  on(event, callback) {
+    if (this.socket) {
+      this.socket.on(event, callback);
+    }
+  }
+
+  off(event, callback) {
+    if (this.socket) {
+      this.socket.off(event, callback);
+    }
+  }
+
+  onDeleteMessage(callback) {
+    if (!this.deleteMessageListeners.includes(callback)) {
+      this.deleteMessageListeners.push(callback);
+    }
+  }
+
+  offDeleteMessage(callback) {
+    if (callback) {
+      this.deleteMessageListeners = this.deleteMessageListeners.filter(cb => cb !== callback);
+    } else {
+      this.deleteMessageListeners = [];
     }
   }
 }

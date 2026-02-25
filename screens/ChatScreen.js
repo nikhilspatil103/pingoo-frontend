@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, StatusBar, Image, Modal, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, StatusBar, Image, Modal, Alert, ActivityIndicator, Clipboard } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 // import { View } from 'expo-blur';
@@ -33,6 +33,8 @@ export default function ChatScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [fullScreenImage, setFullScreenImage] = useState(null);
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [showMessageOptions, setShowMessageOptions] = useState(false);
   const scrollViewRef = useRef();
   const profileIdRef = useRef(profile.id);
   const typingTimeoutRef = useRef(null);
@@ -52,16 +54,24 @@ export default function ChatScreen({ route, navigation }) {
     const handleMessage = (data) => {
       if (String(data.senderId) === String(profileIdRef.current)) {
         const newMessage = {
-          id: Date.now(),
+          id: data.messageId || Date.now(),
           text: data.message,
           mediaUrl: data.mediaUrl,
           mediaType: data.mediaType,
           sent: false,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: data.timestamp ? new Date(data.timestamp).getTime() : Date.now()
         };
         setMessages(prev => [...prev, newMessage]);
         setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
       }
+    };
+    
+    const handleMessageSaved = (data) => {
+      // Update temp message ID with database ID
+      setMessages(prev => prev.map(m => 
+        m.id === data.tempId ? { ...m, id: data.messageId, timestamp: new Date(data.timestamp).getTime() } : m
+      ));
     };
     
     const handleTyping = (data) => {
@@ -77,15 +87,39 @@ export default function ChatScreen({ route, navigation }) {
       }
     };
     
+    const handleRecallMessage = (data) => {
+      // Update message to show recalled state for both users
+      setMessages(prev => prev.map(m => {
+        // Compare both string versions of IDs
+        const msgId = String(m.id);
+        const dataId = String(data.messageId);
+        
+        if (msgId === dataId) {
+          return { 
+            ...m, 
+            text: `${data.senderName || 'User'} recalled this message`, 
+            isRecalled: true, 
+            mediaUrl: null, 
+            mediaType: 'text' 
+          };
+        }
+        return m;
+      }));
+    };
+    
     SocketService.onReceiveMessage(handleMessage);
     SocketService.onTyping(handleTyping);
     SocketService.onStopTyping(handleStopTyping);
+    SocketService.onDeleteMessage(handleRecallMessage);
+    SocketService.on('messageSaved', handleMessageSaved);
 
     return () => {
       clearActiveChat();
       SocketService.offReceiveMessage(handleMessage);
       SocketService.offTyping(handleTyping);
       SocketService.offStopTyping(handleStopTyping);
+      SocketService.offDeleteMessage(handleRecallMessage);
+      SocketService.off('messageSaved', handleMessageSaved);
     };
   }, []);
 
@@ -335,15 +369,17 @@ export default function ChatScreen({ route, navigation }) {
         purchaseChatAccessSilently();
       }
       
+      const tempId = Date.now();
       const newMessage = {
-        id: Date.now(),
+        id: tempId,
         text: message.trim(),
         sent: true,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: tempId
       };
       
       setMessages(prev => [...prev, newMessage]);
-      SocketService.sendMessage(profile.id, message.trim(), user.userId);
+      SocketService.sendMessage(profile.id, message.trim(), user.userId, null, 'text', tempId);
       SocketService.emitStopTyping(profile.id, user.userId);
       setMessage('');
       setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
@@ -426,6 +462,56 @@ export default function ChatScreen({ route, navigation }) {
     }
   };
 
+  const handleLongPress = (msg) => {
+    setSelectedMessage(msg);
+    setShowMessageOptions(true);
+  };
+
+  const canRecallMessage = (msg) => {
+    if (!msg.sent || !msg.timestamp) return false;
+    const messageTime = msg.timestamp;
+    const currentTime = Date.now();
+    const timeDiff = (currentTime - messageTime) / 1000; // in seconds
+    return timeDiff <= 60; // 1 minute
+  };
+
+  const handleCopyMessage = () => {
+    if (selectedMessage?.text) {
+      Clipboard.setString(selectedMessage.text);
+      Alert.alert('Copied', 'Message copied to clipboard');
+    }
+    setShowMessageOptions(false);
+    setSelectedMessage(null);
+  };
+
+  const handleDeleteMessage = async () => {
+    if (!selectedMessage) return;
+    
+    setShowMessageOptions(false);
+    
+    try {
+      // Update message to recalled state locally
+      setMessages(prev => prev.map(m => 
+        m.id === selectedMessage.id 
+          ? { ...m, text: 'You recalled this message', isRecalled: true, mediaUrl: null, mediaType: 'text' }
+          : m
+      ));
+      
+      // Emit recall event via socket
+      SocketService.emit('recallMessage', {
+        messageId: selectedMessage.id,
+        receiverId: profile.id,
+        senderId: user.userId
+      });
+      
+      Alert.alert('Recalled', 'Message recalled');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to recall message');
+    }
+    
+    setSelectedMessage(null);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? '#1a0a2e' : '#ffeef8'} />
@@ -492,11 +578,16 @@ export default function ChatScreen({ route, navigation }) {
                       </View>
                     )}
                     <View style={[styles.messageContainer, msg.sent ? styles.sentContainer : styles.receivedContainer]}>
-                      <View 
-                        
-                        tint={msg.sent ? (isDark ? 'dark' : 'light') : 'light'} 
-                        style={[styles.messageBubble, msg.sent ? styles.sentBubble : styles.receivedBubble]}
+                      <TouchableOpacity 
+                        onLongPress={() => handleLongPress(msg)}
+                        activeOpacity={0.7}
+                        delayLongPress={500}
                       >
+                        <View 
+                          
+                          tint={msg.sent ? (isDark ? 'dark' : 'light') : 'light'} 
+                          style={[styles.messageBubble, msg.sent ? styles.sentBubble : styles.receivedBubble]}
+                        >
                         {msg.mediaType === 'image' && msg.mediaUrl ? (
                           <TouchableOpacity onPress={() => setFullScreenImage(msg.mediaUrl)}>
                             <Image source={{ uri: msg.mediaUrl }} style={styles.mediaImage} />
@@ -506,10 +597,11 @@ export default function ChatScreen({ route, navigation }) {
                             <Text style={styles.videoText}>🎥 Video</Text>
                           </View>
                         ) : (
-                          <Text style={[styles.messageText, msg.sent ? styles.sentText : styles.receivedText]}>{msg.text}</Text>
+                          <Text style={[styles.messageText, msg.sent ? styles.sentText : styles.receivedText, msg.isRecalled && styles.recalledText]}>{msg.text}</Text>
                         )}
                         <Text style={[styles.messageTime, msg.sent ? styles.sentTime : styles.receivedTime]}>{msg.time} ✓✓</Text>
                       </View>
+                      </TouchableOpacity>
                       {msg.sent && (
                         <View style={styles.sentLabel}>
                           <Text style={styles.sentLabelText}>✓✓ Sent</Text>
@@ -701,6 +793,40 @@ export default function ChatScreen({ route, navigation }) {
                 <Image source={{ uri: fullScreenImage }} style={styles.fullScreenImage} resizeMode="contain" />
               </View>
             </Modal>
+
+            <Modal visible={showMessageOptions} animationType="slide" transparent>
+              <View style={styles.reportOverlay}>
+                <View style={styles.reportBox}>
+                  <Text style={styles.reportTitle}>Message Options</Text>
+                  
+                  {selectedMessage?.text && (
+                    <TouchableOpacity onPress={handleCopyMessage}>
+                      <View style={styles.messageOptionButton}>
+                        <Text style={styles.messageOptionText}>📋 Copy</Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                  
+                  {selectedMessage?.sent && canRecallMessage(selectedMessage) && (
+                    <TouchableOpacity onPress={handleDeleteMessage}>
+                      <View style={[styles.messageOptionButton, styles.messageOptionDanger]}>
+                        <Text style={[styles.messageOptionText, styles.messageOptionDangerText]}>↩️ Recall</Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                  
+                  {selectedMessage?.sent && !canRecallMessage(selectedMessage) && (
+                    <View style={[styles.messageOptionButton, styles.messageOptionDisabled]}>
+                      <Text style={[styles.messageOptionText, styles.messageOptionDisabledText]}>↩️ Recall (expired)</Text>
+                    </View>
+                  )}
+                  
+                  <TouchableOpacity onPress={() => { setShowMessageOptions(false); setSelectedMessage(null); }}>
+                    <Text style={styles.reportCancel}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
         </KeyboardAvoidingView>
       </LinearGradient>
     </SafeAreaView>
@@ -795,6 +921,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   messageText: { fontSize: 15, lineHeight: 20, marginBottom: 6 },
   sentText: { color: theme.text },
   receivedText: { color: theme.text },
+  recalledText: { fontStyle: 'italic', opacity: 0.6 },
   messageTime: { fontSize: 11, alignSelf: 'flex-end' },
   sentTime: { color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' },
   receivedTime: { color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)' },
@@ -847,4 +974,10 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   fullScreenImage: { width: '100%', height: '100%' },
   fullScreenClose: { position: 'absolute', top: 50, right: 20, zIndex: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
   fullScreenCloseText: { fontSize: 24, color: '#fff', fontWeight: 'bold' },
+  messageOptionButton: { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', paddingVertical: 16, paddingHorizontal: 24, borderRadius: 12, marginBottom: 12, alignItems: 'center' },
+  messageOptionText: { fontSize: 16, color: theme.text, fontWeight: '600' },
+  messageOptionDanger: { backgroundColor: 'rgba(247,7,118,0.1)', borderWidth: 1, borderColor: '#F70776' },
+  messageOptionDangerText: { color: '#F70776' },
+  messageOptionDisabled: { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)', opacity: 0.5 },
+  messageOptionDisabledText: { color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' },
 });
