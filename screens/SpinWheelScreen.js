@@ -196,19 +196,19 @@ export default function SpinWheelScreen({ navigation }) {
                     return (
                       <G key={index}>
                         <Path d={path} fill={getSegmentColor(index)} stroke="#fff" strokeWidth="2" />
-                        <G transform={`rotate(${textAngle + 90}, ${textPos.x}, ${textPos.y})`}>
-                          <SvgText
-                            x={textPos.x}
-                            y={textPos.y}
-                            fill="#fff"
-                            fontSize="24"
-                            fontWeight="bold"
-                            textAnchor="middle"
-                            alignmentBaseline="middle"
-                          >
-                            {value}
-                          </SvgText>
-                        </G>
+                        <SvgText
+                          x={textPos.x}
+                          y={textPos.y}
+                          fill="#fff"
+                          fontSize="24"
+                          fontWeight="bold"
+                          textAnchor="middle"
+                          alignmentBaseline="middle"
+                          rotation={textAngle + 90}
+                          origin={`${textPos.x}, ${textPos.y}`}
+                        >
+                          {value}
+                        </SvgText>
                       </G>
                     );
                   })}
