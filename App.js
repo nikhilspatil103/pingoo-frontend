@@ -16,6 +16,7 @@ import ProfileViewScreen from './screens/ProfileViewScreen';
 import MyProfileScreen from './screens/MyProfileScreen';
 import EditProfileScreenV2 from './screens/EditProfileScreenV2';
 import MyCoinsScreen from './screens/MyCoinsScreen';
+import SpinWheelScreen from './screens/SpinWheelScreen';
 import TermsScreen from './screens/TermsScreen';
 import AboutScreen from './screens/AboutScreen';
 import BlockListScreen from './screens/BlockListScreen';
@@ -134,6 +135,7 @@ function AppNavigator() {
             <Stack.Screen name="ProfileView" component={ProfileViewScreen} options={{ presentation: 'card' }} />
             <Stack.Screen name="EditProfile" component={EditProfileScreenV2} />
             <Stack.Screen name="MyCoins" component={MyCoinsScreen} />
+            <Stack.Screen name="SpinWheel" component={SpinWheelScreen} />
             <Stack.Screen name="Terms" component={TermsScreen} />
             <Stack.Screen name="About" component={AboutScreen} />
             <Stack.Screen name="BlockList" component={BlockListScreen} />

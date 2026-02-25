@@ -218,6 +218,18 @@ export default function MyProfileScreen({ navigation }) {
                   <Text style={styles.actionArrow}>›</Text>
                 </View>
               </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('SpinWheel')} activeOpacity={1}>
+                <View style={styles.actionCard}>
+                  <View style={styles.actionIconContainer}>
+                    <Text style={styles.actionIcon}>🎡</Text>
+                  </View>
+                  <View style={styles.actionInfo}>
+                    <Text style={styles.actionTitle}>Spin & Win</Text>
+                    <Text style={styles.actionDesc}>Win free coins daily</Text>
+                  </View>
+                  <Text style={styles.actionArrow}>›</Text>
+                </View>
+              </TouchableOpacity>
               <TouchableOpacity activeOpacity={1}>
                 <View style={styles.actionCard}>
                   <View style={styles.actionIconContainer}>
