@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
 
@@ -61,8 +61,13 @@ class NotificationService {
   async registerTokenWithBackend(pushToken) {
     try {
       const token = await AsyncStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        Alert.alert('Error', 'No auth token found');
+        return;
+      }
 
+      Alert.alert('Info', `Calling: ${API_URL}/register-push-token`);
+      
       const response = await fetch(`${API_URL}/register-push-token`, {
         method: 'POST',
         headers: {
@@ -71,12 +76,15 @@ class NotificationService {
         },
         body: JSON.stringify({ pushToken }),
       });
-
+      
       if (response.ok) {
-        console.log('Push token registered with backend');
+        Alert.alert('Success', 'Push token registered! Check Railway logs.');
+      } else {
+        const error = await response.text();
+        Alert.alert('Failed', `Status: ${response.status}\n${error}`);
       }
     } catch (error) {
-      console.error('Error registering push token:', error);
+      Alert.alert('Error', error.message);
     }
   }
 
