@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, StatusBar, Image, Modal, Alert, ActivityIndicator, Clipboard } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, StatusBar, Image, Modal, Alert, ActivityIndicator, Clipboard, Vibration } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 // import { View } from 'expo-blur';
@@ -463,6 +463,7 @@ export default function ChatScreen({ route, navigation }) {
   };
 
   const handleLongPress = (msg) => {
+    Vibration.vibrate(50);
     setSelectedMessage(msg);
     setShowMessageOptions(true);
   };
@@ -514,20 +515,19 @@ export default function ChatScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? '#1a0a2e' : '#ffeef8'} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? '#1a0a2e' : '#ffeef8'} translucent={false} />
       <LinearGradient
         colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']}
         style={styles.gradientBackground}
       >
         <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.keyboardView}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
             <View tint={isDark ? 'dark' : 'light'} style={styles.header}>
-              <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={1}>
-                <View  tint={isDark ? 'dark' : 'light'} style={styles.backButton}>
-                  <Text style={styles.backIcon}>←</Text>
-                </View>
+              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                <Text style={styles.backIcon}>←</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => navigation.navigate('ProfileView', { profile })} activeOpacity={1}>
                 <Text style={styles.headerTitle}>{profile.name}, {profile.age}</Text>
@@ -807,7 +807,7 @@ export default function ChatScreen({ route, navigation }) {
                     </TouchableOpacity>
                   )}
                   
-                  {selectedMessage?.sent && canRecallMessage(selectedMessage) && (
+                  {selectedMessage?.sent && canRecallMessage(selectedMessage) && !selectedMessage?.isRecalled && (
                     <TouchableOpacity onPress={handleDeleteMessage}>
                       <View style={[styles.messageOptionButton, styles.messageOptionDanger]}>
                         <Text style={[styles.messageOptionText, styles.messageOptionDangerText]}>↩️ Recall</Text>
@@ -815,7 +815,7 @@ export default function ChatScreen({ route, navigation }) {
                     </TouchableOpacity>
                   )}
                   
-                  {selectedMessage?.sent && !canRecallMessage(selectedMessage) && (
+                  {selectedMessage?.sent && (!canRecallMessage(selectedMessage) || selectedMessage?.isRecalled) && (
                     <View style={[styles.messageOptionButton, styles.messageOptionDisabled]}>
                       <Text style={[styles.messageOptionText, styles.messageOptionDisabledText]}>↩️ Recall (expired)</Text>
                     </View>
@@ -849,19 +849,12 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
   },
   backButton: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 22, 
+    width: 40, 
+    height: 40, 
+    borderRadius: 20, 
     justifyContent: 'center', 
     alignItems: 'center',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
-    shadowColor: isDark ? '#fff' : '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: isDark ? 0.1 : 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
   },
   backIcon: { fontSize: 18, color: theme.text, fontWeight: '600' },
   headerTitle: { fontSize: 18, fontWeight: '600', color: theme.text },
