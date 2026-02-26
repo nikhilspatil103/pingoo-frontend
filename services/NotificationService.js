@@ -25,37 +25,40 @@ class NotificationService {
       });
     }
 
-    if (Device.isDevice) {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-      
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-      
-      if (finalStatus !== 'granted') {
-        console.log('Failed to get push token for push notification!');
-        return;
-      }
-      
-      try {
-        // Use Expo's push token (not Firebase)
-        token = (await Notifications.getExpoPushTokenAsync({
-          projectId: '6d2cee09-c9c3-4f0b-91ea-59e0aa10c5ec'
-        })).data;
-        console.log('Push token:', token);
-        
-        // Register token with backend
-        await this.registerTokenWithBackend(token);
-      } catch (error) {
-        console.error('Error getting push token:', error);
-      }
-    } else {
-      console.log('Must use physical device for Push Notifications');
+    if (!Device.isDevice) {
+      const error = 'Must use physical device for Push Notifications';
+      console.log(error);
+      throw new Error(error);
     }
 
-    return token;
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    
+    if (finalStatus !== 'granted') {
+      const error = 'Permission not granted for push notifications';
+      console.log(error);
+      throw new Error(error);
+    }
+    
+    try {
+      // Use Expo's push token (not Firebase)
+      token = (await Notifications.getExpoPushTokenAsync({
+        projectId: '6d2cee09-c9c3-4f0b-91ea-59e0aa10c5ec'
+      })).data;
+      console.log('✅ Push token obtained:', token);
+      
+      // Register token with backend
+      await this.registerTokenWithBackend(token);
+      return token;
+    } catch (error) {
+      console.error('❌ Error getting push token:', error);
+      throw error;
+    }
   }
 
   async registerTokenWithBackend(pushToken) {
