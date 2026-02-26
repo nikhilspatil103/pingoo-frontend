@@ -39,11 +39,18 @@ class NotificationService {
         return;
       }
       
-      token = (await Notifications.getExpoPushTokenAsync()).data;
-      console.log('Push token:', token);
-      
-      // Register token with backend
-      await this.registerTokenWithBackend(token);
+      try {
+        // Use Expo's push token (not Firebase)
+        token = (await Notifications.getExpoPushTokenAsync({
+          projectId: '6d2cee09-c9c3-4f0b-91ea-59e0aa10c5ec'
+        })).data;
+        console.log('Push token:', token);
+        
+        // Register token with backend
+        await this.registerTokenWithBackend(token);
+      } catch (error) {
+        console.error('Error getting push token:', error);
+      }
     } else {
       console.log('Must use physical device for Push Notifications');
     }
