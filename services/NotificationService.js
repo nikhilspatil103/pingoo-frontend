@@ -62,11 +62,9 @@ class NotificationService {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        Alert.alert('Error', 'No auth token found');
+        console.log('No auth token found for push notification registration');
         return;
       }
-
-      Alert.alert('Info', `Calling: ${API_URL}/register-push-token`);
       
       const response = await fetch(`${API_URL}/register-push-token`, {
         method: 'POST',
@@ -78,13 +76,13 @@ class NotificationService {
       });
       
       if (response.ok) {
-        Alert.alert('Success', 'Push token registered! Check Railway logs.');
+        console.log('✅ Push token registered successfully');
       } else {
         const error = await response.text();
-        Alert.alert('Failed', `Status: ${response.status}\n${error}`);
+        console.log(`❌ Push token registration failed: ${response.status} - ${error}`);
       }
     } catch (error) {
-      Alert.alert('Error', error.message);
+      console.log('❌ Push token registration error:', error.message);
     }
   }
 

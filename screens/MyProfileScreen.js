@@ -113,10 +113,14 @@ export default function MyProfileScreen({ navigation }) {
   };
 
   const testPushNotification = async () => {
-    Alert.alert('Testing...', 'Registering push token');
     try {
-      await NotificationService.registerForPushNotifications();
-      Alert.alert('Success', 'Push token registered! Check Railway logs.');
+      Alert.alert('Starting...', 'Registering push token');
+      const result = await NotificationService.registerForPushNotifications();
+      if (result) {
+        Alert.alert('Done', `Token: ${result.substring(0, 20)}...`);
+      } else {
+        Alert.alert('Failed', 'Could not get push token');
+      }
     } catch (error) {
       Alert.alert('Error', error.message);
     }

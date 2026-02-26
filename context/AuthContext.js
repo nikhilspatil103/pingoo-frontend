@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SocketService from '../services/SocketService';
+import NotificationService from '../services/NotificationService';
 import { API_URL } from '../config/urlConfig';
 
 const AuthContext = createContext();
@@ -45,6 +46,13 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.setItem('userEmail', userData.email);
       await AsyncStorage.setItem('apiUrl', API_URL);
       setUser(userData);
+      
+      // Register for push notifications after login
+      try {
+        await NotificationService.registerForPushNotifications();
+      } catch (notifError) {
+        console.log('Push notification registration failed:', notifError);
+      }
     } catch (error) {
       console.error('Error saving user data:', error);
     }
