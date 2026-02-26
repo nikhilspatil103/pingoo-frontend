@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "123456789",
-    "project_id": "pingoo-dummy",
-    "storage_bucket": "pingoo-dummy.appspot.com"
+    "project_number": "508441951929",
+    "project_id": "pingoo-ad473",
+    "storage_bucket": "pingoo-ad473.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:123456789:android:abc123",
+        "mobilesdk_app_id": "1:508441951929:android:56fc99bc1e3dc7d8d76568",
         "android_client_info": {
           "package_name": "com.pingoo.pingoo"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDummy-Key-For-Expo-Push"
+          "current_key": "AIzaSyAx_aeTdbS3SiLkJRgWpVLSTCllzF7bCGk"
         }
       ],
       "services": {
