@@ -1,12 +1,14 @@
 import './utils/disableConsole';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { UnreadProvider, useUnread } from './context/UnreadContext';
+import { LikesProvider, useLikes } from './context/LikesContext';
 import MemoryManager from './utils/memoryManager';
+import NotificationService from './services/NotificationService';
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import ProfileSetupScreen from './screens/ProfileSetupScreen';
@@ -17,6 +19,7 @@ import MyProfileScreen from './screens/MyProfileScreen';
 import EditProfileScreenV2 from './screens/EditProfileScreenV2';
 import MyCoinsScreen from './screens/MyCoinsScreen';
 import SpinWheelScreen from './screens/SpinWheelScreen';
+import NotificationsScreen from './screens/NotificationsScreen';
 import TermsScreen from './screens/TermsScreen';
 import AboutScreen from './screens/AboutScreen';
 import BlockListScreen from './screens/BlockListScreen';
@@ -106,9 +109,54 @@ function MainTabs() {
 
 function AppNavigator() {
   const { user, loading } = useAuth();
+  const { addNewLike } = useLikes();
+  const navigationRef = useRef();
   
   console.log('AppNavigator - User:', user);
   console.log('AppNavigator - Loading:', loading);
+
+  useEffect(() => {
+    if (user) {
+      // Register for push notifications when user is logged in
+      NotificationService.registerForPushNotifications();
+
+      // Handle notification received while app is in foreground
+      const notificationListener = NotificationService.addNotificationReceivedListener(notification => {
+        console.log('Notification received:', notification);
+        const data = notification.request.content.data;
+        
+        // Update likes context if it's a like notification
+        if (data.type === 'like' && data.likerId) {
+          addNewLike({
+            id: data.likerId,
+            name: data.likerName,
+            timestamp: new Date()
+          });
+        }
+      });
+
+      // Handle notification tap
+      const responseListener = NotificationService.addNotificationResponseReceivedListener(response => {
+        const data = response.notification.request.content.data;
+        console.log('Notification tapped:', data);
+        
+        // Navigate based on notification type
+        if (data.type === 'message' && data.senderId) {
+          navigationRef.current?.navigate('Chat', { 
+            userId: data.senderId,
+            userName: data.senderName 
+          });
+        } else if (data.type === 'like' && data.likerId) {
+          navigationRef.current?.navigate('ProfileView', { userId: data.likerId });
+        }
+      });
+
+      return () => {
+        notificationListener.remove();
+        responseListener.remove();
+      };
+    }
+  }, [user]);
 
   if (loading) {
     return (
@@ -119,7 +167,7 @@ function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator 
         screenOptions={{ headerShown: false }}
       >
@@ -136,6 +184,7 @@ function AppNavigator() {
             <Stack.Screen name="EditProfile" component={EditProfileScreenV2} />
             <Stack.Screen name="MyCoins" component={MyCoinsScreen} />
             <Stack.Screen name="SpinWheel" component={SpinWheelScreen} />
+            <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="Terms" component={TermsScreen} />
             <Stack.Screen name="About" component={AboutScreen} />
             <Stack.Screen name="BlockList" component={BlockListScreen} />
@@ -163,7 +212,9 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <UnreadProvider>
-          <AppNavigator />
+          <LikesProvider>
+            <AppNavigator />
+          </LikesProvider>
         </UnreadProvider>
       </AuthProvider>
     </ThemeProvider>

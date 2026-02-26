@@ -16,8 +16,9 @@ const { width } = Dimensions.get('window');
 
 export default function ProfileViewScreen({ route, navigation }) {
   const { theme, isDark } = useTheme();
-  const { profile: initialProfile, isMyProfile } = route.params;
-  const [profile, setProfile] = useState(initialProfile);
+  const { profile: initialProfile, userId, isMyProfile } = route.params;
+  const [profile, setProfile] = useState(initialProfile || null);
+  const [loading, setLoading] = useState(!initialProfile);
   const [isStarred, setIsStarred] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -32,6 +33,7 @@ export default function ProfileViewScreen({ route, navigation }) {
   const [selectedReportOption, setSelectedReportOption] = useState('');
   
   const getAllImages = () => {
+    if (!profile) return [];
     const images = [];
     if (profile.profilePhoto) images.push(profile.profilePhoto);
     if (profile.additionalPhotos) images.push(...profile.additionalPhotos);
@@ -41,17 +43,18 @@ export default function ProfileViewScreen({ route, navigation }) {
   const allImages = getAllImages();
 
   useEffect(() => {
-    checkIfStarred();
-    if (initialProfile?.id) {
-      fetchProfileDetails();
+    const profileId = initialProfile?.id || userId;
+    if (profileId) {
+      fetchProfileDetails(profileId);
       checkIfBlocked();
     }
-  }, [initialProfile?.id]);
+  }, [initialProfile?.id, userId]);
 
-  const fetchProfileDetails = async () => {
+  const fetchProfileDetails = async (profileId) => {
     try {
+      setLoading(true);
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch(`${API_URL}/user/${initialProfile.id}`, {
+      const response = await fetch(`${API_URL}/user/${profileId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -60,7 +63,7 @@ export default function ProfileViewScreen({ route, navigation }) {
         setProfile(data.user);
         setLikeCount(data.user.likes?.length || 0);
         
-        const likeStatusResponse = await fetch(`${API_URL}/like-status/${initialProfile.id}`, {
+        const likeStatusResponse = await fetch(`${API_URL}/like-status/${profileId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -69,17 +72,24 @@ export default function ProfileViewScreen({ route, navigation }) {
           setIsLiked(likeData.isLiked);
           setLikeCount(likeData.likeCount);
         }
+        
+        checkIfStarred(data.user);
       }
     } catch (error) {
       console.error('Failed to fetch profile:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const checkIfStarred = async () => {
+  const checkIfStarred = async (profileData) => {
+    const profileToCheck = profileData || profile;
+    if (!profileToCheck) return;
+    
     const contacts = await AsyncStorage.getItem('contacts');
     if (contacts) {
       const list = JSON.parse(contacts);
-      setIsStarred(list.some(c => c.id === profile.id));
+      setIsStarred(list.some(c => c.id === profileToCheck.id));
     }
   };
 
@@ -219,6 +229,18 @@ export default function ProfileViewScreen({ route, navigation }) {
   );
 
   const styles = getStyles(theme, isDark);
+
+  if (loading || !profile) {
+    return (
+      <View style={styles.container}>
+        <LinearGradient colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']} style={styles.gradient}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ fontSize: 16, color: theme.text }}>Loading...</Text>
+          </View>
+        </LinearGradient>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

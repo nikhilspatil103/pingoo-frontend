@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, FlatList, SafeAreaView, Animated, StatusBar, RefreshControl, ActivityIndicator, Modal } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, FlatList, SafeAreaView, Animated, StatusBar, RefreshControl, ActivityIndicator, Modal, Image } from 'react-native';
 import RangeSlider from '../components/RangeSlider';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useLikes } from '../context/LikesContext';
 import { useFocusEffect } from '@react-navigation/native';
 import PingooLogo from '../components/PingooLogo';
 import { ProfileCard, ListCard } from '../components/ProfileCard';
@@ -15,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function HomeScreen({ navigation }) {
   const { theme, isDark, toggleTheme } = useTheme();
   const { logout } = useAuth();
+  const { newLikes, unreadCount, fetchNewLikes } = useLikes();
   const [isListView, setIsListView] = useState(false);
   const [filterVisible, setFilterVisible] = useState(false);
   const [filterType, setFilterType] = useState('all');
@@ -28,6 +30,7 @@ export default function HomeScreen({ navigation }) {
   useFocusEffect(
     React.useCallback(() => {
       fetchProfiles(1, false);
+      fetchNewLikes();
       
       // Setup WebSocket for real-time updates
       const setupSocket = async () => {
@@ -137,6 +140,18 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Pingoo</Text>
             <View style={styles.headerRight}>
+              <TouchableOpacity 
+                style={styles.viewToggle} 
+                onPress={() => navigation.navigate('Notifications')} 
+                activeOpacity={1}
+              >
+                <Text style={styles.viewToggleIcon}>🔔</Text>
+                {unreadCount > 0 && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
               <TouchableOpacity style={styles.viewToggle} onPress={() => setFilterVisible(true)} activeOpacity={1}>
                 <Text style={styles.viewToggleIcon}>⚡</Text>
               </TouchableOpacity>
@@ -263,8 +278,10 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
   },
   headerRight: { flexDirection: 'row', gap: 10 },
-  viewToggle: { width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', justifyContent: 'center', alignItems: 'center' },
+  viewToggle: { width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', justifyContent: 'center', alignItems: 'center', position: 'relative' },
   viewToggleIcon: { fontSize: 20, color: theme.text },
+  notificationBadge: { position: 'absolute', top: -2, right: -2, backgroundColor: '#FF3B30', borderRadius: 10, minWidth: 18, height: 18, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 4 },
+  notificationBadgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
   headerTitle: { fontSize: 28, fontWeight: 'bold', color: theme.text },
   themeButton: { 
     width: 40, 
