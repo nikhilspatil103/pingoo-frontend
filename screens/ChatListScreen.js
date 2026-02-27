@@ -97,7 +97,6 @@ export default function ChatListScreen({ navigation }) {
             <Text style={styles.chatName}>{item.name}, {item.age}</Text>
             <View style={styles.timeContainer}>
               <Text style={styles.chatTime}>{item.time}</Text>
-              <Text style={styles.checkmark}>✓✓</Text>
             </View>
           </View>
           <View style={styles.messageRow}>

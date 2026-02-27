@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, StatusBar, Image, Modal, Alert, ActivityIndicator, Clipboard, Vibration } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, StatusBar, Image, Modal, Alert, ActivityIndicator, Clipboard, Vibration, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 // import { View } from 'expo-blur';
@@ -11,6 +11,81 @@ import SocketService from '../services/SocketService';
 import { API_URL } from '../config/urlConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const AnimatedMessage = React.memo(({ msg, isLastSentMessage, profile, isDark, handleLongPress, setFullScreenImage, styles, shouldAnimate }) => {
+  const slideAnim = useRef(new Animated.Value(shouldAnimate ? (msg.sent ? 50 : -50) : 0)).current;
+  const fadeAnim = useRef(new Animated.Value(shouldAnimate ? 0 : 1)).current;
+  
+  useEffect(() => {
+    if (shouldAnimate) {
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, []);
+  
+  return (
+    <Animated.View 
+      style={[
+        styles.messageRow,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateX: slideAnim }]
+        }
+      ]}
+    >
+      {!msg.sent && (
+        <View style={styles.messageAvatar}>
+          {profile.profilePhoto ? (
+            <Image source={{ uri: profile.profilePhoto }} style={styles.smallAvatar} />
+          ) : (
+            <LinearGradient colors={getAvatarColor(profile.name, profile.email)} style={styles.smallAvatar}>
+              <Text style={styles.smallAvatarText}>{profile.name.charAt(0)}</Text>
+            </LinearGradient>
+          )}
+        </View>
+      )}
+      <View style={[styles.messageContainer, msg.sent ? styles.sentContainer : styles.receivedContainer]}>
+        <TouchableOpacity 
+          onLongPress={() => handleLongPress(msg)}
+          activeOpacity={0.7}
+          delayLongPress={500}
+        >
+          <View 
+            tint={msg.sent ? (isDark ? 'dark' : 'light') : 'light'} 
+            style={[styles.messageBubble, msg.sent ? styles.sentBubble : styles.receivedBubble]}
+          >
+          {msg.mediaType === 'image' && msg.mediaUrl ? (
+            <TouchableOpacity onPress={() => setFullScreenImage(msg.mediaUrl)}>
+              <Image source={{ uri: msg.mediaUrl }} style={styles.mediaImage} />
+            </TouchableOpacity>
+          ) : msg.mediaType === 'video' && msg.mediaUrl ? (
+            <View style={styles.videoContainer}>
+              <Text style={styles.videoText}>🎥 Video</Text>
+            </View>
+          ) : (
+            <Text style={[styles.messageText, msg.sent ? styles.sentText : styles.receivedText, msg.isRecalled && styles.recalledText]}>{msg.text}</Text>
+          )}
+        </View>
+        </TouchableOpacity>
+        {isLastSentMessage && (
+          <View style={styles.sentLabel}>
+            <Text style={styles.sentLabelText}>Sent</Text>
+          </View>
+        )}
+      </View>
+    </Animated.View>
+  );
+});
+
 export default function ChatScreen({ route, navigation }) {
   const { theme, isDark } = useTheme();
   const { user } = useAuth();
@@ -18,6 +93,7 @@ export default function ChatScreen({ route, navigation }) {
   const { profile } = route.params;
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
+  const [animatedMessageIds, setAnimatedMessageIds] = useState(new Set());
   const [showMenu, setShowMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
@@ -40,6 +116,15 @@ export default function ChatScreen({ route, navigation }) {
   const typingTimeoutRef = useRef(null);
   const styles = getStyles(theme, isDark);
   
+  const formatTime = (date = new Date()) => {
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    const displayMinutes = minutes < 10 ? '0' + minutes : minutes;
+    return `${displayHours}:${displayMinutes} ${ampm}`;
+  };
+  
   // Ensure ref is always in sync with current profile
   profileIdRef.current = profile.id;
 
@@ -59,10 +144,11 @@ export default function ChatScreen({ route, navigation }) {
           mediaUrl: data.mediaUrl,
           mediaType: data.mediaType,
           sent: false,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          time: formatTime(),
           timestamp: data.timestamp ? new Date(data.timestamp).getTime() : Date.now()
         };
         setMessages(prev => [...prev, newMessage]);
+        setAnimatedMessageIds(prev => new Set([...prev, newMessage.id]));
         setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
       }
     };
@@ -328,7 +414,7 @@ export default function ChatScreen({ route, navigation }) {
             mediaUrl,
             mediaType,
             sent: true,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            time: formatTime()
           };
           
           setMessages(prev => [...prev, newMessage]);
@@ -374,11 +460,12 @@ export default function ChatScreen({ route, navigation }) {
         id: tempId,
         text: message.trim(),
         sent: true,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: formatTime(),
         timestamp: tempId
       };
       
       setMessages(prev => [...prev, newMessage]);
+      setAnimatedMessageIds(prev => new Set([...prev, tempId]));
       SocketService.sendMessage(profile.id, message.trim(), user.userId, null, 'text', tempId);
       SocketService.emitStopTyping(profile.id, user.userId);
       setMessage('');
@@ -550,6 +637,12 @@ export default function ChatScreen({ route, navigation }) {
               </View>
             </View>
 
+            {isTyping && (
+              <View style={styles.typingIndicator}>
+                <Text style={styles.typingIndicatorText}>{profile.name} is typing...</Text>
+              </View>
+            )}
+
             <ScrollView 
               ref={scrollViewRef}
               style={styles.messagesContainer} 
@@ -564,68 +657,23 @@ export default function ChatScreen({ route, navigation }) {
                   <Text style={styles.emptyText}>Start the conversation</Text>
                 </View>
               ) : (
-                messages.map((msg) => (
-                  <View key={msg.id} style={styles.messageRow}>
-                    {!msg.sent && (
-                      <View style={styles.messageAvatar}>
-                        {profile.profilePhoto ? (
-                          <Image source={{ uri: profile.profilePhoto }} style={styles.smallAvatar} />
-                        ) : (
-                          <LinearGradient colors={getAvatarColor(profile.name, profile.email)} style={styles.smallAvatar}>
-                            <Text style={styles.smallAvatarText}>{profile.name.charAt(0)}</Text>
-                          </LinearGradient>
-                        )}
-                      </View>
-                    )}
-                    <View style={[styles.messageContainer, msg.sent ? styles.sentContainer : styles.receivedContainer]}>
-                      <TouchableOpacity 
-                        onLongPress={() => handleLongPress(msg)}
-                        activeOpacity={0.7}
-                        delayLongPress={500}
-                      >
-                        <View 
-                          
-                          tint={msg.sent ? (isDark ? 'dark' : 'light') : 'light'} 
-                          style={[styles.messageBubble, msg.sent ? styles.sentBubble : styles.receivedBubble]}
-                        >
-                        {msg.mediaType === 'image' && msg.mediaUrl ? (
-                          <TouchableOpacity onPress={() => setFullScreenImage(msg.mediaUrl)}>
-                            <Image source={{ uri: msg.mediaUrl }} style={styles.mediaImage} />
-                          </TouchableOpacity>
-                        ) : msg.mediaType === 'video' && msg.mediaUrl ? (
-                          <View style={styles.videoContainer}>
-                            <Text style={styles.videoText}>🎥 Video</Text>
-                          </View>
-                        ) : (
-                          <Text style={[styles.messageText, msg.sent ? styles.sentText : styles.receivedText, msg.isRecalled && styles.recalledText]}>{msg.text}</Text>
-                        )}
-                        <Text style={[styles.messageTime, msg.sent ? styles.sentTime : styles.receivedTime]}>{msg.time} ✓✓</Text>
-                      </View>
-                      </TouchableOpacity>
-                      {msg.sent && (
-                        <View style={styles.sentLabel}>
-                          <Text style={styles.sentLabelText}>✓✓ Sent</Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-                ))
-              )}
-              {isTyping && (
-                <View style={styles.typingContainer}>
-                  <View style={styles.messageAvatar}>
-                    {profile.profilePhoto ? (
-                      <Image source={{ uri: profile.profilePhoto }} style={styles.smallAvatar} />
-                    ) : (
-                      <LinearGradient colors={getAvatarColor(profile.name, profile.email)} style={styles.smallAvatar}>
-                        <Text style={styles.smallAvatarText}>{profile.name.charAt(0)}</Text>
-                      </LinearGradient>
-                    )}
-                  </View>
-                  <View style={styles.typingBubble}>
-                    <Text style={styles.typingText}>typing...</Text>
-                  </View>
-                </View>
+                messages.map((msg, index) => {
+                  const isLastSentMessage = msg.sent && index === messages.length - 1;
+                  const shouldAnimate = animatedMessageIds.has(msg.id);
+                  return (
+                    <AnimatedMessage
+                      key={msg.id}
+                      msg={msg}
+                      isLastSentMessage={isLastSentMessage}
+                      profile={profile}
+                      isDark={isDark}
+                      handleLongPress={handleLongPress}
+                      setFullScreenImage={setFullScreenImage}
+                      styles={styles}
+                      shouldAnimate={shouldAnimate}
+                    />
+                  );
+                })
               )}
             </ScrollView>
 
@@ -799,6 +847,10 @@ export default function ChatScreen({ route, navigation }) {
                 <View style={styles.reportBox}>
                   <Text style={styles.reportTitle}>Message Options</Text>
                   
+                  <View style={styles.messageTimeDisplay}>
+                    <Text style={styles.messageTimeText}>{selectedMessage?.time}</Text>
+                  </View>
+                  
                   {selectedMessage?.text && (
                     <TouchableOpacity onPress={handleCopyMessage}>
                       <View style={styles.messageOptionButton}>
@@ -884,8 +936,21 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   reportButtonDisabled: { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)', opacity: 0.5 },
   avatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+  typingIndicator: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+    borderBottomWidth: 1,
+    borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+    alignItems: 'center',
+  },
+  typingIndicatorText: {
+    fontSize: 13,
+    color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)',
+    fontStyle: 'italic',
+  },
   messageRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 4 },
-  messageAvatar: { marginRight: 8, marginBottom: 20 },
+  messageAvatar: { marginRight: 8, marginBottom: 4 },
   smallAvatar: { width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   smallAvatarText: { fontSize: 12, fontWeight: 'bold', color: '#fff' },
   messageContainer: { flex: 1 },
@@ -901,24 +966,34 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   uploadingBanner: { backgroundColor: '#03C8F0', paddingVertical: 12, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   uploadingText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   messageBubble: { 
-    maxWidth: '80%', 
-    padding: 14, 
-    borderRadius: 20, 
-    marginBottom: 4,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+    minWidth: 60,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  sentBubble: { alignSelf: 'flex-end', borderBottomRightRadius: 6, backgroundColor: isDark ? 'rgba(255,107,157,0.2)' : 'rgba(255,107,157,0.15)' },
-  receivedBubble: { alignSelf: 'flex-start', borderBottomLeftRadius: 6, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.8)' },
-  messageText: { fontSize: 15, lineHeight: 20, marginBottom: 6 },
+  sentBubble: { 
+    alignSelf: 'flex-end', 
+    borderBottomRightRadius: 4, 
+    backgroundColor: isDark ? 'rgba(255,107,157,0.3)' : 'rgba(255,107,157,0.2)',
+  },
+  receivedBubble: { 
+    alignSelf: 'flex-start', 
+    borderBottomLeftRadius: 4, 
+    backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.95)',
+  },
+  messageText: { fontSize: 15, lineHeight: 20 },
   sentText: { color: theme.text },
   receivedText: { color: theme.text },
   recalledText: { fontStyle: 'italic', opacity: 0.6 },
-  messageTime: { fontSize: 11, alignSelf: 'flex-end' },
+  messageTime: { fontSize: 11, alignSelf: 'flex-end', marginTop: 4 },
   sentTime: { color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' },
   receivedTime: { color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)' },
-  sentLabel: { alignSelf: 'flex-end', marginBottom: 12, marginTop: 4 },
+  sentLabel: { alignSelf: 'flex-end', marginBottom: 12, marginTop: 2 },
   sentLabelText: { fontSize: 11, color: '#03C8F0', fontWeight: '500' },
   mediaImage: { width: 200, height: 200, borderRadius: 12, marginBottom: 8 },
   videoContainer: { width: 200, height: 150, borderRadius: 12, backgroundColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
@@ -928,13 +1003,12 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   typingText: { fontSize: 14, color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)', fontStyle: 'italic', fontWeight: '500' },
   inputContainer: { 
     flexDirection: 'row', 
-    alignItems: 'center', 
+    alignItems: 'flex-end', 
     paddingHorizontal: 15, 
     paddingVertical: 12, 
     borderTopWidth: 1, 
     borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)', 
     gap: 10,
-    overflow: 'hidden',
   },
   iconButton: { 
     width: 44, 
@@ -949,17 +1023,15 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   icon: { fontSize: 20, color: theme.text },
   inputWrapper: {
     flex: 1,
-    height: 44,
+    maxHeight: 120,
     borderRadius: 22,
-    overflow: 'hidden',
     borderWidth: 1,
     borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)',
     backgroundColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.1)',
   },
   input: { 
-    flex: 1, 
-    height: 44, 
     paddingHorizontal: 18, 
+    paddingVertical: 12,
     fontSize: 15, 
     color: theme.text,
   },
@@ -973,4 +1045,6 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   messageOptionDangerText: { color: '#F70776' },
   messageOptionDisabled: { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)', opacity: 0.5 },
   messageOptionDisabledText: { color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' },
+  messageTimeDisplay: { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, marginBottom: 16, alignItems: 'center' },
+  messageTimeText: { fontSize: 13, color: theme.textSecondary, fontWeight: '500' },
 });
