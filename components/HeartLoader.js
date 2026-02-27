@@ -2,51 +2,40 @@ import { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
-export default function PingooLogo({ size = 80, animated = false, message = '', subtext = '' }) {
+export default function HeartLoader({ message = 'Loading...', subtext = '' }) {
   const { theme } = useTheme();
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (animated) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.2,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-
-      Animated.loop(
-        Animated.timing(rotateAnim, {
-          toValue: 1,
-          duration: 2000,
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.2,
+          duration: 800,
           useNativeDriver: true,
-        })
-      ).start();
-    }
-  }, [animated]);
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    Animated.loop(
+      Animated.timing(rotateAnim, {
+        toValue: 1,
+        duration: 2000,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, []);
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.circle, { 
-        width: size * 1.3, 
-        height: size * 1.3, 
-        borderRadius: size * 0.65,
-        transform: [{ scale: pulseAnim }], 
-        backgroundColor: theme.primary + '20' 
-      }]}>
+      <Animated.View style={[styles.circle, { transform: [{ scale: pulseAnim }], backgroundColor: theme.primary + '20' }]}>
         <Animated.View style={[styles.inner, { 
-          width: size * 0.85,
-          height: size * 0.85,
-          borderRadius: size * 0.425,
           backgroundColor: theme.primary,
           transform: [{
             rotate: rotateAnim.interpolate({
@@ -63,7 +52,7 @@ export default function PingooLogo({ size = 80, animated = false, message = '', 
           </View>
         </Animated.View>
       </Animated.View>
-      {message ? <Text style={[styles.text, { color: theme.text }]}>{message}</Text> : null}
+      <Text style={[styles.text, { color: theme.text }]}>{message}</Text>
       {subtext ? <Text style={[styles.subtext, { color: theme.textSecondary }]}>{subtext}</Text> : null}
     </View>
   );
@@ -71,15 +60,23 @@ export default function PingooLogo({ size = 80, animated = false, message = '', 
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 100,
   },
   circle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
   },
   inner: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',

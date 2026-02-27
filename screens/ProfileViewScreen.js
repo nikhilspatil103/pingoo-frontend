@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Dimensions, Platform, StatusBar, TextInput, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 // import { View } from 'expo-blur';
@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
 import OptimizedImage from '../components/OptimizedImage';
+import PingooLogo from '../components/PingooLogo';
 
 let FastImage;
 if (Platform.OS !== 'web') {
@@ -46,7 +47,6 @@ export default function ProfileViewScreen({ route, navigation }) {
     const profileId = initialProfile?.id || userId;
     if (profileId) {
       fetchProfileDetails(profileId);
-      checkIfBlocked();
     }
   }, [initialProfile?.id, userId]);
 
@@ -54,26 +54,37 @@ export default function ProfileViewScreen({ route, navigation }) {
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch(`${API_URL}/user/${profileId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
       
-      if (response.ok) {
-        const data = await response.json();
+      // Make all API calls in parallel instead of sequentially
+      const [profileResponse, likeStatusResponse, blockedResponse] = await Promise.all([
+        fetch(`${API_URL}/user/${profileId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/like-status/${profileId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/blocked-users`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ]);
+      
+      if (profileResponse.ok) {
+        const data = await profileResponse.json();
         setProfile(data.user);
         setLikeCount(data.user.likes?.length || 0);
-        
-        const likeStatusResponse = await fetch(`${API_URL}/like-status/${profileId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (likeStatusResponse.ok) {
-          const likeData = await likeStatusResponse.json();
-          setIsLiked(likeData.isLiked);
-          setLikeCount(likeData.likeCount);
-        }
-        
         checkIfStarred(data.user);
+      }
+      
+      if (likeStatusResponse.ok) {
+        const likeData = await likeStatusResponse.json();
+        setIsLiked(likeData.isLiked);
+        setLikeCount(likeData.likeCount);
+      }
+      
+      if (blockedResponse.ok) {
+        const blockedData = await blockedResponse.json();
+        const blocked = blockedData.blockedUsers.some(u => u._id === profileId);
+        setIsBlocked(blocked);
       }
     } catch (error) {
       console.error('Failed to fetch profile:', error);
@@ -126,20 +137,8 @@ export default function ProfileViewScreen({ route, navigation }) {
   };
 
   const checkIfBlocked = async () => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      const response = await fetch(`${API_URL}/blocked-users`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const blocked = data.blockedUsers.some(u => u._id === profile.id);
-        setIsBlocked(blocked);
-      }
-    } catch (error) {
-      console.error('Error checking block status:', error);
-    }
+    // This function is now integrated into fetchProfileDetails for better performance
+    // Keeping it here for compatibility with other parts of the code
   };
 
   const handleBlock = async () => {
@@ -235,7 +234,7 @@ export default function ProfileViewScreen({ route, navigation }) {
       <View style={styles.container}>
         <LinearGradient colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']} style={styles.gradient}>
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Text style={{ fontSize: 16, color: theme.text }}>Loading...</Text>
+            <PingooLogo size={80} animated={true} />
           </View>
         </LinearGradient>
       </View>

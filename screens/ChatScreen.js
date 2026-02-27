@@ -163,7 +163,6 @@ export default function ChatScreen({ route, navigation }) {
     const handleTyping = (data) => {
       if (String(data.userId) === String(profileIdRef.current)) {
         setIsTyping(true);
-        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
       }
     };
     
@@ -224,7 +223,11 @@ export default function ChatScreen({ route, navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-        setMessages(data.messages || []);
+        const formattedMessages = (data.messages || []).map(msg => ({
+          ...msg,
+          time: msg.timestamp ? formatTime(new Date(msg.timestamp)) : msg.time
+        }));
+        setMessages(formattedMessages);
         
         // Mark messages as read
         await fetch(`${API_URL}/messages/read/${profile.id}`, {
@@ -637,45 +640,47 @@ export default function ChatScreen({ route, navigation }) {
               </View>
             </View>
 
-            {isTyping && (
-              <View style={styles.typingIndicator}>
-                <Text style={styles.typingIndicatorText}>{profile.name} is typing...</Text>
-              </View>
-            )}
-
-            <ScrollView 
-              ref={scrollViewRef}
-              style={styles.messagesContainer} 
-              contentContainerStyle={styles.messagesContent}
-            >
-              {loading ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color="#FF6B9D" />
+            <View style={{ flex: 1, position: 'relative' }} pointerEvents="box-none">
+              {isTyping && (
+                <View style={styles.typingIndicator} pointerEvents="none">
+                  <Text style={styles.typingIndicatorText}>{profile.name} is typing...</Text>
                 </View>
-              ) : messages.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyText}>Start the conversation</Text>
-                </View>
-              ) : (
-                messages.map((msg, index) => {
-                  const isLastSentMessage = msg.sent && index === messages.length - 1;
-                  const shouldAnimate = animatedMessageIds.has(msg.id);
-                  return (
-                    <AnimatedMessage
-                      key={msg.id}
-                      msg={msg}
-                      isLastSentMessage={isLastSentMessage}
-                      profile={profile}
-                      isDark={isDark}
-                      handleLongPress={handleLongPress}
-                      setFullScreenImage={setFullScreenImage}
-                      styles={styles}
-                      shouldAnimate={shouldAnimate}
-                    />
-                  );
-                })
               )}
-            </ScrollView>
+
+              <ScrollView 
+                ref={scrollViewRef}
+                style={styles.messagesContainer} 
+                contentContainerStyle={styles.messagesContent}
+              >
+                {loading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#FF6B9D" />
+                  </View>
+                ) : messages.length === 0 ? (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyText}>Start the conversation</Text>
+                  </View>
+                ) : (
+                  messages.map((msg, index) => {
+                    const isLastSentMessage = msg.sent && index === messages.length - 1;
+                    const shouldAnimate = animatedMessageIds.has(msg.id);
+                    return (
+                      <AnimatedMessage
+                        key={msg.id}
+                        msg={msg}
+                        isLastSentMessage={isLastSentMessage}
+                        profile={profile}
+                        isDark={isDark}
+                        handleLongPress={handleLongPress}
+                        setFullScreenImage={setFullScreenImage}
+                        styles={styles}
+                        shouldAnimate={shouldAnimate}
+                      />
+                    );
+                  })
+                )}
+              </ScrollView>
+            </View>
 
             {isBlockedByUser && (
               <View style={styles.blockedBanner}>
@@ -937,12 +942,17 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   avatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
   typingIndicator: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: 20,
     paddingVertical: 8,
-    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+    backgroundColor: isDark ? '#1a0a2e' : '#ffeef8',
     borderBottomWidth: 1,
-    borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+    borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
     alignItems: 'center',
+    zIndex: 10,
   },
   typingIndicatorText: {
     fontSize: 13,
@@ -970,11 +980,6 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
   sentBubble: { 
     alignSelf: 'flex-end', 
