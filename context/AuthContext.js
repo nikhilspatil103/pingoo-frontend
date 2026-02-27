@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import SocketService from '../services/SocketService';
 import NotificationService from '../services/NotificationService';
 import { API_URL } from '../config/urlConfig';
+import { syncLocationWithBackend } from '../utils/locationService';
 
 const AuthContext = createContext();
 
@@ -52,6 +53,13 @@ export const AuthProvider = ({ children }) => {
         await NotificationService.registerForPushNotifications();
       } catch (notifError) {
         console.log('Push notification registration failed:', notifError);
+      }
+
+      // Sync location with backend after login
+      try {
+        await syncLocationWithBackend(token);
+      } catch (locationError) {
+        console.log('Location sync failed:', locationError);
       }
     } catch (error) {
       console.error('Error saving user data:', error);

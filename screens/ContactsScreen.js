@@ -6,15 +6,18 @@ import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import PingooLogo from '../components/PingooLogo';
+import { getCurrentLocation, getStoredLocation, calculateDistance, formatDistance, syncLocationWithBackend } from '../utils/locationService';
 
 export default function ContactsScreen({ navigation }) {
   const { theme, isDark } = useTheme();
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userLocation, setUserLocation] = useState(null);
 
   useFocusEffect(
     React.useCallback(() => {
       loadContacts();
+      loadLocation();
     }, [])
   );
 
@@ -23,6 +26,29 @@ export default function ContactsScreen({ navigation }) {
     const saved = await AsyncStorage.getItem('contacts');
     if (saved) setContacts(JSON.parse(saved));
     setLoading(false);
+  };
+
+  const loadLocation = async () => {
+    let location = await getStoredLocation();
+    if (!location) {
+      location = await getCurrentLocation();
+      if (location) {
+        const token = await AsyncStorage.getItem('token');
+        if (token) await syncLocationWithBackend(token);
+      }
+    }
+    setUserLocation(location);
+  };
+
+  const getDistanceToContact = (contact) => {
+    if (!userLocation || !contact.latitude || !contact.longitude) return null;
+    const distance = calculateDistance(
+      userLocation.latitude,
+      userLocation.longitude,
+      contact.latitude,
+      contact.longitude
+    );
+    return formatDistance(distance);
   };
 
   const removeContact = async (id) => {
@@ -73,6 +99,9 @@ export default function ContactsScreen({ navigation }) {
                       <View style={styles.contactInfo}>
                         <Text style={styles.contactName}>{contact.name}, {contact.age}</Text>
                         <Text style={styles.contactLocation}>📍 {contact.location || 'Unknown'}</Text>
+                        {getDistanceToContact(contact) && (
+                          <Text style={styles.contactDistance}>📏 {getDistanceToContact(contact)}</Text>
+                        )}
                         <Text style={styles.contactTag}>{contact.tag || 'No tag'}</Text>
                       </View>
                       <TouchableOpacity 
@@ -153,6 +182,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   contactInfo: { flex: 1 },
   contactName: { fontSize: 18, fontWeight: 'bold', color: theme.text, marginBottom: 4 },
   contactLocation: { fontSize: 13, color: theme.textSecondary, marginBottom: 4 },
+  contactDistance: { fontSize: 13, color: '#F70776', marginBottom: 4, fontWeight: '600' },
   contactTag: { fontSize: 12, color: theme.textSecondary },
   removeBtn: { 
     width: 36, 
