@@ -1,0 +1,22 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="512" cy="512" r="512" fill="#F70776"/>
+  
+  <!-- Inner Circle -->
+  <circle cx="512" cy="512" r="380" fill="#FF1493"/>
+  
+  <!-- Grid Pattern (4 blocks) -->
+  <g transform="translate(412, 412)">
+    <!-- Top Left Block -->
+    <rect x="0" y="0" width="90" height="90" rx="12" fill="#FFFFFF"/>
+    
+    <!-- Top Right Block -->
+    <rect x="110" y="0" width="90" height="90" rx="12" fill="#FFFFFF"/>
+    
+    <!-- Bottom Left Block -->
+    <rect x="0" y="110" width="90" height="90" rx="12" fill="#FFFFFF"/>
+    
+    <!-- Bottom Right Block -->
+    <rect x="110" y="110" width="90" height="90" rx="12" fill="#FFFFFF"/>
+  </g>
+</svg>

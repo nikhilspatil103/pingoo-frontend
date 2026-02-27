@@ -32,9 +32,14 @@ export const getCurrentLocation = async () => {
 export const syncLocationWithBackend = async (token) => {
   try {
     const location = await getCurrentLocation();
-    if (!location) return false;
+    if (!location) {
+      console.log('⚠️ Location permission denied or unavailable');
+      return false;
+    }
 
-    const response = await fetch(`${API_URL}/api/location`, {
+    console.log('📍 Syncing location:', location);
+
+    const response = await fetch(`${API_URL}/location`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -48,12 +53,15 @@ export const syncLocationWithBackend = async (token) => {
     });
 
     if (response.ok) {
-      console.log('Location synced with backend');
+      console.log('✅ Location synced with backend successfully');
       return true;
+    } else {
+      const error = await response.json();
+      console.log('❌ Location sync failed:', error);
+      return false;
     }
-    return false;
   } catch (error) {
-    console.error('Error syncing location:', error);
+    console.error('❌ Error syncing location:', error);
     return false;
   }
 };
@@ -76,7 +84,7 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 export const formatDistance = (km) => {
-  if (km < 1) return `${Math.round(km * 1000)}m away`;
+  if (km < 1) return `${(km).toFixed(1)}km away`;
   if (km < 10) return `${km.toFixed(1)}km away`;
   return `${Math.round(km)}km away`;
 };

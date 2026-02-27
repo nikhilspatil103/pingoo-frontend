@@ -31,6 +31,13 @@ export const AuthProvider = ({ children }) => {
       if (token && userData) {
         setUser(JSON.parse(userData));
         await AsyncStorage.setItem('apiUrl', API_URL);
+        
+        // Sync location for existing logged-in users
+        try {
+          await syncLocationWithBackend(token);
+        } catch (locationError) {
+          console.log('Location sync on startup failed:', locationError);
+        }
       }
     } catch (error) {
       console.error('Error checking login status:', error);

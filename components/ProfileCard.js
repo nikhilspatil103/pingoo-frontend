@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import OptimizedImage from './OptimizedImage';
+import { getStoredLocation, calculateDistance, formatDistance } from '../utils/locationService';
 
 let FastImage;
 if (Platform.OS !== 'web') {
@@ -11,6 +12,25 @@ if (Platform.OS !== 'web') {
 
 const ProfileCard = React.memo(({ profile, onPress, isDark, theme }) => {
   const priority = Platform.OS !== 'web' ? FastImage?.priority?.normal : undefined;
+  const [distance, setDistance] = useState(null);
+
+  useEffect(() => {
+    const loadDistance = async () => {
+      if (profile.latitude && profile.longitude) {
+        const userLocation = await getStoredLocation();
+        if (userLocation) {
+          const dist = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            profile.latitude,
+            profile.longitude
+          );
+          setDistance(formatDistance(dist));
+        }
+      }
+    };
+    loadDistance();
+  }, [profile.latitude, profile.longitude]);
   
   return (
     <TouchableOpacity style={styles.wrapper} onPress={onPress} activeOpacity={0.9}>
@@ -39,7 +59,7 @@ const ProfileCard = React.memo(({ profile, onPress, isDark, theme }) => {
                     </View>
                   )}
                 </View>
-                <Text style={styles.profileLocation}>📍 {profile.location || 'Unknown'}</Text>
+                <Text style={styles.profileLocation}>📍 {distance || profile.location || 'Unknown'}</Text>
                 <View style={styles.tagBadge}>
                   <Text style={[styles.genderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>
                     {profile.gender === 'female' ? '♀' : '♂'}
@@ -59,6 +79,25 @@ const ProfileCard = React.memo(({ profile, onPress, isDark, theme }) => {
 
 const ListCard = React.memo(({ profile, onPress, isDark, theme }) => {
   const priority = Platform.OS !== 'web' ? FastImage?.priority?.normal : undefined;
+  const [distance, setDistance] = useState(null);
+
+  useEffect(() => {
+    const loadDistance = async () => {
+      if (profile.latitude && profile.longitude) {
+        const userLocation = await getStoredLocation();
+        if (userLocation) {
+          const dist = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            profile.latitude,
+            profile.longitude
+          );
+          setDistance(formatDistance(dist));
+        }
+      }
+    };
+    loadDistance();
+  }, [profile.latitude, profile.longitude]);
   
   return (
     <TouchableOpacity style={styles.listCard(isDark)} onPress={onPress} activeOpacity={1}>
@@ -84,7 +123,7 @@ const ListCard = React.memo(({ profile, onPress, isDark, theme }) => {
               <Text style={[styles.listLikes, { color: theme.text }]}>❤️ {profile.likesCount}</Text>
             )}
           </View>
-          <Text style={[styles.listLocation, { color: theme.textSecondary }]}>📍 {profile.location || 'Unknown'}</Text>
+          <Text style={[styles.listLocation, { color: theme.textSecondary }]}>📍 {distance || profile.location || 'Unknown'}</Text>
           <View style={styles.listTagRow}>
             <Text style={[styles.listGenderIcon, { color: profile.gender === 'female' ? '#F70776' : '#03C8F0' }]}>
               {profile.gender === 'female' ? '♀' : '♂'}
@@ -124,6 +163,7 @@ const styles = StyleSheet.create({
   likesText: { fontSize: 10, color: '#fff', fontWeight: 'bold' },
   profileName: { fontSize: 16, fontWeight: 'bold', color: '#fff' },
   profileLocation: { fontSize: 11, color: '#fff' },
+  profileDistance: { fontSize: 11, color: '#F70776', fontWeight: '600' },
   tagBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.4)', alignSelf: 'flex-start' },
   genderIcon: { fontSize: 14, fontWeight: 'bold' },
   tagText: { fontSize: 11, color: '#fff', flex: 1 },
@@ -138,6 +178,7 @@ const styles = StyleSheet.create({
   listName: { fontSize: 18, fontWeight: 'bold' },
   listLikes: { fontSize: 12, fontWeight: 'bold' },
   listLocation: { fontSize: 12, marginBottom: 6 },
+  listDistance: { fontSize: 12, color: '#F70776', fontWeight: '600', marginBottom: 6 },
   listTagRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   listGenderIcon: { fontSize: 16, fontWeight: 'bold' },
   listTag: { fontSize: 14 },

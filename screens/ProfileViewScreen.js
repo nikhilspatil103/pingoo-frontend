@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
 import OptimizedImage from '../components/OptimizedImage';
 import PingooLogo from '../components/PingooLogo';
+import { getStoredLocation, calculateDistance, formatDistance } from '../utils/locationService';
 
 let FastImage;
 if (Platform.OS !== 'web') {
@@ -32,6 +33,7 @@ export default function ProfileViewScreen({ route, navigation }) {
   const [isBlocked, setIsBlocked] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [selectedReportOption, setSelectedReportOption] = useState('');
+  const [distance, setDistance] = useState(null);
   
   const getAllImages = () => {
     if (!profile) return [];
@@ -49,6 +51,24 @@ export default function ProfileViewScreen({ route, navigation }) {
       fetchProfileDetails(profileId);
     }
   }, [initialProfile?.id, userId]);
+
+  useEffect(() => {
+    const loadDistance = async () => {
+      if (profile?.latitude && profile?.longitude) {
+        const userLocation = await getStoredLocation();
+        if (userLocation) {
+          const dist = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            profile.latitude,
+            profile.longitude
+          );
+          setDistance(formatDistance(dist));
+        }
+      }
+    };
+    loadDistance();
+  }, [profile?.latitude, profile?.longitude]);
 
   const fetchProfileDetails = async (profileId) => {
     try {
@@ -295,7 +315,7 @@ export default function ProfileViewScreen({ route, navigation }) {
             <View style={styles.header}>
               <View>
                 <Text style={styles.name}>{profile.name}, {profile.age}</Text>
-                <Text style={styles.location}>📍 {profile.currentCity || 'Unknown'}</Text>
+                <Text style={styles.location}>📍 {distance || profile.currentCity || 'Unknown'}</Text>
               </View>
               {!isMyProfile && (
                 <View style={styles.headerActions}>
