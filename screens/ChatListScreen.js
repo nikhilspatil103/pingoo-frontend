@@ -136,7 +136,7 @@ export default function ChatListScreen({ navigation }) {
 
           {loading ? (
             <View style={styles.loadingContainer}>
-              <PingooLogo size={100} animated={true} />
+              <PingooLogo size={80} animated={true} />
             </View>
           ) : chats.length === 0 ? (
             <View style={styles.emptyState}>

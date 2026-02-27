@@ -245,8 +245,10 @@ export default function EditProfileScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Profile Photo</Text>
           <TouchableOpacity style={styles.photoContainer} onPress={() => !uploading && (profilePhoto ? showPhotoOptions(profilePhoto, true) : pickImage(true))} disabled={uploading}>
             {uploading ? (
-              <View style={styles.profileImage}>
-                <PingooLogo size={60} animated={true} />
+              <View style={[styles.profileImage, { justifyContent: 'center', alignItems: 'center' }]}>
+                <View style={{ marginBottom: 0 }}>
+                  <PingooLogo size={60} animated={true} />
+                </View>
               </View>
             ) : profilePhoto ? (
               <Image source={{ uri: profilePhoto }} style={styles.profileImage} />

@@ -166,7 +166,7 @@ export default function HomeScreen({ navigation }) {
 
           {initialLoading ? (
             <View style={styles.loadingContainer}>
-              <PingooLogo size={100} animated={true} />
+              <PingooLogo size={80} animated={true} />
               <Text style={styles.loadingText}>Loading users...</Text>
             </View>
           ) : (
