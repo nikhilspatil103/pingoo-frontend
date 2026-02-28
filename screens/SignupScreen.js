@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, SafeAreaView, StatusBar, KeyboardAvoidingView, ScrollView, Platform, BackHandler } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/urlConfig';
+import PingooLogo from '../components/PingooLogo';
 
 export default function SignupScreen({ navigation }) {
   const { login } = useAuth();
@@ -44,7 +45,7 @@ export default function SignupScreen({ navigation }) {
         >
           <View style={styles.content}>
             <View style={styles.header}>
-              <Text style={styles.logo}>◎</Text>
+              <PingooLogo size={64} animated={true} />
               <Text style={styles.title}>Pingoo</Text>
               <Text style={styles.subtitle}>Connect. Chat. Meet.</Text>
             </View>
@@ -112,7 +113,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1C0F2A' },
   scrollContent: { flexGrow: 1 },
   content: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 40 },
-  header: { alignItems: 'center', marginBottom: 48 },
+  header: { alignItems: 'center', marginBottom: 48, width: '100%' },
   logo: { fontSize: 64, color: '#FF6B9D', marginBottom: 8 },
   title: { fontSize: 42, fontWeight: 'bold', color: '#fff', marginBottom: 8 },
   subtitle: { fontSize: 14, color: 'rgba(255, 255, 255, 0.6)', textAlign: 'center' },

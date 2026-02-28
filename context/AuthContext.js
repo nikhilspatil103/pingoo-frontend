@@ -32,12 +32,10 @@ export const AuthProvider = ({ children }) => {
         setUser(JSON.parse(userData));
         await AsyncStorage.setItem('apiUrl', API_URL);
         
-        // Sync location for existing logged-in users
-        try {
-          await syncLocationWithBackend(token);
-        } catch (locationError) {
-          console.log('Location sync on startup failed:', locationError);
-        }
+        // Sync location in background (non-blocking)
+        syncLocationWithBackend(token).catch(err => 
+          console.log('Location sync on startup failed:', err)
+        );
       }
     } catch (error) {
       console.error('Error checking login status:', error);
@@ -53,23 +51,19 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.setItem('userName', userData.name);
       await AsyncStorage.setItem('userEmail', userData.email);
       await AsyncStorage.setItem('apiUrl', API_URL);
+      
+      // Sync location BEFORE setting user (blocking to ensure it completes)
+      await syncLocationWithBackend(token);
+      
       setUser(userData);
       
-      // Register for push notifications after login
-      try {
-        await NotificationService.registerForPushNotifications();
-      } catch (notifError) {
-        console.log('Push notification registration failed:', notifError);
-      }
-
-      // Sync location with backend after login
-      try {
-        await syncLocationWithBackend(token);
-      } catch (locationError) {
-        console.log('Location sync failed:', locationError);
-      }
+      // Register for push notifications in background
+      NotificationService.registerForPushNotifications().catch(err =>
+        console.log('Push notification registration failed:', err)
+      );
     } catch (error) {
-      console.error('Error saving user data:', error);
+      console.error('Error during login:', error);
+      throw error;
     }
   };
 

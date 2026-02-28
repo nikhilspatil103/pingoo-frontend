@@ -245,18 +245,6 @@ export default function MyProfileScreen({ navigation }) {
                   <Text style={styles.actionArrow}>›</Text>
                 </View>
               </TouchableOpacity>
-              <TouchableOpacity onPress={testPushNotification} activeOpacity={1}>
-                <View style={styles.actionCard}>
-                  <View style={styles.actionIconContainer}>
-                    <Text style={styles.actionIcon}>🔔</Text>
-                  </View>
-                  <View style={styles.actionInfo}>
-                    <Text style={styles.actionTitle}>Test Notifications</Text>
-                    <Text style={styles.actionDesc}>Register push token</Text>
-                  </View>
-                  <Text style={styles.actionArrow}>›</Text>
-                </View>
-              </TouchableOpacity>
               <TouchableOpacity activeOpacity={1}>
                 <View style={styles.actionCard}>
                   <View style={styles.actionIconContainer}>

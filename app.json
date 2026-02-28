@@ -18,7 +18,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.pingoo.app",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -39,7 +41,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "6d2cee09-c9c3-4f0b-91ea-59e0aa10c5ec"
+        "projectId": "55c2a854-a691-4cac-9b49-cadb10cf9056"
       }
     }
   }
