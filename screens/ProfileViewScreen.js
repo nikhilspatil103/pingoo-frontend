@@ -342,6 +342,7 @@ export default function ProfileViewScreen({ route, navigation }) {
               <Text style={styles.sectionTitle}>Info</Text>
               <View style={styles.infoGrid}>
                 <InfoCard icon="♂️" label="Gender" value={profile.gender === 'female' ? 'Female' : 'Male'} />
+                <InfoCard icon="❤️" label="Interested In" value={profile.interestedIn === 'male' ? 'Men' : profile.interestedIn === 'female' ? 'Women' : profile.interestedIn === 'both' ? 'Both' : 'Not added'} />
                 <InfoCard icon="📏" label="Height" value={profile.height ? `${profile.height} cm` : 'Not added'} />
                 <InfoCard icon="💪" label="Body Type" value={profile.bodyType || 'Not added'} />
               </View>

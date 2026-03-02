@@ -82,12 +82,14 @@ export default function ProfileSetupScreen({ route, navigation }) {
         showPopup('error', 'Interest Required', 'Please select who you are interested in');
         return;
       }
+      if (loading) return;
       setStep(5);
     } else if (step === 5) {
       if (!lookingFor.trim()) {
         showPopup('error', 'Looking For Required', 'Please tell us what you are looking for');
         return;
       }
+      if (loading) return;
       handleSignup();
     }
   };
@@ -238,7 +240,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
             {step === 3 && (
               <View style={styles.formCard}>
                 <View style={styles.optionsGrid}>
-                  {[{key: 'male', label: 'Male', icon: '♂'}, {key: 'female', label: 'Female', icon: '♀'}, {key: 'other', label: 'Other', icon: '⚥'}].map((option) => (
+                  {[{key: 'male', label: 'Male', icon: '♂'}, {key: 'female', label: 'Female', icon: '♀'}].map((option) => (
                     <TouchableOpacity
                       key={option.key}
                       style={[styles.optionCardLarge, gender === option.key && styles.selectedCard]}
@@ -257,7 +259,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
             {step === 4 && (
               <View style={styles.formCard}>
                 <View style={styles.optionsGrid}>
-                  {[{key: 'male', label: 'Men', icon: '♂'}, {key: 'female', label: 'Women', icon: '♀'}].map((option) => (
+                  {[{key: 'male', label: 'Men', icon: '♂'}, {key: 'female', label: 'Women', icon: '♀'}, {key: 'both', label: 'Both', icon: '⚤'}].map((option) => (
                     <TouchableOpacity
                       key={option.key}
                       style={[styles.optionCardLarge, interestedIn === option.key && styles.selectedCard]}

@@ -31,6 +31,7 @@ export default function EditProfileScreen({ navigation }) {
   const [profilePhoto, setProfilePhoto] = useState('');
   const [photos, setPhotos] = useState([]);
   const [interests, setInterests] = useState([]);
+  const [interestedIn, setInterestedIn] = useState('');
   const [languages, setLanguages] = useState([]);
   const [showNameEdit, setShowNameEdit] = useState(false);
   const [showBioEdit, setShowBioEdit] = useState(false);
@@ -40,6 +41,7 @@ export default function EditProfileScreen({ navigation }) {
   const [showWorkEdit, setShowWorkEdit] = useState(false);
   const [showLocationEdit, setShowLocationEdit] = useState(false);
   const [showRelationshipEdit, setShowRelationshipEdit] = useState(false);
+  const [showInterestedInEdit, setShowInterestedInEdit] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -80,6 +82,7 @@ export default function EditProfileScreen({ navigation }) {
         setLookingFor(data.user.lookingFor || '');
         setRelationshipStatus(data.user.relationshipStatus || '');
         setKids(data.user.kids || '');
+        setInterestedIn(data.user.interestedIn || '');
       }
     } catch (error) {
       console.error('Failed to load profile data:', error);
@@ -315,6 +318,19 @@ export default function EditProfileScreen({ navigation }) {
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Looking for</Text>
                 <Text style={styles.infoValue} numberOfLines={1}>{lookingFor || 'Not set'}</Text>
+              </View>
+              <Text style={styles.infoArrow}>›</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+            <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowInterestedInEdit(true)}>
+              <View style={styles.infoIcon}>
+                <Text style={styles.infoEmoji}>❤️</Text>
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Interested In</Text>
+                <Text style={styles.infoValue}>{interestedIn === 'male' ? 'Men' : interestedIn === 'female' ? 'Women' : interestedIn === 'both' ? 'Both' : 'Not set'}</Text>
               </View>
               <Text style={styles.infoArrow}>›</Text>
             </TouchableOpacity>
@@ -635,6 +651,39 @@ export default function EditProfileScreen({ navigation }) {
         </View>
       </Modal>
 
+      <Modal visible={showInterestedInEdit} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Interested In</Text>
+              <TouchableOpacity onPress={() => setShowInterestedInEdit(false)}>
+                <Text style={styles.closeBtn}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.optionsGrid}>
+              {[{key: 'male', label: 'Men', icon: '♂'}, {key: 'female', label: 'Women', icon: '♀'}, {key: 'both', label: 'Both', icon: '⚤'}].map((option) => (
+                <TouchableOpacity
+                  key={option.key}
+                  style={[styles.optionCard, interestedIn === option.key && styles.selectedCard]}
+                  onPress={() => setInterestedIn(option.key)}
+                >
+                  <Text style={styles.optionIcon}>{option.icon}</Text>
+                  <Text style={[styles.optionLabel, interestedIn === option.key && styles.selectedLabel]}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity style={styles.saveBtn} onPress={async () => {
+              const success = await updateProfile({ interestedIn });
+              if (success) setShowInterestedInEdit(false);
+            }}>
+              <Text style={styles.saveBtnText}>Save Changes</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={showPhotoModal} animationType="fade" transparent>
         <View style={styles.photoModalOverlay}>
           <View style={styles.photoModalContent}>
@@ -726,6 +775,12 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   closeBtn: { fontSize: 28, color: theme.textSecondary, fontWeight: '300' },
   input: { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#f8f8f8', color: theme.text, padding: 16, borderRadius: 14, fontSize: 16, marginBottom: 16, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
   charCount: { fontSize: 12, color: theme.textSecondary, marginBottom: 12, textAlign: 'right' },
+  optionsGrid: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  optionCard: { flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f8f8f8', borderRadius: 14, paddingVertical: 24, paddingHorizontal: 12, alignItems: 'center', borderWidth: 2, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' },
+  selectedCard: { backgroundColor: '#FF6B9D', borderColor: '#FF6B9D' },
+  optionIcon: { fontSize: 32, marginBottom: 8 },
+  optionLabel: { fontSize: 14, fontWeight: '500', color: theme.textSecondary },
+  selectedLabel: { color: '#fff', fontWeight: '600' },
   saveBtn: { backgroundColor: '#FF6B9D', padding: 16, borderRadius: 14, alignItems: 'center', elevation: 2, shadowColor: '#FF6B9D', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold', letterSpacing: 0.5 },
   optionBtn: { padding: 18, borderRadius: 14, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f8f8f8', marginBottom: 10, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
