@@ -78,7 +78,7 @@ const AnimatedMessage = React.memo(({ msg, isLastSentMessage, profile, isDark, h
         </TouchableOpacity>
         {isLastSentMessage && (
           <View style={styles.sentLabel}>
-            <Text style={styles.sentLabelText}>Sent</Text>
+            <Text style={[styles.sentLabelText, msg.isRead && styles.readLabelText]}>{msg.isRead ? 'Read' : 'Sent'}</Text>
           </View>
         )}
       </View>
@@ -150,6 +150,11 @@ export default function ChatScreen({ route, navigation }) {
         setMessages(prev => [...prev, newMessage]);
         setAnimatedMessageIds(prev => new Set([...prev, newMessage.id]));
         setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+        
+        // Mark message as seen
+        if (data.messageId) {
+          SocketService.markMessageSeen(data.messageId, data.senderId);
+        }
       }
     };
     
@@ -192,10 +197,21 @@ export default function ChatScreen({ route, navigation }) {
       }));
     };
     
+    const handleMessageSeen = (data) => {
+      // Update message to show it was seen
+      setMessages(prev => prev.map(m => {
+        if (String(m.id) === String(data.messageId)) {
+          return { ...m, isRead: true };
+        }
+        return m;
+      }));
+    };
+    
     SocketService.onReceiveMessage(handleMessage);
     SocketService.onTyping(handleTyping);
     SocketService.onStopTyping(handleStopTyping);
     SocketService.onDeleteMessage(handleRecallMessage);
+    SocketService.onMessageSeen(handleMessageSeen);
     SocketService.on('messageSaved', handleMessageSaved);
 
     return () => {
@@ -204,6 +220,7 @@ export default function ChatScreen({ route, navigation }) {
       SocketService.offTyping(handleTyping);
       SocketService.offStopTyping(handleStopTyping);
       SocketService.offDeleteMessage(handleRecallMessage);
+      SocketService.offMessageSeen(handleMessageSeen);
       SocketService.off('messageSaved', handleMessageSaved);
     };
   }, []);
@@ -235,6 +252,14 @@ export default function ChatScreen({ route, navigation }) {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
+          }
+        });
+        
+        // Mark unread messages as seen via socket
+        const unreadMessages = formattedMessages.filter(msg => !msg.sent && !msg.isRead);
+        unreadMessages.forEach(msg => {
+          if (msg.id) {
+            SocketService.markMessageSeen(msg.id, profile.id);
           }
         });
         
@@ -1000,6 +1025,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   receivedTime: { color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)' },
   sentLabel: { alignSelf: 'flex-end', marginBottom: 12, marginTop: 2 },
   sentLabelText: { fontSize: 11, color: '#03C8F0', fontWeight: '500' },
+  readLabelText: { color: '#4CAF50' },
   mediaImage: { width: 200, height: 200, borderRadius: 12, marginBottom: 8 },
   videoContainer: { width: 200, height: 150, borderRadius: 12, backgroundColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
   videoText: { fontSize: 16, color: theme.text },

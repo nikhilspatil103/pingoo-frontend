@@ -193,6 +193,26 @@ class SocketService {
       this.deleteMessageListeners = [];
     }
   }
+
+  // Mark message as seen
+  markMessageSeen(messageId, senderId) {
+    if (this.socket && this.isConnected) {
+      this.socket.emit('markMessageSeen', { messageId, senderId });
+    }
+  }
+
+  // Listen for message seen event
+  onMessageSeen(callback) {
+    if (this.socket) {
+      this.socket.on('messageSeen', callback);
+    }
+  }
+
+  offMessageSeen(callback) {
+    if (this.socket) {
+      this.socket.off('messageSeen', callback);
+    }
+  }
 }
 
 export default new SocketService();
