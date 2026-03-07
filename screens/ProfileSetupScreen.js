@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/urlConfig';
 import { uploadImageToCloudinary } from '../utils/imageUpload';
+import { requestLocationPermission, getCurrentLocation } from '../utils/locationService';
 import PingooLogo from '../components/PingooLogo';
 
 export default function ProfileSetupScreen({ route, navigation }) {
@@ -14,6 +15,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
   const [gender, setGender] = useState('');
   const [interestedIn, setInterestedIn] = useState('');
   const [lookingFor, setLookingFor] = useState('');
+  const [locationGranted, setLocationGranted] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState('');
   const [loading, setLoading] = useState(false);
   const [popup, setPopup] = useState({ visible: false, type: '', title: '', message: '' });
@@ -53,7 +55,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 1) {
       setStep(2);
     } else if (step === 2) {
@@ -90,7 +92,41 @@ export default function ProfileSetupScreen({ route, navigation }) {
         return;
       }
       if (loading) return;
-      handleSignup();
+      setStep(6);
+    } else if (step === 6) {
+      if (loading) return;
+      console.log('Step 6: Requesting location permission');
+      
+      const granted = await requestLocationPermission();
+      console.log('Location permission result:', granted);
+      
+      if (granted) {
+        console.log('Permission granted, getting location...');
+        try {
+          await getCurrentLocation();
+          console.log('Location obtained, proceeding to signup');
+        } catch (locError) {
+          console.log('Location fetch failed:', locError);
+        }
+        // Call handleSignup
+        handleSignup();
+      } else {
+        console.log('Location permission denied');
+        Alert.alert(
+          'Location Required',
+          'Location access is required to find people near you. Please enable location to continue.',
+          [
+            {
+              text: 'Try Again',
+              onPress: () => handleNext()
+            },
+            {
+              text: 'Cancel',
+              style: 'cancel'
+            }
+          ]
+        );
+      }
     }
   };
 
@@ -103,24 +139,28 @@ export default function ProfileSetupScreen({ route, navigation }) {
     
     if (!age.trim()) {
       console.log('Age validation failed');
+      setLoading(false);
       showPopup('error', 'Age Required', 'Please enter your age to continue');
       return;
     }
 
     if (!gender) {
       console.log('Gender validation failed');
+      setLoading(false);
       showPopup('error', 'Gender Required', 'Please select your gender');
       return;
     }
 
     if (!interestedIn) {
       console.log('Interest validation failed');
+      setLoading(false);
       showPopup('error', 'Interest Required', 'Please select who you are interested in');
       return;
     }
 
     if (!lookingFor.trim()) {
       console.log('Looking for validation failed');
+      setLoading(false);
       showPopup('error', 'Looking For Required', 'Please tell us what you are looking for');
       return;
     }
@@ -128,12 +168,14 @@ export default function ProfileSetupScreen({ route, navigation }) {
     const ageNum = parseInt(age);
     if (isNaN(ageNum) || ageNum < 18) {
       console.log('Age restriction validation failed');
+      setLoading(false);
       showPopup('error', 'Age Restriction', 'You must be at least 18 years old to use this app');
       return;
     }
 
     if (ageNum > 100) {
       console.log('Invalid age validation failed');
+      setLoading(false);
       showPopup('error', 'Invalid Age', 'Please enter a valid age');
       return;
     }
@@ -141,6 +183,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
     console.log('All validations passed, proceeding with signup');
     setLoading(true);
     try {
+      console.log('Fetching signup API...');
       const response = await fetch(`${API_URL}/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,20 +198,23 @@ export default function ProfileSetupScreen({ route, navigation }) {
           profilePhoto 
         })
       });
+      console.log('Signup response received:', response.status);
       const data = await response.json();
+      console.log('Signup data:', data);
       
       if (response.ok) {
-        showPopup('success', 'Account Created!', 'Welcome to the app! Your profile has been created successfully.');
-        setTimeout(async () => {
-          await login(data.user, data.token);
-        }, 2000);
+        console.log('Signup successful, logging in...');
+        await login(data.user, data.token);
+        console.log('Login completed');
       } else {
+        console.log('Signup failed:', data.error);
+        setLoading(false);
         showPopup('error', 'Signup Failed', data.error || 'Something went wrong. Please try again.');
       }
     } catch (error) {
-      showPopup('error', 'Network Error', 'Please check your internet connection and try again.');
-    } finally {
+      console.error('Signup error:', error);
       setLoading(false);
+      showPopup('error', 'Network Error', 'Please check your internet connection and try again.');
     }
   };
 
@@ -180,7 +226,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
           <TouchableOpacity onPress={() => step > 1 ? setStep(step - 1) : navigation.goBack()} style={styles.backBtn}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Step {step} of 5</Text>
+          <Text style={styles.headerTitle}>Step {step} of 6</Text>
           <View style={{ width: 40 }} />
         </View>
 
@@ -189,10 +235,10 @@ export default function ProfileSetupScreen({ route, navigation }) {
             <View style={styles.welcomeSection}>
               <PingooLogo size={64} animated={true} />
               <Text style={styles.title}>
-                {step === 1 ? 'Add Your Photo' : step === 2 ? 'How old are you?' : step === 3 ? 'Your Gender' : step === 4 ? 'Interested in' : 'What are you looking for?'}
+                {step === 1 ? 'Add Your Photo' : step === 2 ? 'How old are you?' : step === 3 ? 'Your Gender' : step === 4 ? 'Interested in' : step === 5 ? 'What are you looking for?' : 'Enable Location'}
               </Text>
               <Text style={styles.subtitle}>
-                {step === 1 ? 'Optional - You can skip this' : step === 2 ? 'You must be 18 or older' : step === 3 ? 'Select your gender' : step === 4 ? 'Who would you like to meet?' : 'Tell us your preferences'}
+                {step === 1 ? 'Optional - You can skip this' : step === 2 ? 'You must be 18 or older' : step === 3 ? 'Select your gender' : step === 4 ? 'Who would you like to meet?' : step === 5 ? 'Tell us your preferences' : 'Required to find people near you'}
               </Text>
             </View>
 
@@ -292,6 +338,23 @@ export default function ProfileSetupScreen({ route, navigation }) {
                 </View>
               </View>
             )}
+
+            {step === 6 && (
+              <View style={styles.formCard}>
+                <View style={styles.locationCard}>
+                  <Text style={styles.locationIcon}>📍</Text>
+                  <Text style={styles.locationTitle}>Location Access</Text>
+                  <Text style={styles.locationDescription}>
+                    We need your location to show you people nearby and calculate distances. Your exact location is never shared with other users.
+                  </Text>
+                  <View style={styles.locationFeatures}>
+                    <Text style={styles.locationFeature}>• Find people near you</Text>
+                    <Text style={styles.locationFeature}>• See distance to profiles</Text>
+                    <Text style={styles.locationFeature}>• Your privacy is protected</Text>
+                  </View>
+                </View>
+              </View>
+            )}
           </View>
         </ScrollView>
 
@@ -302,7 +365,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
             disabled={loading}
           >
             <Text style={styles.continueBtnText}>
-              {loading ? 'Uploading...' : step === 5 ? 'Complete Setup' : step === 1 ? (profilePhoto ? 'Next' : 'Skip') : 'Next'}
+              {loading ? 'Creating Account...' : step === 6 ? 'Allow Location & Complete' : step === 5 ? 'Next' : step === 1 ? (profilePhoto ? 'Next' : 'Skip') : 'Next'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -530,5 +593,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     minWidth: 100
   },
-  popupButtonText: { color: '#fff', fontSize: 16, fontWeight: '600', textAlign: 'center' }
+  popupButtonText: { color: '#fff', fontSize: 16, fontWeight: '600', textAlign: 'center' },
+  locationCard: {
+    alignItems: 'center',
+    paddingVertical: 20
+  },
+  locationIcon: {
+    fontSize: 64,
+    marginBottom: 16
+  },
+  locationTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 12
+  },
+  locationDescription: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.7)',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20
+  },
+  locationFeatures: {
+    alignSelf: 'stretch'
+  },
+  locationFeature: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 8,
+    paddingLeft: 8
+  }
 });

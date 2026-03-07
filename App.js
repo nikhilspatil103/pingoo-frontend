@@ -142,12 +142,17 @@ function AppNavigator() {
         
         // Navigate based on notification type
         if (data.type === 'message' && data.senderId) {
-          navigationRef.current?.navigate('Chat', { 
-            userId: data.senderId,
-            userName: data.senderName 
-          });
+          // For message notifications, go to ChatList first, then to specific chat
+          navigationRef.current?.navigate('Chats');
+          setTimeout(() => {
+            navigationRef.current?.navigate('Chat', { 
+              userId: data.senderId,
+              userName: data.senderName 
+            });
+          }, 100);
         } else if (data.type === 'like' && data.likerId) {
-          navigationRef.current?.navigate('ProfileView', { userId: data.likerId });
+          // For like notifications, go to Notifications screen
+          navigationRef.current?.navigate('Notifications');
         }
       });
 

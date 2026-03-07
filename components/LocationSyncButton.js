@@ -15,11 +15,11 @@ export default function LocationSyncButton() {
         return;
       }
 
-      const success = await syncLocationWithBackend(token);
+      const success = await syncLocationWithBackend(token, true);
       if (success) {
         Alert.alert('Success', 'Location synced successfully!');
       } else {
-        Alert.alert('Failed', 'Could not sync location. Check permissions.');
+        Alert.alert('Location Access', 'Location permission is required to show distances to other users. You can enable it in your device settings.');
       }
     } catch (error) {
       Alert.alert('Error', error.message);

@@ -8,6 +8,7 @@ import { API_URL } from '../config/urlConfig';
 import OptimizedImage from '../components/OptimizedImage';
 import PingooLogo from '../components/PingooLogo';
 import { getStoredLocation, calculateDistance, formatDistance } from '../utils/locationService';
+import { formatLastSeen } from '../utils/timeUtils';
 
 let FastImage;
 if (Platform.OS !== 'web') {
@@ -316,6 +317,12 @@ export default function ProfileViewScreen({ route, navigation }) {
               <View>
                 <Text style={styles.name}>{profile.name}, {profile.age}</Text>
                 <Text style={styles.location}>📍 {distance || profile.currentCity || 'Unknown'}</Text>
+                <View style={styles.statusContainer}>
+                  <View style={[styles.statusDot, profile.isOnline && styles.statusDotOnline]} />
+                  <Text style={styles.statusText}>
+                    {profile.isOnline ? 'Online' : formatLastSeen(profile.lastSeen)}
+                  </Text>
+                </View>
               </View>
               {!isMyProfile && (
                 <View style={styles.headerActions}>
@@ -604,6 +611,10 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
   name: { fontSize: 28, fontWeight: 'bold', color: theme.text },
   location: { fontSize: 14, color: theme.textSecondary, marginTop: 4 },
+  statusContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#999', marginRight: 6 },
+  statusDotOnline: { backgroundColor: '#4CAF50' },
+  statusText: { fontSize: 12, color: theme.textSecondary },
   headerActions: { flexDirection: 'row', gap: 10 },
   iconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', justifyContent: 'center', alignItems: 'center' },
   iconBtnText: { fontSize: 20 },

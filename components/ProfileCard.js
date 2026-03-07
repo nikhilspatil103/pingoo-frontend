@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import OptimizedImage from './OptimizedImage';
 import { getStoredLocation, calculateDistance, formatDistance } from '../utils/locationService';
+import { formatLastSeen } from '../utils/timeUtils';
 
 let FastImage;
 if (Platform.OS !== 'web') {
@@ -43,9 +44,13 @@ const ProfileCard = React.memo(({ profile, onPress, isDark, theme }) => {
             userName={profile.name}
             priority={priority}
           />
-          {profile.isOnline && (
+          {profile.isOnline ? (
             <View style={styles.onlineBadge}>
-              <Text style={styles.onlineBadgeText}>🟢</Text>
+              <View style={styles.onlineDot} />
+            </View>
+          ) : (
+            <View style={styles.lastSeenBadge}>
+              <Text style={styles.lastSeenText}>{formatLastSeen(profile.lastSeen)}</Text>
             </View>
           )}
           <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.cardGradient}>
@@ -110,9 +115,13 @@ const ListCard = React.memo(({ profile, onPress, isDark, theme }) => {
             userName={profile.name}
             priority={priority}
           />
-          {profile.isOnline && (
+          {profile.isOnline ? (
             <View style={styles.listOnlineBadge}>
-              <Text style={styles.listOnlineBadgeText}>🟢</Text>
+              <View style={styles.listOnlineDot} />
+            </View>
+          ) : (
+            <View style={styles.listLastSeenBadge}>
+              <Text style={styles.listLastSeenText}>{formatLastSeen(profile.lastSeen)}</Text>
             </View>
           )}
         </View>
@@ -153,8 +162,37 @@ const styles = StyleSheet.create({
   }),
   cardImage: { width: '100%', height: 240, borderRadius: 20, overflow: 'hidden', position: 'relative' },
   cardImageFull: { width: '100%', height: '100%', borderRadius: 20 },
-  onlineBadge: { position: 'absolute', top: 10, right: 10, width: 12, height: 12, borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  onlineBadgeText: { fontSize: 10 },
+  onlineBadge: { 
+    position: 'absolute', 
+    top: 12, 
+    right: 12, 
+    width: 12, 
+    height: 12, 
+    borderRadius: 6, 
+    backgroundColor: 'rgba(0,0,0,0.3)', 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  onlineDot: { 
+    width: 8, 
+    height: 8, 
+    borderRadius: 4, 
+    backgroundColor: '#00ff00' 
+  },
+  lastSeenBadge: { 
+    position: 'absolute', 
+    top: 10, 
+    right: 10, 
+    paddingHorizontal: 6, 
+    paddingVertical: 2, 
+    borderRadius: 8, 
+    backgroundColor: 'rgba(0,0,0,0.6)' 
+  },
+  lastSeenText: { 
+    fontSize: 9, 
+    color: '#fff', 
+    fontWeight: '500' 
+  },
   cardGradient: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '50%' },
   cardOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 10, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, backgroundColor: 'rgba(0,0,0,0.3)' },
   cardInfo: { gap: 4 },
@@ -171,8 +209,37 @@ const styles = StyleSheet.create({
   listCardContent: { flexDirection: 'row', padding: 12 },
   listImage: { width: 80, height: 80, borderRadius: 12, overflow: 'hidden' },
   listImageContainer: { position: 'relative' },
-  listOnlineBadge: { position: 'absolute', top: 2, right: 2, width: 10, height: 10, borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
-  listOnlineBadgeText: { fontSize: 8 },
+  listOnlineBadge: { 
+    position: 'absolute', 
+    top: 4, 
+    right: 4, 
+    width: 10, 
+    height: 10, 
+    borderRadius: 5, 
+    backgroundColor: 'rgba(0,0,0,0.3)', 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  listOnlineDot: { 
+    width: 6, 
+    height: 6, 
+    borderRadius: 3, 
+    backgroundColor: '#00ff00' 
+  },
+  listLastSeenBadge: { 
+    position: 'absolute', 
+    top: 3, 
+    right: 3, 
+    paddingHorizontal: 4, 
+    paddingVertical: 1, 
+    borderRadius: 6, 
+    backgroundColor: 'rgba(0,0,0,0.6)' 
+  },
+  listLastSeenText: { 
+    fontSize: 7, 
+    color: '#fff', 
+    fontWeight: '500' 
+  },
   listInfo: { flex: 1, marginLeft: 15, justifyContent: 'center' },
   listNameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   listName: { fontSize: 18, fontWeight: 'bold' },

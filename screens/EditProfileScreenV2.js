@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { API_URL } from '../config/urlConfig';
 import { uploadImageToCloudinary } from '../utils/imageUpload';
 import PingooLogo from '../components/PingooLogo';
+import LocationPicker from '../components/LocationPicker';
 
 export default function EditProfileScreen({ navigation }) {
   const { theme, isDark } = useTheme();
@@ -118,6 +119,45 @@ export default function EditProfileScreen({ navigation }) {
       console.log('Update network error:', error);
       Alert.alert('Error', 'Network error. Please try again.');
       return false;
+    }
+  };
+
+  const updateLocationWithCoordinates = async (locationData) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      
+      // If coordinates are available, update with location API
+      if (locationData.latitude && locationData.longitude) {
+        const response = await fetch(`${API_URL}/location`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            latitude: locationData.latitude,
+            longitude: locationData.longitude,
+            location: locationData.location
+          }),
+        });
+        
+        if (response.ok) {
+          setCurrentCity(locationData.location);
+          Alert.alert('Success', 'Location updated successfully');
+          setShowLocationEdit(false);
+        } else {
+          Alert.alert('Error', 'Failed to update location');
+        }
+      } else {
+        // If no coordinates, just update the city name
+        const success = await updateProfile({ currentCity: locationData.location });
+        if (success) {
+          setCurrentCity(locationData.location);
+          setShowLocationEdit(false);
+        }
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Network error. Please try again.');
     }
   };
 
@@ -610,14 +650,22 @@ export default function EditProfileScreen({ navigation }) {
                 <Text style={styles.closeBtn}>✕</Text>
               </TouchableOpacity>
             </View>
-            <TextInput style={styles.input} value={hometown} onChangeText={setHometown} placeholder="Hometown" placeholderTextColor={theme.textSecondary} />
-            <TextInput style={styles.input} value={currentCity} onChangeText={setCurrentCity} placeholder="Current City" placeholderTextColor={theme.textSecondary} />
-            <TouchableOpacity style={styles.saveBtn} onPress={async () => {
-              await updateProfile({ hometown, currentCity });
-              setShowLocationEdit(false);
-            }}>
-              <Text style={styles.saveBtnText}>Save Changes</Text>
-            </TouchableOpacity>
+            <LocationPicker 
+              onLocationSelect={updateLocationWithCoordinates}
+              theme={theme}
+              isDark={isDark}
+            />
+            <View style={styles.manualSection}>
+              <Text style={styles.fieldLabel}>Or Enter Manually</Text>
+              <TextInput style={styles.input} value={hometown} onChangeText={setHometown} placeholder="Hometown" placeholderTextColor={theme.textSecondary} />
+              <TextInput style={styles.input} value={currentCity} onChangeText={setCurrentCity} placeholder="Current City" placeholderTextColor={theme.textSecondary} />
+              <TouchableOpacity style={styles.saveBtn} onPress={async () => {
+                await updateProfile({ hometown, currentCity });
+                setShowLocationEdit(false);
+              }}>
+                <Text style={styles.saveBtnText}>Save Changes</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -796,4 +844,10 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   actionBtn: { backgroundColor: '#FF6B9D', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12, minWidth: 100 },
   deleteBtn: { backgroundColor: '#ff4757' },
   actionBtnText: { color: '#fff', fontWeight: '700', textAlign: 'center', fontSize: 15 },
+  manualSection: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+  },
 });

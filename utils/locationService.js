@@ -3,17 +3,31 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
 
 export const requestLocationPermission = async () => {
-  const { status } = await Location.requestForegroundPermissionsAsync();
-  return status === 'granted';
+  try {
+    console.log('Requesting location permission...');
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    console.log('Location permission status:', status);
+    
+    // Check if permission was granted or already granted
+    if (status === 'granted') {
+      return true;
+    }
+    
+    // If denied, check current status one more time
+    const { status: currentStatus } = await Location.getForegroundPermissionsAsync();
+    console.log('Current location permission status:', currentStatus);
+    return currentStatus === 'granted';
+  } catch (error) {
+    console.error('Error requesting location permission:', error);
+    return false;
+  }
 };
 
 export const getCurrentLocation = async () => {
   try {
-    const hasPermission = await requestLocationPermission();
-    if (!hasPermission) return null;
-
     const location = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Balanced,
+      timeout: 10000,
     });
 
     const coords = {
@@ -36,8 +50,6 @@ export const syncLocationWithBackend = async (token) => {
       console.log('⚠️ Location permission denied or unavailable');
       return false;
     }
-
-    console.log('📍 Syncing location:', location);
 
     const response = await fetch(`${API_URL}/location`, {
       method: 'PUT',
@@ -72,7 +84,7 @@ export const getStoredLocation = async () => {
 };
 
 export const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // Earth's radius in km
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = 
