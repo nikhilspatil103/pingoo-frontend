@@ -95,7 +95,7 @@ class SocketService {
     }
   }
 
-  sendMessage(receiverId, message, senderId, mediaUrl = null, mediaType = 'text', tempId = null) {
+  sendMessage(receiverId, message, senderId, mediaUrl = null, mediaType = 'text', tempId = null, replyTo = null) {
     if (this.socket && this.isConnected) {
       this.socket.emit('sendMessage', {
         receiverId,
@@ -103,7 +103,8 @@ class SocketService {
         senderId,
         mediaUrl,
         mediaType,
-        tempId
+        tempId,
+        replyTo
       });
     }
   }

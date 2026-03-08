@@ -11,7 +11,7 @@ import SocketService from '../services/SocketService';
 import { API_URL } from '../config/urlConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const AnimatedMessage = React.memo(({ msg, isLastSentMessage, profile, isDark, handleLongPress, setFullScreenImage, styles, shouldAnimate }) => {
+const AnimatedMessage = React.memo(({ msg, isLastSentMessage, profile, isDark, handleLongPress, setFullScreenImage, styles, shouldAnimate, isSelected }) => {
   const slideAnim = useRef(new Animated.Value(shouldAnimate ? (msg.sent ? 50 : -50) : 0)).current;
   const fadeAnim = useRef(new Animated.Value(shouldAnimate ? 0 : 1)).current;
   
@@ -57,12 +57,21 @@ const AnimatedMessage = React.memo(({ msg, isLastSentMessage, profile, isDark, h
         <TouchableOpacity 
           onLongPress={() => handleLongPress(msg)}
           activeOpacity={0.7}
-          delayLongPress={500}
+          delayLongPress={300}
         >
           <View 
             tint={msg.sent ? (isDark ? 'dark' : 'light') : 'light'} 
-            style={[styles.messageBubble, msg.sent ? styles.sentBubble : styles.receivedBubble]}
+            style={[
+              styles.messageBubble, 
+              msg.sent ? styles.sentBubble : styles.receivedBubble,
+              isSelected && styles.selectedBubble
+            ]}
           >
+          {msg.replyTo && (
+            <View style={styles.replyBubble}>
+              <Text style={styles.replyBubbleText} numberOfLines={1}>{msg.replyTo.text}</Text>
+            </View>
+          )}
           {msg.mediaType === 'image' && msg.mediaUrl ? (
             <TouchableOpacity onPress={() => setFullScreenImage(msg.mediaUrl)}>
               <Image source={{ uri: msg.mediaUrl }} style={styles.mediaImage} />
@@ -111,6 +120,9 @@ export default function ChatScreen({ route, navigation }) {
   const [fullScreenImage, setFullScreenImage] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [showMessageOptions, setShowMessageOptions] = useState(false);
+  const [showReplyPopup, setShowReplyPopup] = useState(false);
+  const [showCopyPopup, setShowCopyPopup] = useState(false);
+  const [replyTo, setReplyTo] = useState(null);
   const scrollViewRef = useRef();
   const profileIdRef = useRef(profile.id);
   const typingTimeoutRef = useRef(null);
@@ -143,6 +155,7 @@ export default function ChatScreen({ route, navigation }) {
           text: data.message,
           mediaUrl: data.mediaUrl,
           mediaType: data.mediaType,
+          replyTo: data.replyTo || null,
           sent: false,
           time: formatTime(),
           timestamp: data.timestamp ? new Date(data.timestamp).getTime() : Date.now()
@@ -489,14 +502,16 @@ export default function ChatScreen({ route, navigation }) {
         text: message.trim(),
         sent: true,
         time: formatTime(),
-        timestamp: tempId
+        timestamp: tempId,
+        replyTo: replyTo ? { messageId: replyTo.id, text: replyTo.text } : null
       };
       
       setMessages(prev => [...prev, newMessage]);
       setAnimatedMessageIds(prev => new Set([...prev, tempId]));
-      SocketService.sendMessage(profile.id, message.trim(), user.userId, null, 'text', tempId);
+      SocketService.sendMessage(profile.id, message.trim(), user.userId, null, 'text', tempId, replyTo ? { messageId: replyTo.id, text: replyTo.text } : null);
       SocketService.emitStopTyping(profile.id, user.userId);
       setMessage('');
+      setReplyTo(null);
       setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
     }
   };
@@ -583,6 +598,19 @@ export default function ChatScreen({ route, navigation }) {
     setShowMessageOptions(true);
   };
 
+  const handleMessageAction = (action, msg, emoji = null) => {
+    if (action === 'reply') {
+      setReplyTo(msg);
+      setShowReplyPopup(true);
+      setTimeout(() => setShowReplyPopup(false), 2000);
+    } else if (action === 'react') {
+      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, reaction: emoji } : m));
+      SocketService.emit('reactToMessage', { messageId: msg.id, reaction: emoji, receiverId: profile.id });
+    }
+    setShowMessageOptions(false);
+    setSelectedMessage(null);
+  };
+
   const canRecallMessage = (msg) => {
     if (!msg.sent || !msg.timestamp) return false;
     const messageTime = msg.timestamp;
@@ -594,7 +622,18 @@ export default function ChatScreen({ route, navigation }) {
   const handleCopyMessage = () => {
     if (selectedMessage?.text) {
       Clipboard.setString(selectedMessage.text);
-      Alert.alert('Copied', 'Message copied to clipboard');
+      setShowCopyPopup(true);
+      setTimeout(() => setShowCopyPopup(false), 2000);
+    }
+    setShowMessageOptions(false);
+    setSelectedMessage(null);
+  };
+
+  const handleReplyMessage = () => {
+    if (selectedMessage) {
+      setReplyTo(selectedMessage);
+      setShowReplyPopup(true);
+      setTimeout(() => setShowReplyPopup(false), 2000);
     }
     setShowMessageOptions(false);
     setSelectedMessage(null);
@@ -665,6 +704,32 @@ export default function ChatScreen({ route, navigation }) {
               </View>
             </View>
 
+            {showMessageOptions && selectedMessage && (
+              <Modal visible={true} animationType="fade" transparent>
+                <View style={styles.messageOptionsOverlay}>
+                  <TouchableOpacity style={styles.messageOptionsBackdrop} onPress={() => { setShowMessageOptions(false); setSelectedMessage(null); }} />
+                  <View style={styles.messageOptionsPopup}>
+                    <TouchableOpacity onPress={() => handleMessageAction('reply', selectedMessage)} style={styles.messageOptionButton}>
+                      <Text style={styles.messageOptionIcon}>↩️</Text>
+                      <Text style={styles.messageOptionText}>Reply</Text>
+                    </TouchableOpacity>
+                    {selectedMessage?.text && (
+                      <TouchableOpacity onPress={handleCopyMessage} style={styles.messageOptionButton}>
+                        <Text style={styles.messageOptionIcon}>📋</Text>
+                        <Text style={styles.messageOptionText}>Copy</Text>
+                      </TouchableOpacity>
+                    )}
+                    {selectedMessage?.sent && canRecallMessage(selectedMessage) && !selectedMessage?.isRecalled && (
+                      <TouchableOpacity onPress={handleDeleteMessage} style={styles.messageOptionButton}>
+                        <Text style={styles.messageOptionIcon}>🗑️</Text>
+                        <Text style={styles.messageOptionText}>Delete</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              </Modal>
+            )}
+
             <View style={{ flex: 1, position: 'relative' }} pointerEvents="box-none">
               {isTyping && (
                 <View style={styles.typingIndicator} pointerEvents="none">
@@ -676,6 +741,12 @@ export default function ChatScreen({ route, navigation }) {
                 ref={scrollViewRef}
                 style={styles.messagesContainer} 
                 contentContainerStyle={styles.messagesContent}
+                onTouchStart={() => {
+                  if (showMessageOptions) {
+                    setShowMessageOptions(false);
+                    setSelectedMessage(null);
+                  }
+                }}
               >
                 {loading ? (
                   <View style={styles.loadingContainer}>
@@ -700,6 +771,7 @@ export default function ChatScreen({ route, navigation }) {
                         setFullScreenImage={setFullScreenImage}
                         styles={styles}
                         shouldAnimate={shouldAnimate}
+                        isSelected={selectedMessage?.id === msg.id}
                       />
                     );
                   })
@@ -721,6 +793,18 @@ export default function ChatScreen({ route, navigation }) {
             )}
 
             <View tint={isDark ? 'dark' : 'light'} style={styles.inputContainer}>
+              {replyTo && (
+                <View style={styles.replyPreview}>
+                  <View style={styles.replyContent}>
+                    <Text style={styles.replyLabel}>Replying to</Text>
+                    <Text style={styles.replyText} numberOfLines={1}>{replyTo.text}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setReplyTo(null)}>
+                    <Text style={styles.replyClose}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              <View style={styles.inputRow}>
               <TouchableOpacity onPress={pickMedia}>
                 <View tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
                   <Text style={styles.icon}>🔗</Text>
@@ -745,6 +829,7 @@ export default function ChatScreen({ route, navigation }) {
                   <Text style={styles.icon}>➤</Text>
                 </View>
               </TouchableOpacity>
+              </View>
             </View>
 
             {showMenu && (
@@ -872,43 +957,25 @@ export default function ChatScreen({ route, navigation }) {
               </View>
             </Modal>
 
-            <Modal visible={showMessageOptions} animationType="slide" transparent>
-              <View style={styles.reportOverlay}>
-                <View style={styles.reportBox}>
-                  <Text style={styles.reportTitle}>Message Options</Text>
-                  
-                  <View style={styles.messageTimeDisplay}>
-                    <Text style={styles.messageTimeText}>{selectedMessage?.time}</Text>
-                  </View>
-                  
-                  {selectedMessage?.text && (
-                    <TouchableOpacity onPress={handleCopyMessage}>
-                      <View style={styles.messageOptionButton}>
-                        <Text style={styles.messageOptionText}>📋 Copy</Text>
-                      </View>
-                    </TouchableOpacity>
-                  )}
-                  
-                  {selectedMessage?.sent && canRecallMessage(selectedMessage) && !selectedMessage?.isRecalled && (
-                    <TouchableOpacity onPress={handleDeleteMessage}>
-                      <View style={[styles.messageOptionButton, styles.messageOptionDanger]}>
-                        <Text style={[styles.messageOptionText, styles.messageOptionDangerText]}>↩️ Recall</Text>
-                      </View>
-                    </TouchableOpacity>
-                  )}
-                  
-                  {selectedMessage?.sent && (!canRecallMessage(selectedMessage) || selectedMessage?.isRecalled) && (
-                    <View style={[styles.messageOptionButton, styles.messageOptionDisabled]}>
-                      <Text style={[styles.messageOptionText, styles.messageOptionDisabledText]}>↩️ Recall (expired)</Text>
-                    </View>
-                  )}
-                  
-                  <TouchableOpacity onPress={() => { setShowMessageOptions(false); setSelectedMessage(null); }}>
-                    <Text style={styles.reportCancel}>Cancel</Text>
-                  </TouchableOpacity>
+            {showReplyPopup && (
+              <View style={styles.popupOverlay}>
+                <View style={styles.popup}>
+                  <Text style={styles.popupIcon}>↩️</Text>
+                  <Text style={styles.popupText}>Reply set</Text>
                 </View>
               </View>
-            </Modal>
+            )}
+
+            {showCopyPopup && (
+              <View style={styles.popupOverlay}>
+                <View style={styles.popup}>
+                  <Text style={styles.popupIcon}>📋</Text>
+                  <Text style={styles.popupText}>Copied to clipboard</Text>
+                </View>
+              </View>
+            )}
+
+
         </KeyboardAvoidingView>
       </LinearGradient>
     </SafeAreaView>
@@ -1033,14 +1100,40 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   typingBubble: { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.95)', paddingHorizontal: 18, paddingVertical: 12, borderRadius: 20, borderBottomLeftRadius: 6, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2, minWidth: 80 },
   typingText: { fontSize: 14, color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)', fontStyle: 'italic', fontWeight: '500' },
   inputContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'flex-end', 
     paddingHorizontal: 15, 
     paddingVertical: 12, 
     borderTopWidth: 1, 
     borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.3)', 
+  },
+  inputRow: {
+    flexDirection: 'row', 
+    alignItems: 'flex-end', 
     gap: 10,
   },
+  replyPreview: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#F70776'
+  },
+  replyContent: { flex: 1 },
+  replyLabel: { fontSize: 11, color: '#F70776', fontWeight: '600', marginBottom: 2 },
+  replyText: { fontSize: 13, color: theme.text, opacity: 0.8 },
+  replyClose: { fontSize: 18, color: theme.textSecondary, marginLeft: 8, fontWeight: 'bold' },
+  replyBubble: {
+    backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.08)',
+    padding: 8,
+    borderRadius: 8,
+    borderLeftWidth: 2,
+    borderLeftColor: '#F70776',
+    marginBottom: 6
+  },
+  replyBubbleText: { fontSize: 12, color: theme.text, opacity: 0.7, fontStyle: 'italic' },
   iconButton: { 
     width: 44, 
     height: 44, 
@@ -1078,4 +1171,90 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   messageOptionDisabledText: { color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' },
   messageTimeDisplay: { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, marginBottom: 16, alignItems: 'center' },
   messageTimeText: { fontSize: 13, color: theme.textSecondary, fontWeight: '500' },
+  selectedBubble: {
+    backgroundColor: isDark ? 'rgba(255,107,157,0.5)' : 'rgba(255,107,157,0.35)',
+    borderWidth: 2,
+    borderColor: '#F70776'
+  },
+  messageOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 999
+  },
+  messageOptionsOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)'
+  },
+  messageOptionsBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0
+  },
+  messageOptionsPopup: {
+    backgroundColor: isDark ? '#2a1a3e' : '#fff',
+    borderRadius: 16,
+    paddingVertical: 8,
+    minWidth: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8
+  },
+  messageOptionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12
+  },
+  messageOptionIcon: {
+    fontSize: 20
+  },
+  messageOptionText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: theme.text
+  },
+  popupOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 2000
+  },
+  popup: {
+    backgroundColor: isDark ? '#2a1a3e' : '#fff',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8
+  },
+  popupIcon: {
+    fontSize: 24
+  },
+  popupText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.text
+  },
 });

@@ -438,7 +438,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.2)',
-    borderStyle: 'dashed'
+    borderStyle: 'dashed',
+    display: 'flex'
   },
   cameraIcon: { fontSize: 32, marginBottom: 8 },
   photoHint: { fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: '500' },
