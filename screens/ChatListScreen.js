@@ -55,17 +55,26 @@ export default function ChatListScreen({ navigation }) {
 
       if (response.ok) {
         const data = await response.json();
-        const formattedChats = data.conversations.map(conv => ({
-          id: conv.id,
-          name: conv.name,
-          age: conv.age,
-          message: conv.isFromMe ? `You: ${conv.lastMessage}` : conv.lastMessage,
-          time: new Date(conv.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          avatar: conv.name.charAt(0),
-          profilePhoto: conv.profilePhoto,
-          unread: conv.unreadCount > 0,
-          unreadCount: conv.unreadCount
-        }));
+        const formattedChats = data.conversations.map(conv => {
+          let displayMessage = conv.lastMessage;
+          
+          // Handle audio messages
+          if (!displayMessage || displayMessage.trim() === '') {
+            displayMessage = '🎵 Audio message';
+          }
+          
+          return {
+            id: conv.id,
+            name: conv.name,
+            age: conv.age,
+            message: conv.isFromMe ? `You: ${displayMessage}` : displayMessage,
+            time: new Date(conv.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            avatar: conv.name.charAt(0),
+            profilePhoto: conv.profilePhoto,
+            unread: conv.unreadCount > 0,
+            unreadCount: conv.unreadCount
+          };
+        });
         setChats(formattedChats);
         refreshUnreadCount();
         if (initialLoad) setInitialLoad(false);

@@ -2,16 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, StatusBar, Image, Modal, Alert, ActivityIndicator, Clipboard, Vibration, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import { Audio } from 'expo-av';
 // import { View } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useUnread } from '../context/UnreadContext';
 import { getAvatarColor } from '../utils/avatarColors';
 import SocketService from '../services/SocketService';
+import AudioRecorder from '../utils/audioRecorder';
 import { API_URL } from '../config/urlConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const AnimatedMessage = React.memo(({ msg, isLastSentMessage, profile, isDark, handleLongPress, setFullScreenImage, styles, shouldAnimate, isSelected }) => {
+const AnimatedMessage = React.memo(({ msg, isLastSentMessage, profile, isDark, handleLongPress, setFullScreenImage, playAudio, pauseAudio, playingAudio, styles, shouldAnimate, isSelected }) => {
   const slideAnim = useRef(new Animated.Value(shouldAnimate ? (msg.sent ? 50 : -50) : 0)).current;
   const fadeAnim = useRef(new Animated.Value(shouldAnimate ? 0 : 1)).current;
   
@@ -80,6 +82,32 @@ const AnimatedMessage = React.memo(({ msg, isLastSentMessage, profile, isDark, h
             <View style={styles.videoContainer}>
               <Text style={styles.videoText}>🎥 Video</Text>
             </View>
+          ) : msg.mediaType === 'audio' && msg.mediaUrl ? (
+            <View style={styles.audioPlayer}>
+              <TouchableOpacity 
+                onPress={() => playingAudio === msg.id ? pauseAudio() : playAudio(msg.mediaUrl, msg.id)} 
+                style={styles.playButton}
+              >
+                <Text style={styles.playButtonIcon}>
+                  {playingAudio === msg.id ? '⏸️' : '▶️'}
+                </Text>
+              </TouchableOpacity>
+              <View style={styles.audioInfo}>
+                <View style={styles.waveform}>
+                  {[8, 12, 16, 10, 14, 18, 12, 8, 15, 11, 13, 9].map((height, i) => (
+                    <View 
+                      key={i} 
+                      style={[
+                        styles.waveBar, 
+                        { height },
+                        playingAudio === msg.id && styles.activeWaveBar
+                      ]} 
+                    />
+                  ))}
+                </View>
+                <Text style={styles.audioDuration}>{msg.audioDuration || 0}s</Text>
+              </View>
+            </View>
           ) : (
             <Text style={[styles.messageText, msg.sent ? styles.sentText : styles.receivedText, msg.isRecalled && styles.recalledText]}>{msg.text}</Text>
           )}
@@ -123,9 +151,14 @@ export default function ChatScreen({ route, navigation }) {
   const [showReplyPopup, setShowReplyPopup] = useState(false);
   const [showCopyPopup, setShowCopyPopup] = useState(false);
   const [replyTo, setReplyTo] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [playingAudio, setPlayingAudio] = useState(null);
+  const [currentSound, setCurrentSound] = useState(null);
   const scrollViewRef = useRef();
   const profileIdRef = useRef(profile.id);
   const typingTimeoutRef = useRef(null);
+  const recordingTimerRef = useRef(null);
   const styles = getStyles(theme, isDark);
   
   const formatTime = (date = new Date()) => {
@@ -376,6 +409,179 @@ export default function ChatScreen({ route, navigation }) {
       }
     } catch (error) {
       console.error('Error purchasing chat access:', error);
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      await AudioRecorder.startRecording();
+      setIsRecording(true);
+      setRecordingDuration(0);
+      
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to start recording');
+    }
+  };
+
+  const stopRecording = async () => {
+    try {
+      const audioUri = await AudioRecorder.stopRecording();
+      setIsRecording(false);
+      
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+      
+      if (audioUri && recordingDuration > 0) {
+        // Check access and coins before sending audio (same as text messages)
+        if (isBlocked) {
+          setShowUnblockConfirm(true);
+          return;
+        }
+        
+        if (isBlockedByUser) {
+          Alert.alert('Cannot Send Audio', `${profile.name} has blocked you. You cannot send audio messages.`);
+          return;
+        }
+        
+        // Check if we need to purchase access silently
+        if (!hasAccess) {
+          if (userCoins < 10) {
+            setShowCoinModal(true);
+            return;
+          }
+          // Silently purchase access in background
+          await purchaseChatAccessSilently();
+        }
+        
+        const duration = await AudioRecorder.getAudioDuration(audioUri);
+        await uploadAndSendAudio(audioUri, duration);
+      }
+      
+      setRecordingDuration(0);
+    } catch (error) {
+      console.error('Recording error:', error);
+      setIsRecording(false);
+      setRecordingDuration(0);
+      Alert.alert('Recording Error', error.message || 'Unknown error');
+    }
+  };
+
+  const uploadAndSendAudio = async (audioUri, duration) => {
+    try {
+      // First try to upload audio, if it fails, send as text message
+      setUploading(true);
+      const token = await AsyncStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('No authentication token');
+      }
+      
+      const response = await fetch(audioUri);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch audio file: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      
+      try {
+        const reader = new FileReader();
+        const base64data = await new Promise((resolve, reject) => {
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        
+        const uploadResponse = await fetch(`${API_URL}/upload-audio-base64`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ audio: base64data })
+        });
+        
+        if (uploadResponse.ok) {
+          const data = await uploadResponse.json();
+          const audioUrl = data.audioUrl;
+          
+          const newMessage = {
+            id: Date.now(),
+            mediaUrl: audioUrl,
+            mediaType: 'audio',
+            audioDuration: duration,
+            sent: true,
+            time: formatTime()
+          };
+          
+          setMessages(prev => [...prev, newMessage]);
+          SocketService.sendMessage(profile.id, '', user.userId, audioUrl, 'audio');
+          setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+        } else {
+          throw new Error('Audio upload not available');
+        }
+      } catch (uploadError) {
+        // Fallback: send as text message
+        console.log('Audio upload failed, sending as text:', uploadError);
+        const newMessage = {
+          id: Date.now(),
+          text: `🎵 Audio message (${duration}s)`,
+          mediaType: 'text',
+          sent: true,
+          time: formatTime()
+        };
+        
+        setMessages(prev => [...prev, newMessage]);
+        SocketService.sendMessage(profile.id, `🎵 Audio message (${duration}s)`, user.userId, null, 'text');
+        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+      }
+    } catch (error) {
+      console.error('Audio processing error:', error);
+      Alert.alert('Error', 'Failed to send audio');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const playAudio = async (audioUrl, messageId) => {
+    try {
+      // Stop current audio if playing
+      if (currentSound) {
+        await currentSound.unloadAsync();
+        setCurrentSound(null);
+        setPlayingAudio(null);
+      }
+      
+      const { sound } = await Audio.Sound.createAsync({ uri: audioUrl });
+      setCurrentSound(sound);
+      setPlayingAudio(messageId);
+      
+      await sound.playAsync();
+      
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          sound.unloadAsync();
+          setCurrentSound(null);
+          setPlayingAudio(null);
+        }
+      });
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      Alert.alert('Error', 'Cannot play audio');
+    }
+  };
+
+  const pauseAudio = async () => {
+    try {
+      if (currentSound) {
+        await currentSound.pauseAsync();
+        setPlayingAudio(null);
+      }
+    } catch (error) {
+      console.error('Error pausing audio:', error);
     }
   };
 
@@ -769,6 +975,9 @@ export default function ChatScreen({ route, navigation }) {
                         isDark={isDark}
                         handleLongPress={handleLongPress}
                         setFullScreenImage={setFullScreenImage}
+                        playAudio={playAudio}
+                        pauseAudio={pauseAudio}
+                        playingAudio={playingAudio}
                         styles={styles}
                         shouldAnimate={shouldAnimate}
                         isSelected={selectedMessage?.id === msg.id}
@@ -782,6 +991,23 @@ export default function ChatScreen({ route, navigation }) {
             {isBlockedByUser && (
               <View style={styles.blockedBanner}>
                 <Text style={styles.blockedBannerText}>🚫 {profile.name} has blocked you. You cannot send messages.</Text>
+              </View>
+            )}
+
+            {isRecording && (
+              <View style={styles.recordingOverlay}>
+                <View style={styles.recordingModal}>
+                  <View style={styles.recordingWave}>
+                    <View style={[styles.waveBar, { height: 20 }]} />
+                    <View style={[styles.waveBar, { height: 35 }]} />
+                    <View style={[styles.waveBar, { height: 25 }]} />
+                    <View style={[styles.waveBar, { height: 40 }]} />
+                    <View style={[styles.waveBar, { height: 30 }]} />
+                  </View>
+                  <Text style={styles.recordingText}>🎤 Recording...</Text>
+                  <Text style={styles.recordingDuration}>{recordingDuration}s</Text>
+                  <Text style={styles.recordingHint}>Release to send</Text>
+                </View>
               </View>
             )}
 
@@ -819,9 +1045,13 @@ export default function ChatScreen({ route, navigation }) {
                   onChangeText={handleTyping}
                 />
               </View>
-              <TouchableOpacity>
-                <View tint={isDark ? 'dark' : 'light'} style={styles.iconButton}>
-                  <Text style={styles.icon}>🎤</Text>
+              <TouchableOpacity
+                onPressIn={startRecording}
+                onPressOut={stopRecording}
+                disabled={isRecording && recordingDuration < 1}
+              >
+                <View tint={isDark ? 'dark' : 'light'} style={[styles.iconButton, isRecording && styles.recordingButton]}>
+                  <Text style={styles.icon}>{isRecording ? '⏹️' : '🎤'}</Text>
                 </View>
               </TouchableOpacity>
               <TouchableOpacity onPress={sendMessage}>
@@ -1096,6 +1326,64 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   mediaImage: { width: 200, height: 200, borderRadius: 12, marginBottom: 8 },
   videoContainer: { width: 200, height: 150, borderRadius: 12, backgroundColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
   videoText: { fontSize: 16, color: theme.text },
+  audioContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, gap: 8 },
+  audioIcon: { fontSize: 16 },
+  audioText: { fontSize: 14, color: theme.text, fontWeight: '500' },
+  playIcon: { fontSize: 12, marginLeft: 4 },
+  audioPlayer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 20,
+    minWidth: 180,
+    gap: 12
+  },
+  playButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgb(249 249 249)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  playButtonIcon: {
+    fontSize: 16,
+    color: '#fff'
+  },
+  audioInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  waveform: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    paddingHorizontal: 4
+  },
+  waveBar: {
+    width: 2,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)',
+    borderRadius: 1,
+    marginHorizontal: 0.5
+  },
+  activeWaveBar: {
+    backgroundColor: 'rgb(249 249 249)'
+  },
+  audioDuration: {
+    fontSize: 12,
+    color: theme.textSecondary,
+    fontWeight: '500',
+    marginLeft: 8
+  },
   typingContainer: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 20, marginLeft: 0 },
   typingBubble: { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.95)', paddingHorizontal: 18, paddingVertical: 12, borderRadius: 20, borderBottomLeftRadius: 6, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2, minWidth: 80 },
   typingText: { fontSize: 14, color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)', fontStyle: 'italic', fontWeight: '500' },
@@ -1256,5 +1544,80 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: theme.text
+  },
+  recordingButton: {
+    backgroundColor: '#FF4444',
+    borderColor: '#FF4444'
+  },
+  recordingIndicator: {
+    position: 'absolute',
+    top: -50,
+    left: 0,
+    right: 0,
+    backgroundColor: isDark ? '#2a1a3e' : '#fff',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4
+  },
+  recordingText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FF4444'
+  },
+  recordingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000
+  },
+  recordingModal: {
+    backgroundColor: isDark ? '#2a1a3e' : '#fff',
+    borderRadius: 20,
+    padding: 30,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8
+  },
+  recordingWave: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 4,
+    marginBottom: 20
+  },
+  waveBar: {
+    width: 4,
+    backgroundColor: '#FF4444',
+    borderRadius: 2
+  },
+  recordingText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: theme.text,
+    marginBottom: 8
+  },
+  recordingDuration: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FF4444',
+    marginBottom: 8
+  },
+  recordingHint: {
+    fontSize: 14,
+    color: theme.textSecondary,
+    opacity: 0.7
   },
 });
