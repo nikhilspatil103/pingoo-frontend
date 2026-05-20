@@ -62,20 +62,10 @@ export default function MyProfileScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      if (profile) playEntryAnimation();
-    }, [profile])
+      loadProfile();
+      playEntryAnimation();
+    }, [])
   );
-
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadProfile(); // Refresh profile when screen comes into focus
-    });
-    return unsubscribe;
-  }, [navigation]);
 
   const loadProfile = async () => {
     try {
