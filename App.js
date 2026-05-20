@@ -9,6 +9,7 @@ import { UnreadProvider, useUnread } from './context/UnreadContext';
 import { LikesProvider, useLikes } from './context/LikesContext';
 import MemoryManager from './utils/memoryManager';
 import NotificationService from './services/NotificationService';
+import * as Notifications from 'expo-notifications';
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import ProfileSetupScreen from './screens/ProfileSetupScreen';
@@ -111,49 +112,58 @@ function AppNavigator() {
   const { user, loading } = useAuth();
   const { addNewLike } = useLikes();
   const navigationRef = useRef();
-  
-  console.log('AppNavigator - User:', user);
-  console.log('AppNavigator - Loading:', loading);
+  const isNavigationReady = useRef(false);
+  const pendingNotification = useRef(null);
+
+  const handleNotificationNavigation = (data) => {
+    const nav = navigationRef.current;
+    if (!nav || !isNavigationReady.current) {
+      pendingNotification.current = data;
+      return;
+    }
+
+    if (data.type === 'message' && data.senderId) {
+      nav.navigate('Chat', {
+        profile: {
+          id: data.senderId,
+          name: data.senderName || 'User',
+          age: 0,
+          profilePhoto: null
+        }
+      });
+    } else if (data.type === 'like') {
+      nav.navigate('Notifications');
+    }
+  };
+
+  // Check if app was opened from a killed state via notification tap
+  useEffect(() => {
+    if (user) {
+      Notifications.getLastNotificationResponseAsync().then(response => {
+        if (response) {
+          const data = response.notification.request.content.data;
+          console.log('App opened from killed state via notification:', data);
+          handleNotificationNavigation(data);
+        }
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user) {
-      // Register for push notifications when user is logged in
       NotificationService.registerForPushNotifications();
 
-      // Handle notification received while app is in foreground
       const notificationListener = NotificationService.addNotificationReceivedListener(notification => {
-        console.log('Notification received:', notification);
         const data = notification.request.content.data;
-        
-        // Update likes context if it's a like notification
         if (data.type === 'like' && data.likerId) {
-          addNewLike({
-            id: data.likerId,
-            name: data.likerName,
-            timestamp: new Date()
-          });
+          addNewLike({ id: data.likerId, name: data.likerName, timestamp: new Date() });
         }
       });
 
-      // Handle notification tap
       const responseListener = NotificationService.addNotificationResponseReceivedListener(response => {
         const data = response.notification.request.content.data;
         console.log('Notification tapped:', data);
-        
-        // Navigate based on notification type
-        if (data.type === 'message' && data.senderId) {
-          // For message notifications, go to ChatList first, then to specific chat
-          navigationRef.current?.navigate('Chats');
-          setTimeout(() => {
-            navigationRef.current?.navigate('Chat', { 
-              userId: data.senderId,
-              userName: data.senderName 
-            });
-          }, 100);
-        } else if (data.type === 'like' && data.likerId) {
-          // For like notifications, go to Notifications screen
-          navigationRef.current?.navigate('Notifications');
-        }
+        handleNotificationNavigation(data);
       });
 
       return () => {
@@ -172,7 +182,16 @@ function AppNavigator() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => {
+        isNavigationReady.current = true;
+        if (pendingNotification.current) {
+          handleNotificationNavigation(pendingNotification.current);
+          pendingNotification.current = null;
+        }
+      }}
+    >
       <Stack.Navigator 
         screenOptions={{ headerShown: false }}
       >

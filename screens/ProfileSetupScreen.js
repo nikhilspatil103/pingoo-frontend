@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, SafeAreaView, StatusBar, Image, TextInput, ScrollView, Modal, Animated } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, SafeAreaView, StatusBar, Image, TextInput, ScrollView, Modal, Animated, Linking, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/urlConfig';
@@ -92,39 +92,33 @@ export default function ProfileSetupScreen({ route, navigation }) {
         return;
       }
       if (loading) return;
-      setStep(6);
-    } else if (step === 6) {
-      if (loading) return;
-      console.log('Step 6: Requesting location permission');
       
+      // Request location permission directly
       const granted = await requestLocationPermission();
-      console.log('Location permission result:', granted);
-      
       if (granted) {
-        console.log('Permission granted, getting location...');
-        try {
-          await getCurrentLocation();
-          console.log('Location obtained, proceeding to signup');
-        } catch (locError) {
-          console.log('Location fetch failed:', locError);
-        }
-        // Call handleSignup
+        try { await getCurrentLocation(); } catch (e) {}
         handleSignup();
       } else {
-        console.log('Location permission denied');
         Alert.alert(
           'Location Required',
-          'Location access is required to find people near you. Please enable location to continue.',
+          'Location access is mandatory to find people near you. Please allow location access.',
           [
+            {
+              text: 'Open Settings',
+              onPress: () => {
+                if (Platform.OS === 'ios') {
+                  Linking.openURL('app-settings:');
+                } else {
+                  Linking.openSettings();
+                }
+              }
+            },
             {
               text: 'Try Again',
               onPress: () => handleNext()
-            },
-            {
-              text: 'Cancel',
-              style: 'cancel'
             }
-          ]
+          ],
+          { cancelable: false }
         );
       }
     }
@@ -226,7 +220,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
           <TouchableOpacity onPress={() => step > 1 ? setStep(step - 1) : navigation.goBack()} style={styles.backBtn}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Step {step} of 6</Text>
+          <Text style={styles.headerTitle}>Step {step} of 5</Text>
           <View style={{ width: 40 }} />
         </View>
 
@@ -235,10 +229,10 @@ export default function ProfileSetupScreen({ route, navigation }) {
             <View style={styles.welcomeSection}>
               <PingooLogo size={64} animated={true} />
               <Text style={styles.title}>
-                {step === 1 ? 'Add Your Photo' : step === 2 ? 'How old are you?' : step === 3 ? 'Your Gender' : step === 4 ? 'Interested in' : step === 5 ? 'What are you looking for?' : 'Enable Location'}
+                {step === 1 ? 'Add Your Photo' : step === 2 ? 'How old are you?' : step === 3 ? 'Your Gender' : step === 4 ? 'Interested in' : 'What are you looking for?'}
               </Text>
               <Text style={styles.subtitle}>
-                {step === 1 ? 'Optional - You can skip this' : step === 2 ? 'You must be 18 or older' : step === 3 ? 'Select your gender' : step === 4 ? 'Who would you like to meet?' : step === 5 ? 'Tell us your preferences' : 'Required to find people near you'}
+                {step === 1 ? 'Optional - You can skip this' : step === 2 ? 'You must be 18 or older' : step === 3 ? 'Select your gender' : step === 4 ? 'Who would you like to meet?' : 'Tell us your preferences'}
               </Text>
             </View>
 
@@ -339,22 +333,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
               </View>
             )}
 
-            {step === 6 && (
-              <View style={styles.formCard}>
-                <View style={styles.locationCard}>
-                  <Text style={styles.locationIcon}>📍</Text>
-                  <Text style={styles.locationTitle}>Location Access</Text>
-                  <Text style={styles.locationDescription}>
-                    We need your location to show you people nearby and calculate distances. Your exact location is never shared with other users.
-                  </Text>
-                  <View style={styles.locationFeatures}>
-                    <Text style={styles.locationFeature}>• Find people near you</Text>
-                    <Text style={styles.locationFeature}>• See distance to profiles</Text>
-                    <Text style={styles.locationFeature}>• Your privacy is protected</Text>
-                  </View>
-                </View>
-              </View>
-            )}
+
           </View>
         </ScrollView>
 
@@ -365,7 +344,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
             disabled={loading}
           >
             <Text style={styles.continueBtnText}>
-              {loading ? 'Creating Account...' : step === 6 ? 'Allow Location & Complete' : step === 5 ? 'Next' : step === 1 ? (profilePhoto ? 'Next' : 'Skip') : 'Next'}
+              {loading ? 'Creating Account...' : step === 5 ? 'Complete' : step === 1 ? (profilePhoto ? 'Next' : 'Skip') : 'Next'}
             </Text>
           </TouchableOpacity>
         </View>

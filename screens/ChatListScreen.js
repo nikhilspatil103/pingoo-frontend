@@ -58,9 +58,16 @@ export default function ChatListScreen({ navigation }) {
         const formattedChats = data.conversations.map(conv => {
           let displayMessage = conv.lastMessage;
           
-          // Handle audio messages
-          if (!displayMessage || displayMessage.trim() === '') {
-            displayMessage = '🎵 Audio message';
+          // Handle media messages based on type
+          if (conv.lastMessageType && conv.lastMessageType !== 'text') {
+            switch (conv.lastMessageType) {
+              case 'image': displayMessage = '📷 Photo'; break;
+              case 'video': displayMessage = '🎥 Video'; break;
+              case 'audio': displayMessage = '🎵 Audio message'; break;
+              default: displayMessage = '📎 Attachment'; break;
+            }
+          } else if (!displayMessage || displayMessage.trim() === '') {
+            displayMessage = '📎 Attachment';
           }
           
           return {
@@ -154,7 +161,7 @@ export default function ChatListScreen({ navigation }) {
             </View>
           ) : (
             <FlatList
-              data={chats}
+              data={chats.filter(chat => chat.name.toLowerCase().includes(searchQuery.toLowerCase()))}
               renderItem={renderChatItem}
               keyExtractor={(item) => item.id.toString()}
               style={styles.chatList}

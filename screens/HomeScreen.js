@@ -106,9 +106,12 @@ export default function HomeScreen({ navigation }) {
   const keyExtractor = useCallback((item) => item.id.toString(), []);
 
   const filteredProfiles = profiles.filter(profile => {
-    if (filterType === 'online' && !profile.isOnline) return false;
-    if (filterType === 'age' && profile.age && (profile.age < ageRange.min || profile.age > ageRange.max)) return false;
+    // Gender filter
     if (genderFilter !== 'both' && profile.gender !== genderFilter) return false;
+    // Age filter
+    if (profile.age && (profile.age < ageRange.min || profile.age > ageRange.max)) return false;
+    // Online filter
+    if (filterType === 'online' && !profile.isOnline) return false;
     return true;
   }).sort((a, b) => {
     if (filterType === 'age') return a.age - b.age;
@@ -205,18 +208,6 @@ export default function HomeScreen({ navigation }) {
                 </View>
 
                 <View style={styles.filterSection}>
-                  <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>SHOW</Text>
-                  <TouchableOpacity style={[styles.filterCard, filterType === 'online' && styles.filterCardActive]} onPress={() => applyFilter('online')}>
-                    <Text style={styles.filterEmoji}>🟢</Text>
-                    <Text style={[styles.filterCardText, { color: filterType === 'online' ? '#fff' : theme.text }]}>Online Only</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.filterCard, filterType === 'mostLiked' && styles.filterCardActive]} onPress={() => applyFilter('mostLiked')}>
-                    <Text style={styles.filterEmoji}>❤️</Text>
-                    <Text style={[styles.filterCardText, { color: filterType === 'mostLiked' ? '#fff' : theme.text }]}>Most Liked</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.filterSection}>
                   <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>GENDER</Text>
                   <View style={styles.genderButtons}>
                     <TouchableOpacity style={[styles.genderCard, genderFilter === 'male' && styles.genderCardActive]} onPress={() => setGenderFilter('male')}>
@@ -235,7 +226,7 @@ export default function HomeScreen({ navigation }) {
                 </View>
 
                 <View style={styles.filterSection}>
-                  <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>AGE RANGE</Text>
+                  <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>AGE RANGE ({ageRange.min} - {ageRange.max})</Text>
                   <View style={[styles.ageCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
                     <RangeSlider
                       min={18}
@@ -246,15 +237,37 @@ export default function HomeScreen({ navigation }) {
                       isDark={isDark}
                       onValueChanged={(low, high) => {
                         setAgeRange({ min: low, max: high });
-                        setFilterType('age');
                       }}
                     />
                   </View>
                 </View>
 
-                <TouchableOpacity style={styles.clearButton} onPress={clearFilters}>
-                  <Text style={styles.clearButtonText}>Clear All Filters</Text>
-                </TouchableOpacity>
+                <View style={styles.filterSection}>
+                  <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>SORT BY</Text>
+                  <View style={styles.sortButtons}>
+                    <TouchableOpacity style={[styles.sortChip, filterType === 'all' && styles.sortChipActive]} onPress={() => setFilterType('all')}>
+                      <Text style={[styles.sortChipText, { color: filterType === 'all' ? '#fff' : theme.text }]}>All</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.sortChip, filterType === 'online' && styles.sortChipActive]} onPress={() => setFilterType('online')}>
+                      <Text style={[styles.sortChipText, { color: filterType === 'online' ? '#fff' : theme.text }]}>🟢 Online</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.sortChip, filterType === 'mostLiked' && styles.sortChipActive]} onPress={() => setFilterType('mostLiked')}>
+                      <Text style={[styles.sortChipText, { color: filterType === 'mostLiked' ? '#fff' : theme.text }]}>❤️ Popular</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.sortChip, filterType === 'age' && styles.sortChipActive]} onPress={() => setFilterType('age')}>
+                      <Text style={[styles.sortChipText, { color: filterType === 'age' ? '#fff' : theme.text }]}>🎂 Age</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.filterActions}>
+                  <TouchableOpacity style={styles.clearButton} onPress={clearFilters}>
+                    <Text style={styles.clearButtonText}>Clear All</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.applyButton} onPress={() => setFilterVisible(false)}>
+                    <Text style={styles.applyButtonText}>Apply</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </BlurView>
           </View>
@@ -326,8 +339,15 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   genderEmoji: { fontSize: 24, marginBottom: 6 },
   genderCardText: { fontSize: 14, fontWeight: '600' },
   ageCard: { borderRadius: 16, paddingHorizontal: 12 },
-  clearButton: { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', paddingVertical: 16, borderRadius: 16, alignItems: 'center', marginTop: 8 },
+  clearButton: { flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', paddingVertical: 16, borderRadius: 16, alignItems: 'center' },
   clearButtonText: { fontSize: 16, fontWeight: '600', color: '#FF6B9D' },
+  applyButton: { flex: 1, backgroundColor: '#FF6B9D', paddingVertical: 16, borderRadius: 16, alignItems: 'center' },
+  applyButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  filterActions: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  sortButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  sortChip: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', borderWidth: 2, borderColor: 'transparent' },
+  sortChipActive: { backgroundColor: '#FF6B9D', borderColor: '#FF6B9D' },
+  sortChipText: { fontSize: 14, fontWeight: '600' },
   listCard: { width: '100%', backgroundColor: isDark ? '#1a1a1a' : '#fff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
   listCardContent: { flexDirection: 'row', padding: 12 },
   listImage: { width: 80, height: 80, borderRadius: 12, overflow: 'hidden' },

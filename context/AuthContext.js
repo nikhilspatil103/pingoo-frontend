@@ -6,6 +6,12 @@ import { API_URL } from '../config/urlConfig';
 import { syncLocationWithBackend } from '../utils/locationService';
 
 const AuthContext = createContext();
+let globalLogout = null;
+
+// Call this from anywhere to force logout on 401
+export const forceLogout = () => {
+  if (globalLogout) globalLogout();
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -87,6 +93,12 @@ export const AuthProvider = ({ children }) => {
       console.error('Error logging out:', error);
     }
   };
+
+  // Expose logout globally for 401 handling
+  useEffect(() => {
+    globalLogout = logout;
+    return () => { globalLogout = null; };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, login, logout, loading }}>

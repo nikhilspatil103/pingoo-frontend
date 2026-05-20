@@ -1,6 +1,7 @@
 import create from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
+import { forceLogout } from '../context/AuthContext';
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
@@ -62,6 +63,10 @@ const useProfileStore = create((set, get) => ({
         } else {
           set({ profiles: [...state.profiles, ...newUsers], page: pageNum, hasMore: newUsers.length === 20, lastFetch: now });
         }
+      } else if (response.status === 401) {
+        set({ hasMore: false, initialLoading: false, loadingMore: false, refreshing: false });
+        forceLogout();
+        return;
       }
     } catch (error) {
       if (error.name === 'AbortError') {

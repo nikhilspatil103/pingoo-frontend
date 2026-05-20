@@ -45,10 +45,10 @@ export default function MyCoinsScreen({ navigation }) {
   ];
 
   const buyOptions = [
-    { id: 1, coins: 50, price: '$0.99', popular: false },
-    { id: 2, coins: 150, price: '$2.49', popular: true },
-    { id: 3, coins: 300, price: '$4.99', popular: false },
-    { id: 4, coins: 1000, price: '$14.99', popular: false },
+    { id: 1, coins: 50, price: '₹79', popular: false },
+    { id: 2, coins: 150, price: '₹199', popular: true },
+    { id: 3, coins: 300, price: '₹399', popular: false },
+    { id: 4, coins: 1000, price: '₹1199', popular: false },
   ];
 
   const styles = getStyles(theme, isDark);
