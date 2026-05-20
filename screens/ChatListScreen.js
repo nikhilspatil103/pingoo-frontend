@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, FlatList, StatusBar, Image } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, TextInput, FlatList, StatusBar, Image, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -93,39 +93,8 @@ export default function ChatListScreen({ navigation }) {
     }
   };
 
-  const renderChatItem = ({ item }) => (
-    <TouchableOpacity 
-      onPress={() => navigation.navigate('Chat', { profile: { id: item.id, name: item.name, age: item.age, profilePhoto: item.profilePhoto } })}
-      activeOpacity={1}
-    >
-      <View tint={isDark ? 'dark' : 'light'} style={styles.chatItem}>
-        {item.profilePhoto ? (
-          <View style={styles.avatar}>
-            <Image source={{ uri: item.profilePhoto }} style={styles.avatarImage} />
-          </View>
-        ) : (
-          <View style={[styles.avatar, { backgroundColor: getAvatarColor(item.id, item.name)[0] }]}>
-            <Text style={styles.avatarText}>{item.avatar}</Text>
-          </View>
-        )}
-        <View style={styles.chatInfo}>
-          <View style={styles.chatHeader}>
-            <Text style={styles.chatName}>{item.name}, {item.age}</Text>
-            <View style={styles.timeContainer}>
-              <Text style={styles.chatTime}>{item.time}</Text>
-            </View>
-          </View>
-          <View style={styles.messageRow}>
-            <Text style={[styles.chatMessage, item.unread && styles.unreadMessage]} numberOfLines={1}>{item.message}</Text>
-            {item.unread && item.unreadCount > 0 && (
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadCount}>{item.unreadCount}</Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
+  const renderChatItem = ({ item, index }) => (
+    <AnimatedChatItem item={item} index={index} navigation={navigation} styles={styles} isDark={isDark} />
   );
 
   return (
@@ -174,6 +143,61 @@ export default function ChatListScreen({ navigation }) {
     </View>
   );
 }
+
+const AnimatedChatItem = ({ item, index, navigation, styles, isDark }) => {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateX = useRef(new Animated.Value(-20)).current;
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 350, delay: index * 60, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
+      Animated.timing(translateX, { toValue: 0, duration: 350, delay: index * 60, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
+    ]).start();
+  }, []);
+
+  const handlePressIn = () => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
+  const handlePressOut = () => Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
+
+  return (
+    <Animated.View style={{ opacity, transform: [{ translateX }, { scale }] }}>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Chat', { profile: { id: item.id, name: item.name, age: item.age, profilePhoto: item.profilePhoto } })}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+      >
+        <View style={styles.chatItem}>
+          {item.profilePhoto ? (
+            <View style={styles.avatar}>
+              <Image source={{ uri: item.profilePhoto }} style={styles.avatarImage} />
+            </View>
+          ) : (
+            <View style={[styles.avatar, { backgroundColor: getAvatarColor(item.id, item.name)[0] }]}>
+              <Text style={styles.avatarText}>{item.avatar}</Text>
+            </View>
+          )}
+          <View style={styles.chatInfo}>
+            <View style={styles.chatHeader}>
+              <Text style={styles.chatName}>{item.name}, {item.age}</Text>
+              <View style={styles.timeContainer}>
+                <Text style={styles.chatTime}>{item.time}</Text>
+              </View>
+            </View>
+            <View style={styles.messageRow}>
+              <Text style={[styles.chatMessage, item.unread && styles.unreadMessage]} numberOfLines={1}>{item.message}</Text>
+              {item.unread && item.unreadCount > 0 && (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadCount}>{item.unreadCount}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 const getStyles = (theme, isDark) => StyleSheet.create({
   container: { flex: 1 },

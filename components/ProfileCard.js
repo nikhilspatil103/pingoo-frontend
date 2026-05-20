@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import OptimizedImage from './OptimizedImage';
@@ -11,9 +11,19 @@ if (Platform.OS !== 'web') {
   FastImage = require('react-native-fast-image');
 }
 
-const ProfileCard = React.memo(({ profile, onPress, isDark, theme }) => {
+const ProfileCard = React.memo(({ profile, onPress, isDark, theme, index = 0 }) => {
   const priority = Platform.OS !== 'web' ? FastImage?.priority?.normal : undefined;
   const [distance, setDistance] = useState(null);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(25)).current;
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 400, delay: index * 80, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
+      Animated.timing(translateY, { toValue: 0, duration: 400, delay: index * 80, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
+    ]).start();
+  }, []);
 
   useEffect(() => {
     const loadDistance = async () => {
@@ -32,9 +42,13 @@ const ProfileCard = React.memo(({ profile, onPress, isDark, theme }) => {
     };
     loadDistance();
   }, [profile.latitude, profile.longitude]);
+
+  const handlePressIn = () => Animated.spring(scale, { toValue: 0.95, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
+  const handlePressOut = () => Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
   
   return (
-    <TouchableOpacity style={styles.wrapper} onPress={onPress} activeOpacity={0.9}>
+    <Animated.View style={[styles.wrapper, { opacity, transform: [{ translateY }, { scale }] }]}>
+    <TouchableOpacity style={{ flex: 1 }} onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut} activeOpacity={1}>
       <View style={styles.glassCard(isDark)}>
         <View style={styles.cardImage}>
           <OptimizedImage
@@ -79,12 +93,23 @@ const ProfileCard = React.memo(({ profile, onPress, isDark, theme }) => {
         </View>
       </View>
     </TouchableOpacity>
+    </Animated.View>
   );
 });
 
-const ListCard = React.memo(({ profile, onPress, isDark, theme }) => {
+const ListCard = React.memo(({ profile, onPress, isDark, theme, index = 0 }) => {
   const priority = Platform.OS !== 'web' ? FastImage?.priority?.normal : undefined;
   const [distance, setDistance] = useState(null);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateX = useRef(new Animated.Value(-30)).current;
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 350, delay: index * 60, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
+      Animated.timing(translateX, { toValue: 0, duration: 350, delay: index * 60, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
+    ]).start();
+  }, []);
 
   useEffect(() => {
     const loadDistance = async () => {
@@ -103,9 +128,13 @@ const ListCard = React.memo(({ profile, onPress, isDark, theme }) => {
     };
     loadDistance();
   }, [profile.latitude, profile.longitude]);
+
+  const handlePressIn = () => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
+  const handlePressOut = () => Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
   
   return (
-    <TouchableOpacity style={styles.listCard(isDark)} onPress={onPress} activeOpacity={1}>
+    <Animated.View style={{ opacity, transform: [{ translateX }, { scale }] }}>
+    <TouchableOpacity style={styles.listCard(isDark)} onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut} activeOpacity={1}>
       <View style={styles.listCardContent}>
         <View style={styles.listImageContainer}>
           <OptimizedImage
@@ -144,6 +173,7 @@ const ListCard = React.memo(({ profile, onPress, isDark, theme }) => {
         </View>
       </View>
     </TouchableOpacity>
+    </Animated.View>
   );
 });
 

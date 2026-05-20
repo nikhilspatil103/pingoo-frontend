@@ -87,11 +87,11 @@ export default function HomeScreen({ navigation }) {
     }
   }, [page, loadingMore, hasMore, fetchProfiles, setPage]);
 
-  const renderItem = useCallback(({ item }) => {
+  const renderItem = useCallback(({ item, index }) => {
     if (isListView) {
-      return <ListCard profile={item} onPress={() => navigation.navigate('ProfileView', { profile: item })} isDark={isDark} theme={theme} />;
+      return <ListCard profile={item} onPress={() => navigation.navigate('ProfileView', { profile: item })} isDark={isDark} theme={theme} index={index} />;
     }
-    return <ProfileCard profile={item} onPress={() => navigation.navigate('ProfileView', { profile: item })} isDark={isDark} theme={theme} />;
+    return <ProfileCard profile={item} onPress={() => navigation.navigate('ProfileView', { profile: item })} isDark={isDark} theme={theme} index={index} />;
   }, [isListView, isDark, theme, navigation]);
 
   const renderFooter = () => {
