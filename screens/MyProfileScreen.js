@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Alert, StatusBar, ActivityIndicator, Platform } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Alert, StatusBar, ActivityIndicator, Platform, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 // import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -10,6 +10,7 @@ import { API_URL } from '../config/urlConfig';
 import ProfileViewScreen from './ProfileViewScreen';
 import PingooLogo from '../components/PingooLogo';
 import OptimizedImage from '../components/OptimizedImage';
+import { useFocusEffect } from '@react-navigation/native';
 
 let FastImage;
 if (Platform.OS !== 'web') {
@@ -26,6 +27,44 @@ export default function MyProfileScreen({ navigation }) {
   const [likesCount, setLikesCount] = useState(0);
   const [coins, setCoins] = useState(100);
   const [imageLoading, setImageLoading] = useState(true);
+
+  // Animations
+  const cardOpacity = useRef(new Animated.Value(0)).current;
+  const cardTranslateY = useRef(new Animated.Value(30)).current;
+  const statsOpacity = useRef(new Animated.Value(0)).current;
+  const statsTranslateY = useRef(new Animated.Value(20)).current;
+  const actionsOpacity = useRef(new Animated.Value(0)).current;
+  const actionsTranslateY = useRef(new Animated.Value(20)).current;
+
+  const playEntryAnimation = useCallback(() => {
+    cardOpacity.setValue(0);
+    cardTranslateY.setValue(30);
+    statsOpacity.setValue(0);
+    statsTranslateY.setValue(20);
+    actionsOpacity.setValue(0);
+    actionsTranslateY.setValue(20);
+
+    Animated.stagger(120, [
+      Animated.parallel([
+        Animated.timing(cardOpacity, { toValue: 1, duration: 400, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
+        Animated.timing(cardTranslateY, { toValue: 0, duration: 400, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
+      ]),
+      Animated.parallel([
+        Animated.timing(statsOpacity, { toValue: 1, duration: 350, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
+        Animated.timing(statsTranslateY, { toValue: 0, duration: 350, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
+      ]),
+      Animated.parallel([
+        Animated.timing(actionsOpacity, { toValue: 1, duration: 350, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
+        Animated.timing(actionsTranslateY, { toValue: 0, duration: 350, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
+      ]),
+    ]).start();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (profile) playEntryAnimation();
+    }, [profile])
+  );
 
   useEffect(() => {
     loadProfile();
@@ -163,6 +202,7 @@ export default function MyProfileScreen({ navigation }) {
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
+            <Animated.View style={{ opacity: cardOpacity, transform: [{ translateY: cardTranslateY }] }}>
             <View style={styles.profileCard}>
               <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate('EditProfile')}>
                 <OptimizedImage
@@ -183,7 +223,9 @@ export default function MyProfileScreen({ navigation }) {
               </View>
               <Text style={styles.progressText}>{profileCompletion}% Profile Completed</Text>
             </View>
+            </Animated.View>
 
+            <Animated.View style={{ opacity: statsOpacity, transform: [{ translateY: statsTranslateY }] }}>
             <View style={styles.statsRow}>
               <View style={styles.statCard}>
                 <Text style={styles.statIcon}>◎</Text>
@@ -206,7 +248,9 @@ export default function MyProfileScreen({ navigation }) {
                 </View>
               </TouchableOpacity>
             </View>
+            </Animated.View>
 
+            <Animated.View style={{ opacity: actionsOpacity, transform: [{ translateY: actionsTranslateY }] }}>
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Quick Actions</Text>
               <TouchableOpacity onPress={() => navigation.navigate('EditProfile')} activeOpacity={1}>
@@ -270,6 +314,7 @@ export default function MyProfileScreen({ navigation }) {
                 </View>
               </TouchableOpacity>
             </View>
+            </Animated.View>
 
             <View style={{ height: 100 }} />
           </ScrollView>
