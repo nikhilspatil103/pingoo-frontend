@@ -412,8 +412,11 @@ export default function ChatScreen({ route, navigation }) {
     }
   };
 
+  const recordStartTime = useRef(null);
+
   const startRecording = async () => {
     try {
+      recordStartTime.current = Date.now();
       await AudioRecorder.startRecording();
       setIsRecording(true);
       setRecordingDuration(0);
@@ -428,11 +431,18 @@ export default function ChatScreen({ route, navigation }) {
 
   const stopRecording = async () => {
     try {
+      const holdDuration = Date.now() - (recordStartTime.current || 0);
       const audioUri = await AudioRecorder.stopRecording();
       setIsRecording(false);
       
       if (recordingTimerRef.current) {
         clearInterval(recordingTimerRef.current);
+      }
+
+      // If held for less than 500ms, it was a tap not a hold
+      if (holdDuration < 500) {
+        Alert.alert('Hold to Record', 'Press and hold the mic button to record a voice message.');
+        return;
       }
       
       if (audioUri && recordingDuration > 0) {
