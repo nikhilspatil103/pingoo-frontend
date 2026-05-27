@@ -27,6 +27,10 @@ import BlockListScreen from './screens/BlockListScreen';
 import DeleteAccountScreen from './screens/DeleteAccountScreen';
 import ChatScreen from './screens/ChatScreen';
 import ChatListScreen from './screens/ChatListScreen';
+import MoodScreen from './screens/MoodScreen';
+import MyMoodsScreen from './screens/MyMoodsScreen';
+import MoodPlayerScreen from './screens/MoodPlayerScreen';
+import { FEATURES } from './config/featureFlags';
 import { ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -58,17 +62,16 @@ function MainTabs() {
         headerShown: false,
         tabBarStyle: {
           position: 'absolute',
-          bottom: 20,
-          left: 5,
-          right: 5,
-          backgroundColor: isDark ? '#1a1a1a' : '#2a2a2a',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#000',
           borderTopWidth: 0,
           elevation: 0,
-          height: 65,
+          height: 68,
           paddingTop: 5,
-          borderRadius: 35,
-          borderWidth: 1,
-          borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.2)',
+          borderRadius: 0,
+          borderWidth: 0,
         },
         tabBarBackground: () => null,
         tabBarActiveTintColor: isDark ? '#F70776' : '#FF6B9D',
@@ -83,6 +86,15 @@ function MainTabs() {
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="home-outline" isDark={isDark} />,
         }}
       />
+      {FEATURES.MOOD_SCREEN && (
+      <Tab.Screen 
+        name="Moods" 
+        component={MoodScreen}
+        options={{
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="videocam-outline" isDark={isDark} />,
+        }}
+      />
+      )}
       <Tab.Screen 
         name="Contacts" 
         component={ContactsScreen}
@@ -131,6 +143,10 @@ function AppNavigator() {
           profilePhoto: null
         }
       });
+    } else if (data.type === 'mood_like' && data.moodId) {
+      nav.navigate('Main', { screen: 'Moods', params: { moodId: data.moodId, openComments: false } });
+    } else if (data.type === 'mood_comment' && data.moodId) {
+      nav.navigate('Main', { screen: 'Moods', params: { moodId: data.moodId, openComments: true } });
     } else if (data.type === 'like') {
       nav.navigate('Notifications');
     }
@@ -214,6 +230,8 @@ function AppNavigator() {
             <Stack.Screen name="BlockList" component={BlockListScreen} />
             <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
             <Stack.Screen name="Chat" component={ChatScreen} />
+            <Stack.Screen name="MyMoods" component={MyMoodsScreen} />
+            <Stack.Screen name="MoodPlayer" component={MoodPlayerScreen} options={{ presentation: 'fullScreenModal' }} />
           </>
         )}
       </Stack.Navigator>

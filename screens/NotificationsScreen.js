@@ -84,28 +84,54 @@ export default function NotificationsScreen({ navigation }) {
           ) : (
             <FlatList
               data={notifications}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item, index) => `${item.id}-${item.type}-${index}`}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[styles.notificationCard, !item.read && styles.unreadCard]}
-                  onPress={() => navigation.navigate('ProfileView', { userId: item.id })}
+                  onPress={() => {
+                    if (item.type === 'mood_comment' && item.moodId) {
+                      navigation.navigate('Main', { screen: 'Moods', params: { moodId: item.moodId, openComments: true } });
+                    } else if (item.type === 'mood_like' && item.moodId) {
+                      navigation.navigate('Main', { screen: 'Moods', params: { moodId: item.moodId, openComments: false } });
+                    } else {
+                      navigation.navigate('ProfileView', { userId: item.id });
+                    }
+                  }}
                 >
-                  {item.profilePhoto ? (
-                    <Image source={{ uri: item.profilePhoto }} style={styles.avatar} />
-                  ) : (
-                    <View style={[styles.avatar, { backgroundColor: '#FF6B9D' }]}>
-                      <Text style={styles.avatarText}>{item.name?.[0]?.toUpperCase()}</Text>
+                  <View style={styles.avatarContainer}>
+                    {item.profilePhoto ? (
+                      <Image source={{ uri: item.profilePhoto }} style={styles.avatar} />
+                    ) : (
+                      <View style={[styles.avatar, { backgroundColor: '#FF6B9D' }]}>
+                        <Text style={styles.avatarText}>{item.name?.[0]?.toUpperCase()}</Text>
+                      </View>
+                    )}
+                    <View style={styles.typeIcon}>
+                      <Text style={styles.typeIconText}>
+                        {item.type === 'mood_like' ? '❤️' : 
+                         item.type === 'mood_comment' ? '💬' : '💖'}
+                      </Text>
                     </View>
-                  )}
+                  </View>
                   <View style={styles.notificationContent}>
                     <View style={styles.notificationHeader}>
                       <Text style={styles.notificationTitle}>
-                        <Text style={styles.userName}>{item.name}</Text>
-                        <Text style={styles.notificationText}> liked your profile</Text>
+                        <Text style={styles.userName}>{item.name}, {item.age}</Text>
+                        <Text style={styles.notificationText}>
+                          {item.type === 'mood_like' ? ' liked your mood' : 
+                           item.type === 'mood_comment' ? ' commented on your mood' : 
+                           ' liked your profile'}
+                        </Text>
                       </Text>
                       {!item.read && <View style={styles.unreadDot} />}
                     </View>
-                    <Text style={styles.notificationTime}>{formatTime(item.timestamp)}</Text>
+                    <View style={styles.notificationMeta}>
+                      <Text style={styles.notificationTime}>{formatTime(item.timestamp)}</Text>
+                      <Text style={styles.notificationTypeTag}>
+                        {item.type === 'mood_like' ? '🎭 Mood' : 
+                         item.type === 'mood_comment' ? '🎭 Mood' : '👤 Profile'}
+                      </Text>
+                    </View>
                   </View>
                   <Text style={styles.arrow}>›</Text>
                 </TouchableOpacity>
@@ -161,10 +187,25 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    marginRight: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  avatarContainer: {
+    position: 'relative',
+    marginRight: 16,
+  },
+  typeIcon: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: isDark ? '#1a0a2e' : '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  typeIconText: { fontSize: 12 },
   avatarText: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
   notificationContent: { flex: 1 },
   notificationHeader: {
@@ -174,9 +215,11 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     marginBottom: 4,
   },
   notificationTitle: { flex: 1, flexDirection: 'row', flexWrap: 'wrap' },
-  userName: { fontSize: 16, fontWeight: 'bold', color: theme.text },
-  notificationText: { fontSize: 16, color: theme.text },
+  userName: { fontSize: 15, fontWeight: 'bold', color: theme.text },
+  notificationText: { fontSize: 15, color: theme.textSecondary },
+  notificationMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   notificationTime: { fontSize: 13, color: theme.textSecondary },
+  notificationTypeTag: { fontSize: 11, color: '#FF6B9D', fontWeight: '600' },
   unreadDot: {
     width: 8,
     height: 8,

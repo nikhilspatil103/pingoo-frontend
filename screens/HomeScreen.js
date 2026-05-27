@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, FlatList, SafeAreaView, Anima
 import RangeSlider from '../components/RangeSlider';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useLikes } from '../context/LikesContext';
@@ -12,6 +13,8 @@ import { ProfileCard, ListCard } from '../components/ProfileCard';
 import useProfileStore from '../store/profileStore';
 import ProfileSocketService from '../services/ProfileSocketService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStoredLocation, calculateDistance } from '../utils/locationService';
+import { FEATURES } from '../config/featureFlags';
 
 export default function HomeScreen({ navigation }) {
   const { theme, isDark, toggleTheme } = useTheme();
@@ -22,6 +25,8 @@ export default function HomeScreen({ navigation }) {
   const [filterType, setFilterType] = useState('all');
   const [ageRange, setAgeRange] = useState({ min: 18, max: 80 });
   const [genderFilter, setGenderFilter] = useState('both');
+  const [distanceFilter, setDistanceFilter] = useState(50);
+  const [userLocation, setUserLocation] = useState(null);
   const [fadeAnim] = useState(new Animated.Value(1));
   const [slideAnim] = useState(new Animated.Value(0));
   
@@ -31,6 +36,11 @@ export default function HomeScreen({ navigation }) {
     React.useCallback(() => {
       fetchProfiles(1, false);
       fetchNewLikes();
+
+      // Load user location for distance filtering
+      if (FEATURES.DISTANCE_FILTER) {
+        getStoredLocation().then(loc => { if (loc) setUserLocation(loc); });
+      }
       
       // Setup WebSocket for real-time updates
       const setupSocket = async () => {
@@ -95,12 +105,22 @@ export default function HomeScreen({ navigation }) {
   }, [isListView, isDark, theme, navigation]);
 
   const renderFooter = () => {
-    if (!loadingMore) return null;
-    return (
-      <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color={theme.text} />
-      </View>
-    );
+    if (loadingMore) {
+      return (
+        <View style={styles.footerLoader}>
+          <ActivityIndicator size="large" color="#FF6B9D" />
+          <Text style={styles.footerLoaderText}>Loading more profiles...</Text>
+        </View>
+      );
+    }
+    if (!hasMore && filteredProfiles.length > 0) {
+      return (
+        <View style={styles.footerLoader}>
+          <Text style={styles.footerEndText}>No more profiles</Text>
+        </View>
+      );
+    }
+    return null;
   };
 
   const keyExtractor = useCallback((item) => item.id.toString(), []);
@@ -112,6 +132,11 @@ export default function HomeScreen({ navigation }) {
     if (profile.age && (profile.age < ageRange.min || profile.age > ageRange.max)) return false;
     // Online filter
     if (filterType === 'online' && !profile.isOnline) return false;
+    // Distance filter
+    if (FEATURES.DISTANCE_FILTER && userLocation && profile.latitude && profile.longitude) {
+      const dist = calculateDistance(userLocation.latitude, userLocation.longitude, profile.latitude, profile.longitude);
+      if (dist > distanceFilter) return false;
+    }
     return true;
   }).sort((a, b) => {
     if (filterType === 'age') return a.age - b.age;
@@ -128,6 +153,7 @@ export default function HomeScreen({ navigation }) {
     setFilterType('all');
     setGenderFilter('both');
     setAgeRange({ min: 18, max: 80 });
+    setDistanceFilter(50);
   };
 
   const styles = getStyles(theme, isDark);
@@ -146,23 +172,23 @@ export default function HomeScreen({ navigation }) {
               <TouchableOpacity 
                 style={styles.viewToggle} 
                 onPress={() => navigation.navigate('Notifications')} 
-                activeOpacity={1}
+                activeOpacity={0.7}
               >
-                <Text style={styles.viewToggleIcon}>🔔</Text>
+                <Ionicons name="notifications-outline" size={20} color={isDark ? '#fff' : '#333'} />
                 {unreadCount > 0 && (
                   <View style={styles.notificationBadge}>
                     <Text style={styles.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
                   </View>
                 )}
               </TouchableOpacity>
-              <TouchableOpacity style={styles.viewToggle} onPress={() => setFilterVisible(true)} activeOpacity={1}>
-                <Text style={styles.viewToggleIcon}>⚡</Text>
+              <TouchableOpacity style={styles.viewToggle} onPress={() => setFilterVisible(true)} activeOpacity={0.7}>
+                <Ionicons name="options-outline" size={20} color={isDark ? '#fff' : '#333'} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.viewToggle} onPress={() => setIsListView(!isListView)} activeOpacity={1}>
-                <Text style={styles.viewToggleIcon}>{isListView ? '⊞' : '☰'}</Text>
+              <TouchableOpacity style={styles.viewToggle} onPress={() => setIsListView(!isListView)} activeOpacity={0.7}>
+                <Ionicons name={isListView ? 'grid-outline' : 'list-outline'} size={20} color={isDark ? '#fff' : '#333'} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.themeButton} onPress={toggleTheme} activeOpacity={1}>
-                <Text style={styles.themeIcon}>{isDark ? '☀️' : '🌙'}</Text>
+              <TouchableOpacity style={styles.themeButton} onPress={toggleTheme} activeOpacity={0.7}>
+                <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={20} color={isDark ? '#FFD93D' : '#333'} />
               </TouchableOpacity>
             </View>
           </View>
@@ -242,6 +268,19 @@ export default function HomeScreen({ navigation }) {
                   </View>
                 </View>
 
+                {FEATURES.DISTANCE_FILTER && (
+                <View style={styles.filterSection}>
+                  <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>DISTANCE ({distanceFilter} km)</Text>
+                  <View style={styles.sortButtons}>
+                    {[10, 20, 30, 50, 100].map(km => (
+                      <TouchableOpacity key={km} style={[styles.sortChip, distanceFilter === km && styles.sortChipActive]} onPress={() => setDistanceFilter(km)}>
+                        <Text style={[styles.sortChipText, { color: distanceFilter === km ? '#fff' : theme.text }]}>{km} km</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+                )}
+
                 <View style={styles.filterSection}>
                   <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>SORT BY</Text>
                   <View style={styles.sortButtons}>
@@ -287,8 +326,6 @@ const getStyles = (theme, isDark) => StyleSheet.create({
     alignItems: 'center', 
     paddingHorizontal: 20, 
     paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
   },
   headerRight: { flexDirection: 'row', gap: 10 },
   viewToggle: { width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', justifyContent: 'center', alignItems: 'center', position: 'relative' },
@@ -319,7 +356,9 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   loadingText: { marginTop: 20, fontSize: 16, color: theme.text },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
   emptyText: { fontSize: 16, color: theme.textSecondary },
-  footerLoader: { paddingVertical: 20, alignItems: 'center' },
+  footerLoader: { paddingVertical: 30, alignItems: 'center', gap: 8 },
+  footerLoaderText: { fontSize: 14, color: theme.textSecondary, marginTop: 8 },
+  footerEndText: { fontSize: 14, color: theme.textSecondary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   blurView: { borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
   modalContent: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
