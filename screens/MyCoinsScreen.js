@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, StatusBar } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-// import { View } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
@@ -9,6 +8,9 @@ import { API_URL } from '../config/urlConfig';
 export default function MyCoinsScreen({ navigation }) {
   const { theme, isDark } = useTheme();
   const [coins, setCoins] = useState(0);
+  const [purchasing, setPurchasing] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [purchasedCoins, setPurchasedCoins] = useState(0);
 
   useEffect(() => {
     loadCoins();
@@ -37,12 +39,34 @@ export default function MyCoinsScreen({ navigation }) {
     }
   };
 
-  const earnOptions = [
-    { id: 1, icon: '🎥', title: 'Watch Ad', coins: 5, desc: 'Watch a short video' },
-    { id: 2, icon: '✓', title: 'Complete Profile', coins: 20, desc: 'Fill all profile details' },
-    { id: 3, icon: '📸', title: 'Add Photos', coins: 10, desc: 'Upload 3+ photos' },
-    { id: 4, icon: '🎁', title: 'Daily Login', coins: 5, desc: 'Login every day' },
-  ];
+  const handlePurchase = async (pack) => {
+    setPurchasing(pack.id);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/payment/test-purchase`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ coins: pack.coins, packageId: pack.id })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCoins(data.coins);
+        setPurchasedCoins(pack.coins);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+      } else {
+        Alert.alert('Error', 'Purchase failed. Please try again.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Network error. Please try again.');
+    } finally {
+      setPurchasing(null);
+    }
+  };
 
   const buyOptions = [
     { id: 1, coins: 50, price: '₹79', popular: false },
@@ -79,6 +103,13 @@ export default function MyCoinsScreen({ navigation }) {
               <Text style={styles.balanceDesc}>Coins</Text>
             </View>
 
+            {showSuccess && (
+              <View style={styles.successBanner}>
+                <Text style={styles.successEmoji}>🎉</Text>
+                <Text style={styles.successText}>+{purchasedCoins} coins credited!</Text>
+              </View>
+            )}
+
             <View tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
               <Text style={styles.infoIcon}>💬</Text>
               <Text style={styles.infoTitle}>How Coins Work</Text>
@@ -89,42 +120,49 @@ export default function MyCoinsScreen({ navigation }) {
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Earn Free Coins</Text>
-              {earnOptions.map((option) => (
-                <View key={option.id}  tint={isDark ? 'dark' : 'light'} style={styles.optionCard}>
-                  <TouchableOpacity style={styles.optionInner}>
-                    <View style={styles.optionIcon}>
-                      <Text style={styles.optionEmoji}>{option.icon}</Text>
-                    </View>
-                    <View style={styles.optionInfo}>
-                      <Text style={styles.optionTitle}>{option.title}</Text>
-                      <Text style={styles.optionDesc}>{option.desc}</Text>
-                    </View>
-                    <View style={styles.coinBadge}>
-                      <Text style={styles.coinBadgeText}>+{option.coins}</Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              ))}
+              <View style={styles.earnCard}>
+                <TouchableOpacity style={styles.spinButton} onPress={() => navigation.navigate('SpinWheel')}>
+                  <Text style={styles.spinEmoji}>🎰</Text>
+                  <View style={styles.spinInfo}>
+                    <Text style={styles.spinTitle}>Spin the Wheel</Text>
+                    <Text style={styles.spinDesc}>Win up to 50 coins daily!</Text>
+                  </View>
+                  <View style={styles.coinBadge}>
+                    <Text style={styles.coinBadgeText}>FREE</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Buy Coins</Text>
               <View style={styles.buyGrid}>
                 {buyOptions.map((option) => (
-                  <View key={option.id}  tint={isDark ? 'dark' : 'light'} style={styles.buyCard}>
-                    <TouchableOpacity style={styles.buyInner}>
+                  <View key={option.id} style={styles.buyCard}>
+                    <TouchableOpacity 
+                      style={styles.buyInner} 
+                      onPress={() => handlePurchase(option)}
+                      disabled={purchasing !== null}
+                    >
                       {option.popular && (
                         <View style={styles.popularBadge}>
                           <Text style={styles.popularText}>POPULAR</Text>
                         </View>
                       )}
-                      <Text style={styles.buyCoinIcon}>◎</Text>
-                      <Text style={styles.buyCoinAmount}>{option.coins}</Text>
+                      {purchasing === option.id ? (
+                        <ActivityIndicator size="small" color="#FFD700" style={{ marginVertical: 20 }} />
+                      ) : (
+                        <>
+                          <Text style={styles.buyCoinIcon}>◎</Text>
+                          <Text style={styles.buyCoinAmount}>{option.coins}</Text>
+                        </>
+                      )}
                       <Text style={styles.buyPrice}>{option.price}</Text>
                     </TouchableOpacity>
                   </View>
                 ))}
               </View>
+              <Text style={styles.testModeText}>⚠️ Test Mode - No real charges</Text>
             </View>
 
             <View style={{ height: 40 }} />
@@ -171,4 +209,14 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   buyCoinIcon: { fontSize: 40, color: '#FFD700', marginBottom: 8 },
   buyCoinAmount: { fontSize: 28, fontWeight: 'bold', color: theme.text, marginBottom: 4 },
   buyPrice: { fontSize: 16, color: theme.textSecondary },
+  testModeText: { fontSize: 12, color: theme.textSecondary, textAlign: 'center', marginTop: 12, fontStyle: 'italic' },
+  successBanner: { marginHorizontal: 20, marginBottom: 16, backgroundColor: '#4CAF50', borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+  successEmoji: { fontSize: 24 },
+  successText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+  earnCard: { borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)' },
+  spinButton: { flexDirection: 'row', alignItems: 'center', padding: 16 },
+  spinEmoji: { fontSize: 36, marginRight: 16 },
+  spinInfo: { flex: 1 },
+  spinTitle: { fontSize: 16, fontWeight: 'bold', color: theme.text, marginBottom: 4 },
+  spinDesc: { fontSize: 13, color: theme.textSecondary },
 });
