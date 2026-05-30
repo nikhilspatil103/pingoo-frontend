@@ -416,6 +416,39 @@ export default function MoodScreen({ navigation, route }) {
     }, [currentIndex, moods])
   );
 
+  const [reportModal, setReportModal] = useState(false);
+  const [reportMoodId, setReportMoodId] = useState(null);
+
+  const reportMood = (moodId) => {
+    setReportMoodId(moodId);
+    setReportModal(true);
+  };
+
+  const submitReport = async (reason) => {
+    if (!reportMoodId) return;
+    setReportModal(false);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await fetch(`${API_URL}/mood/${reportMoodId}/report`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        Alert.alert('✅ Reported', 'Thanks for keeping the community safe.');
+        if (data.hidden) {
+          setMoods(prev => prev.filter(m => m.id !== reportMoodId));
+        }
+      } else {
+        Alert.alert('Error', data.error || 'Failed to report');
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Something went wrong');
+    }
+    setReportMoodId(null);
+  };
+
   const togglePlayPause = () => {
     const currentMood = moods[currentIndex];
     if (!currentMood) return;
@@ -505,6 +538,10 @@ export default function MoodScreen({ navigation, route }) {
 
         <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('ProfileView', { profile: item.user })}>
           <Ionicons name="person-circle-outline" size={28} color="#fff" />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionBtn} onPress={() => reportMood(item.id)}>
+          <Ionicons name="flag-outline" size={22} color="rgba(255,255,255,0.6)" />
         </TouchableOpacity>
       </View>
     </View>
@@ -637,6 +674,24 @@ export default function MoodScreen({ navigation, route }) {
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Report Modal */}
+      <Modal visible={reportModal} transparent animationType="fade">
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }} activeOpacity={1} onPress={() => setReportModal(false)}>
+          <View style={{ width: '80%', borderRadius: 16, padding: 20, backgroundColor: isDark ? '#1a0a2e' : '#fff' }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.text, marginBottom: 16 }}>🚩 Report Mood</Text>
+            <Text style={{ fontSize: 14, color: theme.textSecondary, marginBottom: 16 }}>Why are you reporting this?</Text>
+            {['Nudity/Sexual content', 'Violence/Abuse', 'Spam/Fake content', 'Harassment'].map(reason => (
+              <TouchableOpacity key={reason} style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }} onPress={() => submitReport(reason)}>
+                <Text style={{ fontSize: 15, color: theme.text }}>{reason}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={{ paddingVertical: 12, marginTop: 8 }} onPress={() => setReportModal(false)}>
+              <Text style={{ fontSize: 15, color: '#FF6B9D', textAlign: 'center', fontWeight: '600' }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </Modal>
 
       {/* Comments Modal */}
