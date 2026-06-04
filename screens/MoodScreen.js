@@ -9,6 +9,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { FEATURES } from '../config/featureFlags';
 import PingooLogo from '../components/PingooLogo';
+import PingooLoader from '../assets/brand/PingooLoader';
+import PingooLogoStatic from '../components/PingooLogoStatic';
 
 const { width } = Dimensions.get('window');
 
@@ -552,7 +554,7 @@ export default function MoodScreen({ navigation, route }) {
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
-        <PingooLogo size={80} animated={true} />
+        <PingooLoader size={100} />
         <Text style={styles.loadingText}>Loading moods...</Text>
       </View>
     );
@@ -563,7 +565,7 @@ export default function MoodScreen({ navigation, route }) {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTitleRow}>
-          <Image source={require('../assets/Ping.png')} style={{ width: 50, height: 50}} resizeMode="contain" />
+          <PingooLogoStatic size={28} />
           <Text style={styles.headerTitle}>Moods</Text>
         </View>
         <TouchableOpacity

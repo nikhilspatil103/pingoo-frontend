@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
 import ProfileViewScreen from './ProfileViewScreen';
 import PingooLogo from '../components/PingooLogo';
+import PingooLoader from '../assets/brand/PingooLoader';
 import OptimizedImage from '../components/OptimizedImage';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -236,7 +237,7 @@ export default function MyProfileScreen({ navigation }) {
         >
           <SafeAreaView style={styles.safeArea}>
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              <PingooLogo size={100} animated={true} />
+              <PingooLoader size={100} />
             </View>
           </SafeAreaView>
         </LinearGradient>

@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import PingooLogo from '../components/PingooLogo';
+import PingooLoader from '../assets/brand/PingooLoader';
 import { getCurrentLocation, getStoredLocation, calculateDistance, formatDistance, syncLocationWithBackend } from '../utils/locationService';
 
 export default function ContactsScreen({ navigation }) {
@@ -74,7 +75,7 @@ export default function ContactsScreen({ navigation }) {
 
           {loading ? (
             <View style={styles.loadingContainer}>
-              <PingooLogo size={80} animated={true} />
+              <PingooLoader size={100} />
             </View>
           ) : (
           <ScrollView showsVerticalScrollIndicator={false}>

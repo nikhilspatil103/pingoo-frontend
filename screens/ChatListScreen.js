@@ -8,6 +8,7 @@ import { API_URL } from '../config/urlConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAvatarColor } from '../utils/avatarColors';
 import PingooLogo from '../components/PingooLogo';
+import PingooLoader from '../assets/brand/PingooLoader';
 import { useFocusEffect } from '@react-navigation/native';
 import SocketService from '../services/SocketService';
 
@@ -121,7 +122,7 @@ export default function ChatListScreen({ navigation }) {
 
           {loading ? (
             <View style={styles.loadingContainer}>
-              <PingooLogo size={80} animated={true} />
+              <PingooLoader size={100} />
             </View>
           ) : chats.length === 0 ? (
             <View style={styles.emptyState}>

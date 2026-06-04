@@ -61,7 +61,10 @@ const useProfileStore = create((set, get) => ({
         if (isRefresh) {
           set({ profiles: newUsers, page: 1, hasMore: newUsers.length === 20, lastFetch: now });
         } else {
-          set({ profiles: [...state.profiles, ...newUsers], page: pageNum, hasMore: newUsers.length === 20, lastFetch: now });
+          const existing = state.profiles;
+          const existingIds = new Set(existing.map(p => p.id.toString()));
+          const uniqueNew = newUsers.filter(u => !existingIds.has(u.id.toString()));
+          set({ profiles: [...existing, ...uniqueNew], page: pageNum, hasMore: newUsers.length === 20, lastFetch: now });
         }
       } else if (response.status === 401) {
         set({ hasMore: false, initialLoading: false, loadingMore: false, refreshing: false });

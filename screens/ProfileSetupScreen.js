@@ -6,6 +6,7 @@ import { API_URL } from '../config/urlConfig';
 import { uploadImageToCloudinary } from '../utils/imageUpload';
 import { requestLocationPermission, getCurrentLocation } from '../utils/locationService';
 import PingooLogo from '../components/PingooLogo';
+import PingooLoader from '../assets/brand/PingooLoader';
 
 export default function ProfileSetupScreen({ route, navigation }) {
   const { name, email, password } = route.params;
@@ -227,7 +228,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
         <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
           <View style={styles.content}>
             <View style={styles.welcomeSection}>
-              <PingooLogo size={64} animated={true} />
+              <PingooLoader size={100} />
               <Text style={styles.title}>
                 {step === 1 ? 'Add Your Photo' : step === 2 ? 'How old are you?' : step === 3 ? 'Your Gender' : step === 4 ? 'Interested in' : 'What are you looking for?'}
               </Text>
@@ -241,7 +242,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
                 <TouchableOpacity style={styles.photoWrapper} onPress={pickImage} disabled={loading}>
                   {loading ? (
                     <View style={styles.photoPlaceholder}>
-                      <PingooLogo size={60} animated={true} />
+                      <PingooLoader size={100} />
                     </View>
                   ) : profilePhoto ? (
                     <Image source={{ uri: profilePhoto }} style={styles.profilePhoto} />

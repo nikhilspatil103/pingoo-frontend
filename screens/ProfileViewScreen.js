@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
 import OptimizedImage from '../components/OptimizedImage';
 import PingooLogo from '../components/PingooLogo';
+import PingooLoader from '../assets/brand/PingooLoader';
 import { getStoredLocation, calculateDistance, formatDistance } from '../utils/locationService';
 import { formatLastSeen } from '../utils/timeUtils';
 
@@ -255,7 +256,7 @@ export default function ProfileViewScreen({ route, navigation }) {
       <View style={styles.container}>
         <LinearGradient colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']} style={styles.gradient}>
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <PingooLogo size={80} animated={true} />
+            <PingooLoader size={100} />
           </View>
         </LinearGradient>
       </View>

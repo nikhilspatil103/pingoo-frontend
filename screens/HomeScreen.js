@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLikes } from '../context/LikesContext';
 import { useFocusEffect } from '@react-navigation/native';
 import PingooLogo from '../components/PingooLogo';
+import PingooLoader from '../assets/brand/PingooLoader';
 import { ProfileCard, ListCard } from '../components/ProfileCard';
 import useProfileStore from '../store/profileStore';
 import ProfileSocketService from '../services/ProfileSocketService';
@@ -195,7 +196,7 @@ export default function HomeScreen({ navigation }) {
 
           {initialLoading ? (
             <View style={styles.loadingContainer}>
-              <PingooLogo size={80} animated={true} />
+              <PingooLoader size={100} />
               <Text style={styles.loadingText}>Loading users...</Text>
             </View>
           ) : (

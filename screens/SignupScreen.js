@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, SafeAreaVie
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/urlConfig';
 import PingooLogo from '../components/PingooLogo';
+import PingooLoader from '../assets/brand/PingooLoader';
 
 export default function SignupScreen({ navigation }) {
   const { login } = useAuth();
@@ -45,7 +46,7 @@ export default function SignupScreen({ navigation }) {
         >
           <View style={styles.content}>
             <View style={styles.header}>
-              <PingooLogo size={64} animated={true} />
+              <PingooLoader size={100} />
               <Text style={styles.title}>Pingoo</Text>
               <Text style={styles.subtitle}>Connect. Chat. Meet.</Text>
             </View>

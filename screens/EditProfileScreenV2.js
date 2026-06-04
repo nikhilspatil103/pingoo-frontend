@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { API_URL } from '../config/urlConfig';
 import { uploadImageToCloudinary } from '../utils/imageUpload';
 import PingooLogo from '../components/PingooLogo';
+import PingooLoader from '../assets/brand/PingooLoader';
 import LocationPicker from '../components/LocationPicker';
 
 export default function EditProfileScreen({ navigation }) {
@@ -290,7 +291,7 @@ export default function EditProfileScreen({ navigation }) {
             {uploading ? (
               <View style={[styles.profileImage, { justifyContent: 'center', alignItems: 'center' }]}>
                 <View style={{ marginBottom: 0 }}>
-                  <PingooLogo size={60} animated={true} />
+                  <PingooLoader size={100} />
                 </View>
               </View>
             ) : profilePhoto ? (
