@@ -36,6 +36,7 @@ export default function MoodScreen({ navigation, route }) {
   const [thumbnailUri, setThumbnailUri] = useState(null);
   const [paused, setPaused] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const flatListRef = useRef(null);
   const videoRefs = useRef({});
 
@@ -95,6 +96,20 @@ export default function MoodScreen({ navigation, route }) {
   }, []);
 
   const hasFetched = useRef(false);
+
+  // Check if user has seen moods onboarding
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      const seen = await AsyncStorage.getItem('moodOnboardingSeen');
+      if (seen) setShowOnboarding(true);
+    };
+    checkOnboarding();
+  }, []);
+
+  const dismissOnboarding = async () => {
+    await AsyncStorage.setItem('moodOnboardingSeen', 'true');
+    setShowOnboarding(false);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -589,13 +604,78 @@ export default function MoodScreen({ navigation, route }) {
       </View>
 
       {moods.length === 0 ? (
-        <View style={styles.center}>
-          <Text style={{ fontSize: 60 }}>🎭</Text>
-          <Text style={styles.emptyText}>No moods yet</Text>
-          <Text style={styles.emptySubtext}>Be the first to share your mood!</Text>
+        <View style={styles.onboarding}>
+          <View style={styles.onboardingContent}>
+            <Text style={styles.onboardingEmoji}>🫧</Text>
+            <Text style={styles.onboardingTitle}>Welcome to Moods!</Text>
+            <Text style={styles.onboardingDesc}>Share what you’re feeling right now! Record a quick video, show your vibe, and let people ping you. It’s like Snaps but for dating — Your mood stays live for 7 days — keep posting to build streaks! 🔥</Text>
+            
+            <View style={styles.onboardingSteps}>
+              <View style={styles.stepRow}>
+                <View style={styles.stepIcon}><Text style={styles.stepNum}>1</Text></View>
+                <Text style={styles.stepText}>Record or pick a 15s video</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <View style={styles.stepIcon}><Text style={styles.stepNum}>2</Text></View>
+                <Text style={styles.stepText}>Add a caption & mood emoji</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <View style={styles.stepIcon}><Text style={styles.stepNum}>3</Text></View>
+                <Text style={styles.stepText}>Get likes, comments & new matches!</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <View style={styles.stepIcon}><Text style={styles.stepNum}>4</Text></View>
+                <Text style={styles.stepText}>Ping someone via their mood — start a convo!</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity 
+              style={styles.onboardingBtn} 
+              onPress={() => Alert.alert('Post Mood', 'Choose option', [
+                { text: 'Record Video 🎥', onPress: recordMood },
+                { text: 'Pick from Gallery 📁', onPress: pickVideo },
+                { text: 'Cancel', style: 'cancel' }
+              ])}
+            >
+              <Text style={styles.onboardingBtnText}>🚀 Post Your First Mood</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       ) : (
-        <FlatList
+        <>
+          {showOnboarding && (
+            <View style={styles.onboardingOverlay}>
+              <View style={styles.onboardingOverlayContent}>
+                <Text style={styles.onboardingEmoji}>🫧</Text>
+                <Text style={styles.onboardingTitle}>Welcome to Moods!</Text>
+                <Text style={styles.onboardingDesc}>Share what you’re feeling right now! Moods are like video statuses — show your vibe, get pinged by people who feel the same. Each mood stays live for 7 days. Think Snaps meets dating 🔥</Text>
+            
+            <View style={styles.onboardingSteps}>
+              <View style={styles.stepRow}>
+                <View style={styles.stepIcon}><Text style={styles.stepNum}>↑</Text></View>
+                <Text style={styles.stepText}>Swipe up to watch people’s moods</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <View style={styles.stepIcon}><Text style={styles.stepNum}>❤️</Text></View>
+                <Text style={styles.stepText}>Like & comment on vibes you connect with</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <View style={styles.stepIcon}><Text style={styles.stepNum}>📨</Text></View>
+                <Text style={styles.stepText}>Ping someone via their mood to start a chat</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <View style={styles.stepIcon}><Text style={styles.stepNum}>+</Text></View>
+                <Text style={styles.stepText}>Post your mood — keep the streak going! 🔥</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.onboardingBtn} onPress={dismissOnboarding}>
+              <Text style={styles.onboardingBtnText}>Got it! Let’s Go 🙌</Text>
+            </TouchableOpacity>
+              </View>
+            </View>
+          )}
+          <FlatList
           ref={flatListRef}
           data={moods}
           renderItem={renderMoodItem}
@@ -617,6 +697,7 @@ export default function MoodScreen({ navigation, route }) {
           initialNumToRender={2}
           updateCellsBatchingPeriod={100}
         />
+        </>
       )}
 
       {/* Post Mood Modal — Caption + Mood Picker */}
@@ -625,7 +706,7 @@ export default function MoodScreen({ navigation, route }) {
           <TouchableOpacity style={styles.commentModalDismiss} onPress={() => { setPostModal(false); setPendingVideoUri(null); }} />
           <View style={[styles.postModalContent, { backgroundColor: isDark ? '#1a0a2e' : '#fff' }]}>
             <View style={styles.commentHeader}>
-              <Text style={[styles.commentTitle, { color: theme.text }]}>Post Your Mood 🎭</Text>
+              <Text style={[styles.commentTitle, { color: theme.text }]}>Post Your Mood 🫧</Text>
               <TouchableOpacity onPress={() => { setPostModal(false); setPendingVideoUri(null); }}>
                 <Text style={{ fontSize: 24, color: theme.text }}>✕</Text>
               </TouchableOpacity>
@@ -752,6 +833,20 @@ export default function MoodScreen({ navigation, route }) {
 const getStyles = (theme, isDark) => StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  onboarding: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 30 },
+  onboardingContent: { alignItems: 'center', width: '100%' },
+  onboardingEmoji: { fontSize: 70, marginBottom: 16 },
+  onboardingTitle: { fontSize: 26, fontWeight: 'bold', color: '#fff', marginBottom: 12 },
+  onboardingDesc: { fontSize: 15, color: 'rgba(255,255,255,0.7)', textAlign: 'center', lineHeight: 22, marginBottom: 30 },
+  onboardingSteps: { width: '100%', marginBottom: 30 },
+  stepRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  stepIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#FF6B9D', justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+  stepNum: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+  stepText: { fontSize: 15, color: 'rgba(255,255,255,0.85)', flex: 1 },
+  onboardingBtn: { backgroundColor: '#FF6B9D', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 30, width: '100%', alignItems: 'center' },
+  onboardingBtnText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
+  onboardingOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 100, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 30 },
+  onboardingOverlayContent: { alignItems: 'center', width: '100%' },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 8, paddingTop: 10,
