@@ -317,6 +317,7 @@ export default function ProfileViewScreen({ route, navigation }) {
             <View style={styles.header}>
               <View>
                 <Text style={styles.name}>{profile.name}, {profile.age}</Text>
+                {profile.username && <Text style={styles.username}>@{profile.username}</Text>}
                 <Text style={styles.location}>📍 {distance || profile.currentCity || 'Unknown'}</Text>
                 <View style={styles.statusContainer}>
                   <View style={[styles.statusDot, profile.isOnline && styles.statusDotOnline]} />
@@ -611,6 +612,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   content: { padding: 20, marginTop: -30, borderTopLeftRadius: 30, borderTopRightRadius: 30, backgroundColor: isDark ? '#1a0a2e' : '#ffeef8' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
   name: { fontSize: 28, fontWeight: 'bold', color: theme.text },
+  username: { fontSize: 14, color: '#FF6B9D', fontWeight: '600', marginTop: 2 },
   location: { fontSize: 14, color: theme.textSecondary, marginTop: 4 },
   statusContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#999', marginRight: 6 },

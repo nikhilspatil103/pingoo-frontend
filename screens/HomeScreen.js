@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, FlatList, SafeAreaView, Animated, StatusBar, RefreshControl, ActivityIndicator, Modal, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, FlatList, SafeAreaView, Animated, StatusBar, RefreshControl, ActivityIndicator, Modal, Image, TextInput } from 'react-native';
 import RangeSlider from '../components/RangeSlider';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -14,6 +14,7 @@ import { ProfileCard, ListCard } from '../components/ProfileCard';
 import useProfileStore from '../store/profileStore';
 import ProfileSocketService from '../services/ProfileSocketService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../config/urlConfig';
 import { getStoredLocation, calculateDistance } from '../utils/locationService';
 import { FEATURES } from '../config/featureFlags';
 
@@ -23,6 +24,10 @@ export default function HomeScreen({ navigation }) {
   const { newLikes, unreadCount, fetchNewLikes } = useLikes();
   const [isListView, setIsListView] = useState(false);
   const [filterVisible, setFilterVisible] = useState(false);
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
   const [filterType, setFilterType] = useState('all');
   const [ageRange, setAgeRange] = useState({ min: 18, max: 80 });
   const [genderFilter, setGenderFilter] = useState('both');
@@ -150,6 +155,29 @@ export default function HomeScreen({ navigation }) {
     setFilterVisible(false);
   };
 
+  const searchUsers = async (query) => {
+    setSearchQuery(query);
+    if (query.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    setSearching(true);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await fetch(`${API_URL}/search?q=${encodeURIComponent(query.trim())}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSearchResults(data.users || []);
+      }
+    } catch (e) {
+      console.error('Search error:', e);
+    } finally {
+      setSearching(false);
+    }
+  };
+
   const clearFilters = () => {
     setFilterType('all');
     setGenderFilter('both');
@@ -170,6 +198,9 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Pingoo</Text>
             <View style={styles.headerRight}>
+              <TouchableOpacity style={styles.viewToggle} onPress={() => setSearchVisible(true)} activeOpacity={0.7}>
+                <Ionicons name="search-outline" size={20} color={isDark ? '#fff' : '#333'} />
+              </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.viewToggle} 
                 onPress={() => navigation.navigate('Notifications')} 
@@ -310,6 +341,92 @@ export default function HomeScreen({ navigation }) {
                 </View>
               </View>
             </BlurView>
+          </View>
+        </Modal>
+
+        <Modal visible={searchVisible} animationType="slide">
+          <View style={[styles.searchContainer, { backgroundColor: isDark ? '#1a0a2e' : '#ffeef8' }]}>
+            <LinearGradient colors={isDark ? ['#1a0a2e', '#16213e'] : ['#ffeef8', '#e8d5f2']} style={{ flex: 1 }}>
+              <SafeAreaView style={{ flex: 1 }}>
+                <View style={styles.searchHeader}>
+                  <TouchableOpacity onPress={() => { setSearchVisible(false); setSearchQuery(''); setSearchResults([]); }} style={styles.searchBackBtn}>
+                    <Ionicons name="arrow-back" size={22} color={theme.text} />
+                  </TouchableOpacity>
+                  <View style={styles.searchInputWrapper}>
+                    <Ionicons name="search" size={18} color={theme.textSecondary} />
+                    <TextInput
+                      style={[styles.searchInput, { color: theme.text }]}
+                      placeholder="Search name or @username..."
+                      placeholderTextColor={theme.textSecondary}
+                      value={searchQuery}
+                      onChangeText={searchUsers}
+                      autoFocus
+                      autoCapitalize="none"
+                    />
+                    {searchQuery.length > 0 && (
+                      <TouchableOpacity onPress={() => { setSearchQuery(''); setSearchResults([]); }}>
+                        <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+
+                {searching && (
+                  <View style={styles.searchLoading}>
+                    <ActivityIndicator size="small" color="#FF6B9D" />
+                    <Text style={[styles.searchLoadingText, { color: theme.textSecondary }]}>Searching...</Text>
+                  </View>
+                )}
+
+                {!searching && searchQuery.length === 0 && (
+                  <View style={styles.searchHint}>
+                    <Ionicons name="people-outline" size={60} color={isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'} />
+                    <Text style={[styles.searchHintTitle, { color: theme.text }]}>Find People</Text>
+                    <Text style={[styles.searchHintText, { color: theme.textSecondary }]}>Search by name or @username to find and connect with people</Text>
+                  </View>
+                )}
+
+                {!searching && searchQuery.length >= 2 && searchResults.length === 0 && (
+                  <View style={styles.searchHint}>
+                    <Ionicons name="search-outline" size={50} color={isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'} />
+                    <Text style={[styles.searchHintTitle, { color: theme.text }]}>No results</Text>
+                    <Text style={[styles.searchHintText, { color: theme.textSecondary }]}>Try a different name or username</Text>
+                  </View>
+                )}
+
+                <FlatList
+                  data={searchResults}
+                  keyExtractor={item => item.id.toString()}
+                  contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8 }}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity 
+                      style={[styles.searchResultCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fff' }]} 
+                      onPress={() => { setSearchVisible(false); setSearchQuery(''); setSearchResults([]); navigation.navigate('ProfileView', { profile: item }); }}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.searchResultLeft}>
+                        {item.profilePhoto ? (
+                          <Image source={{ uri: item.profilePhoto }} style={styles.searchResultAvatar} />
+                        ) : (
+                          <LinearGradient colors={['#FF6B9D', '#FF3B7F']} style={styles.searchResultAvatar}>
+                            <Text style={styles.searchResultAvatarText}>{item.name?.[0]}</Text>
+                          </LinearGradient>
+                        )}
+                        {item.isOnline && <View style={styles.searchResultOnline} />}
+                      </View>
+                      <View style={styles.searchResultInfo}>
+                        <Text style={[styles.searchResultName, { color: theme.text }]}>{item.name}, {item.age}</Text>
+                        {item.username && <Text style={styles.searchResultUsername}>@{item.username}</Text>}
+                        <View style={styles.searchResultMeta}>
+                          <Text style={styles.searchResultGender}>{item.gender === 'male' ? '♂' : '♀'} {item.gender}</Text>
+                        </View>
+                      </View>
+                      <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+                    </TouchableOpacity>
+                  )}
+                />
+              </SafeAreaView>
+            </LinearGradient>
           </View>
         </Modal>
       </LinearGradient>
@@ -570,4 +687,24 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   onlineBadgeText: {
     fontSize: 8,
   },
+  searchContainer: { flex: 1 },
+  searchHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12, gap: 12 },
+  searchBackBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', justifyContent: 'center', alignItems: 'center' },
+  searchInputWrapper: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', borderRadius: 25, paddingHorizontal: 16, paddingVertical: 12, gap: 10, borderWidth: 1.5, borderColor: isDark ? 'rgba(255,107,157,0.3)' : 'rgba(255,107,157,0.2)' },
+  searchInput: { flex: 1, fontSize: 16, fontWeight: '400' },
+  searchLoading: { alignItems: 'center', marginTop: 30, gap: 8 },
+  searchLoadingText: { fontSize: 13 },
+  searchHint: { alignItems: 'center', justifyContent: 'center', paddingTop: 80, paddingHorizontal: 40, gap: 12 },
+  searchHintTitle: { fontSize: 20, fontWeight: '700' },
+  searchHintText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  searchResultCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, marginBottom: 10, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  searchResultLeft: { position: 'relative' },
+  searchResultAvatar: { width: 52, height: 52, borderRadius: 26, marginRight: 14, justifyContent: 'center', alignItems: 'center' },
+  searchResultAvatarText: { color: '#fff', fontWeight: 'bold', fontSize: 20 },
+  searchResultOnline: { position: 'absolute', bottom: 2, right: 14, width: 12, height: 12, borderRadius: 6, backgroundColor: '#4ECDC4', borderWidth: 2, borderColor: isDark ? '#1a0a2e' : '#fff' },
+  searchResultInfo: { flex: 1 },
+  searchResultName: { fontSize: 16, fontWeight: '700' },
+  searchResultUsername: { fontSize: 13, color: '#FF6B9D', marginTop: 2, fontWeight: '500' },
+  searchResultMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 },
+  searchResultGender: { fontSize: 12, color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' },
 });

@@ -14,6 +14,9 @@ import LocationPicker from '../components/LocationPicker';
 export default function EditProfileScreen({ navigation }) {
   const { theme, isDark } = useTheme();
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
+  const [showUsernameEdit, setShowUsernameEdit] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState(null);
   const [bio, setBio] = useState('');
   const [height, setHeight] = useState('');
   const [bodyType, setBodyType] = useState('');
@@ -66,6 +69,7 @@ export default function EditProfileScreen({ navigation }) {
       if (response.ok) {
         const data = await response.json();
         setName(data.user.name || '');
+        setUsername(data.user.username || '');
         setProfilePhoto(data.user.profilePhoto || '');
         setPhotos(data.user.additionalPhotos || []);
         setBio(data.user.bio || '');
@@ -338,6 +342,19 @@ export default function EditProfileScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
+          <View  tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
+            <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowUsernameEdit(true)}>
+              <View style={styles.infoIcon}>
+                <Text style={styles.infoEmoji}>@</Text>
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Username</Text>
+                <Text style={styles.infoValue}>{username ? `@${username}` : 'Not set'}</Text>
+              </View>
+              <Text style={styles.infoArrow}>›</Text>
+            </TouchableOpacity>
+          </View>
+
           <View tint={isDark ? 'dark' : 'light'} style={styles.infoCard}>
             <TouchableOpacity style={styles.infoCardInner} onPress={() => setShowBioEdit(true)}>
               <View style={styles.infoIcon}>
@@ -492,6 +509,62 @@ export default function EditProfileScreen({ navigation }) {
               if (success) setShowNameEdit(false);
             }}>
               <Text style={styles.saveBtnText}>Save Changes</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showUsernameEdit} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View  tint={isDark ? 'dark' : 'light'} style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Username</Text>
+              <TouchableOpacity onPress={() => { setShowUsernameEdit(false); setUsernameAvailable(null); }}>
+                <Text style={styles.closeBtn}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={styles.input}
+              value={username}
+              onChangeText={async (text) => {
+                const sanitized = text.toLowerCase().replace(/[^a-z0-9_]/g, '');
+                setUsername(sanitized);
+                if (sanitized.length >= 3) {
+                  const token = await AsyncStorage.getItem('token');
+                  const res = await fetch(`${API_URL}/username/check?username=${sanitized}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                  });
+                  const data = await res.json();
+                  setUsernameAvailable(data.available);
+                } else {
+                  setUsernameAvailable(null);
+                }
+              }}
+              placeholder="e.g. deepak_das"
+              placeholderTextColor={theme.textSecondary}
+              autoCapitalize="none"
+              maxLength={20}
+            />
+            <Text style={{ fontSize: 12, color: theme.textSecondary, marginTop: 4, marginBottom: 8 }}>3-20 chars, lowercase, letters, numbers & underscores</Text>
+            {usernameAvailable === true && <Text style={{ color: '#4CAF50', fontSize: 13, marginBottom: 8 }}>✅ Username available</Text>}
+            {usernameAvailable === false && <Text style={{ color: '#FF3B30', fontSize: 13, marginBottom: 8 }}>❌ Username taken</Text>}
+            <TouchableOpacity style={[styles.saveBtn, (!usernameAvailable || username.length < 3) && { opacity: 0.5 }]} disabled={!usernameAvailable || username.length < 3} onPress={async () => {
+              const token = await AsyncStorage.getItem('token');
+              const res = await fetch(`${API_URL}/username`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username })
+              });
+              if (res.ok) {
+                setShowUsernameEdit(false);
+                setUsernameAvailable(null);
+                Alert.alert('✅ Updated', `Username set to @${username}`);
+              } else {
+                const data = await res.json();
+                Alert.alert('Error', data.error || 'Failed to update');
+              }
+            }}>
+              <Text style={styles.saveBtnText}>Save Username</Text>
             </TouchableOpacity>
           </View>
         </View>

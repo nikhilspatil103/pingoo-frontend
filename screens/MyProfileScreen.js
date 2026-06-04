@@ -278,6 +278,7 @@ export default function MyProfileScreen({ navigation }) {
                 </View>
               </TouchableOpacity>
               <Text style={styles.profileName}>{profile.name}</Text>
+              <Text style={styles.profileUsername}>@{profile.username || 'loading...'}</Text>
               <Text style={styles.profileEmail}>{profile.email}</Text>
               <View style={styles.progressBar}>
                 <View style={[styles.progressFill, { width: `${profileCompletion}%` }]} />
@@ -606,7 +607,8 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   avatarText: { fontSize: 56, fontWeight: 'bold', color: '#fff' },
   editBadge: { position: 'absolute', bottom: 5, right: 5, width: 44, height: 44, borderRadius: 22, backgroundColor: '#FF6B9D', justifyContent: 'center', alignItems: 'center', borderWidth: 4, borderColor: isDark ? '#1a0a2e' : '#ffeef8', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 },
   editIcon: { fontSize: 18 },
-  profileName: { fontSize: 26, fontWeight: 'bold', color: theme.text, marginBottom: 6 },
+  profileName: { fontSize: 26, fontWeight: 'bold', color: theme.text, marginBottom: 4 },
+  profileUsername: { fontSize: 14, color: '#FF6B9D', marginBottom: 4, fontWeight: '600' },
   profileEmail: { fontSize: 14, color: theme.textSecondary, marginBottom: 20 },
   progressBar: { width: '100%', height: 10, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', borderRadius: 5, overflow: 'hidden', marginBottom: 10 },
   progressFill: { height: '100%', backgroundColor: '#FF6B9D', borderRadius: 5 },
