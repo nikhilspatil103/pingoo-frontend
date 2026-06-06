@@ -96,7 +96,9 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 export const formatDistance = (km) => {
-  if (km < 1) return `${(km).toFixed(1)}km away`;
-  if (km < 10) return `${km.toFixed(1)}km away`;
-  return `${Math.round(km)}km away`;
+  if (km < 2) return 'To Close';
+  if (km < 5) return 'Nearby';
+  if (km < 15) return 'In your area';
+  if (km < 50) return `~${Math.round(km / 5) * 5} km away`;
+  return 'Far away';
 };
