@@ -17,12 +17,14 @@ export default function ChatListScreen({ navigation }) {
   const { refreshUnreadCount } = useUnread();
   const [searchQuery, setSearchQuery] = useState('');
   const [chats, setChats] = useState([]);
+  const [likedByUsers, setLikedByUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
   const styles = getStyles(theme, isDark);
 
   useEffect(() => {
     fetchConversations(true);
+    fetchLikedByUsers();
     
     const handleNewMessage = () => {
       fetchConversations(false);
@@ -38,8 +40,25 @@ export default function ChatListScreen({ navigation }) {
   useFocusEffect(
     React.useCallback(() => {
       fetchConversations(false);
+      fetchLikedByUsers();
     }, [])
   );
+
+  const fetchLikedByUsers = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) return;
+      const response = await fetch(`${API_URL}/all-likes`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setLikedByUsers(data.likes || []);
+      }
+    } catch (error) {
+      console.error('Error fetching liked by users:', error);
+    }
+  };
 
   const fetchConversations = async (showLoader = false) => {
     if (showLoader) setLoading(true);
@@ -108,6 +127,39 @@ export default function ChatListScreen({ navigation }) {
         <SafeAreaView style={styles.safeArea}>
           <Text style={styles.title}>Chats</Text>
           
+          {likedByUsers.length > 0 && (
+            <View style={styles.likesSection}>
+              <View style={styles.likesSectionHeader}>
+                <Text style={styles.likesSectionTitle}>Liked You</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('AllLikes')} activeOpacity={0.7}>
+                  <Text style={styles.seeAllText}>See All</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.likesScroll}>
+                {likedByUsers.map((like) => (
+                  <TouchableOpacity
+                    key={like.id || like._id}
+                    style={styles.likeItem}
+                    onPress={() => navigation.navigate('ProfileView', { profile: like })}
+                    activeOpacity={0.7}
+                  >
+                    {like.profilePhoto ? (
+                      <Image source={{ uri: like.profilePhoto }} style={styles.likeAvatar} />
+                    ) : (
+                      <LinearGradient colors={['#FF6B9D', '#FF3B7F']} style={styles.likeAvatar}>
+                        <Text style={styles.likeAvatarText}>{like.name?.[0]}</Text>
+                      </LinearGradient>
+                    )}
+                    <View style={styles.likeHeart}>
+                      <Text style={{ fontSize: 10 }}>❤️</Text>
+                    </View>
+                    <Text style={styles.likeName} numberOfLines={1}>{like.name?.split(' ')[0]}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
           <View style={styles.searchContainer}>
             <View tint={isDark ? 'dark' : 'light'} style={styles.searchWrapper}>
               <TextInput
@@ -122,7 +174,7 @@ export default function ChatListScreen({ navigation }) {
 
           {loading ? (
             <View style={styles.loadingContainer}>
-              <PingooLoader size={100} />
+              <PingooLoader />
             </View>
           ) : chats.length === 0 ? (
             <View style={styles.emptyState}>
@@ -246,6 +298,17 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   unreadCount: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
   separator: { height: 12 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { fontSize: 18, fontWeight: '600', color: theme.text, marginBottom: 8 },
   emptySubtext: { fontSize: 14, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' },
+  likesSection: { paddingHorizontal: 20, marginBottom: 16 },
+  likesSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  likesSectionTitle: { fontSize: 14, fontWeight: '700', color: theme.textSecondary, letterSpacing: 0.5 },
+  seeAllText: { fontSize: 13, fontWeight: '600', color: '#FF6B9D' },
+  likesScroll: { gap: 16 },
+  likeItem: { alignItems: 'center', width: 64 },
+  likeAvatar: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FF6B9D' },
+  likeAvatarText: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  likeHeart: { position: 'absolute', top: 38, right: 4, backgroundColor: isDark ? '#1a0a2e' : '#ffeef8', borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' },
+  likeName: { fontSize: 11, color: theme.text, marginTop: 4, fontWeight: '500', textAlign: 'center', width: 60 },
 });

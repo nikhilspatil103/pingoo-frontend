@@ -30,6 +30,7 @@ import ChatListScreen from './screens/ChatListScreen';
 import MoodScreen from './screens/MoodScreen';
 import MyMoodsScreen from './screens/MyMoodsScreen';
 import MoodPlayerScreen from './screens/MoodPlayerScreen';
+import AllLikesScreen from './screens/AllLikesScreen';
 import { FEATURES } from './config/featureFlags';
 import { ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -232,6 +233,7 @@ function AppNavigator() {
             <Stack.Screen name="Chat" component={ChatScreen} />
             <Stack.Screen name="MyMoods" component={MyMoodsScreen} />
             <Stack.Screen name="MoodPlayer" component={MoodPlayerScreen} options={{ presentation: 'fullScreenModal' }} />
+            <Stack.Screen name="AllLikes" component={AllLikesScreen} />
           </>
         )}
       </Stack.Navigator>
