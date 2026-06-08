@@ -295,7 +295,7 @@ export default function EditProfileScreen({ navigation }) {
             {uploading ? (
               <View style={[styles.profileImage, { justifyContent: 'center', alignItems: 'center' }]}>
                 <View style={{ marginBottom: 0 }}>
-                  <PingooLoader size={100} />
+                  <PingooLoader />
                 </View>
               </View>
             ) : profilePhoto ? (

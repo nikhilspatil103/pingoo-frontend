@@ -52,7 +52,7 @@ export default function LoginScreen({ navigation }) {
         >
           <View style={styles.content}>
             <View style={styles.header}>
-              <PingooLoader size={100} />
+              <PingooLoader />
               <Text style={styles.title}>Pingoo</Text>
               <Text style={styles.subtitle}>Connect. Chat. Meet.</Text>
             </View>

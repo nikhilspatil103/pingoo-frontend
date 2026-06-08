@@ -247,7 +247,7 @@ export default function EditProfileScreen({ navigation }) {
           <TouchableOpacity style={styles.photoContainer} onPress={() => !uploading && (profilePhoto ? showPhotoOptions(profilePhoto, true) : pickImage(true))} disabled={uploading}>
             {uploading ? (
               <View style={styles.profileImage}>
-                <PingooLoader size={100} />
+                <PingooLoader />
               </View>
             ) : profilePhoto ? (
               <Image source={{ uri: profilePhoto }} style={styles.profileImage} />

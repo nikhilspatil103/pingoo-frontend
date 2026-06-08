@@ -227,7 +227,7 @@ export default function HomeScreen({ navigation }) {
 
           {initialLoading ? (
             <View style={styles.loadingContainer}>
-              <PingooLoader size={100} />
+              <PingooLoader />
               <Text style={styles.loadingText}>Loading users...</Text>
             </View>
           ) : (

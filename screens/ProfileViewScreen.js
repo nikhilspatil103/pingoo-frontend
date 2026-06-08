@@ -256,7 +256,7 @@ export default function ProfileViewScreen({ route, navigation }) {
       <View style={styles.container}>
         <LinearGradient colors={isDark ? ['#1a0a2e', '#16213e', '#0f3460'] : ['#ffeef8', '#e8d5f2', '#d4e4f7']} style={styles.gradient}>
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <PingooLoader size={100} />
+            <PingooLoader />
           </View>
         </LinearGradient>
       </View>

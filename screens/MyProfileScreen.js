@@ -237,7 +237,7 @@ export default function MyProfileScreen({ navigation }) {
         >
           <SafeAreaView style={styles.safeArea}>
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              <PingooLoader size={100} />
+              <PingooLoader />
             </View>
           </SafeAreaView>
         </LinearGradient>

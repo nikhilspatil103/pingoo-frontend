@@ -228,7 +228,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
         <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
           <View style={styles.content}>
             <View style={styles.welcomeSection}>
-              <PingooLoader size={100} />
+              <PingooLoader />
               <Text style={styles.title}>
                 {step === 1 ? 'Add Your Photo' : step === 2 ? 'How old are you?' : step === 3 ? 'Your Gender' : step === 4 ? 'Interested in' : 'What are you looking for?'}
               </Text>
@@ -242,7 +242,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
                 <TouchableOpacity style={styles.photoWrapper} onPress={pickImage} disabled={loading}>
                   {loading ? (
                     <View style={styles.photoPlaceholder}>
-                      <PingooLoader size={100} />
+                      <PingooLoader />
                     </View>
                   ) : profilePhoto ? (
                     <Image source={{ uri: profilePhoto }} style={styles.profilePhoto} />

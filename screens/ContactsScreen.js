@@ -75,7 +75,7 @@ export default function ContactsScreen({ navigation }) {
 
           {loading ? (
             <View style={styles.loadingContainer}>
-              <PingooLoader size={100} />
+              <PingooLoader />
             </View>
           ) : (
           <ScrollView showsVerticalScrollIndicator={false}>

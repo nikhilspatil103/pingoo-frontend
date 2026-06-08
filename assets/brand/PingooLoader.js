@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, View } from 'react-native';
+import { Animated, Easing, View, Dimensions } from 'react-native';
 import Svg, { Circle, Rect, Polygon, Defs, LinearGradient, RadialGradient, Stop } from 'react-native-svg';
 
-export default function PingooLoader({ size = 80 }) {
+const screenWidth = Dimensions.get('window').width;
+
+export default function PingooLoader({ size = Math.min(screenWidth * 0.12, 56) }) {
   const burstRotation = useRef(new Animated.Value(0)).current;
   const particleRotation = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;

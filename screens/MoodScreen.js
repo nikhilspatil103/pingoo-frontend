@@ -569,7 +569,7 @@ export default function MoodScreen({ navigation, route }) {
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
-        <PingooLoader size={100} />
+        <PingooLoader />
         <Text style={styles.loadingText}>Loading moods...</Text>
       </View>
     );
