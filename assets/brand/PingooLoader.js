@@ -4,7 +4,7 @@ import Svg, { Circle, Rect, Polygon, Defs, LinearGradient, RadialGradient, Stop 
 
 const screenWidth = Dimensions.get('window').width;
 
-export default function PingooLoader({ size = Math.min(screenWidth * 0.12, 56) }) {
+export default function PingooLoader({ size = Math.min(screenWidth * 0.16, 68) }) {
   const burstRotation = useRef(new Animated.Value(0)).current;
   const particleRotation = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;

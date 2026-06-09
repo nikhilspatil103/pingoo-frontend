@@ -5,12 +5,15 @@ import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 import { API_URL } from '../config/urlConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { FEATURES } from '../config/featureFlags';
 import PingooLogo from '../components/PingooLogo';
 import PingooLoader from '../assets/brand/PingooLoader';
 import PingooLogoStatic from '../components/PingooLogoStatic';
+import { MoodEmojiOverlay, MoodEmoji, MoodLabel } from '../components/MoodEmoji';
+import MoodRecorder from '../components/MoodRecorder';
 
 const { width } = Dimensions.get('window');
 
@@ -37,6 +40,10 @@ export default function MoodScreen({ navigation, route }) {
   const [paused, setPaused] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showRecorder, setShowRecorder] = useState(false);
+  const [chatModal, setChatModal] = useState(false);
+  const [chatTargetUser, setChatTargetUser] = useState(null);
+  const [userCoins, setUserCoins] = useState(0);
   const flatListRef = useRef(null);
   const videoRefs = useRef({});
 
@@ -160,24 +167,15 @@ export default function MoodScreen({ navigation, route }) {
       Alert.alert('Permission needed', 'Camera access is required to record mood');
       return;
     }
+    setShowRecorder(true);
+  };
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      videoMaxDuration: 15,
-      quality: 0.7,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      const duration = result.assets[0].duration;
-      if (duration && duration > 15000) {
-        Alert.alert('Too Long', 'Video must be 15 seconds or less. Please record a shorter video.');
-        return;
-      }
-      setPendingVideoUri(result.assets[0].uri);
-      setCaptionInput('');
-      setSelectedMoodEmoji('vibing');
-      setPostModal(true);
-    }
+  const handleRecordedVideo = (uri) => {
+    setShowRecorder(false);
+    setPendingVideoUri(uri);
+    setCaptionInput('');
+    setSelectedMoodEmoji('vibing');
+    setPostModal(true);
   };
 
   const pickVideo = async () => {
@@ -218,29 +216,34 @@ export default function MoodScreen({ navigation, route }) {
     setUploading(true);
     try {
       const token = await AsyncStorage.getItem('token');
-      const base64 = await fetch(pendingVideoUri).then(r => r.blob()).then(blob => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(blob);
-        });
-      });
 
-      let thumbnailBase64 = null;
+      // Check file size first
+      const fileInfo = await FileSystem.getInfoAsync(pendingVideoUri);
+      console.log('Video file size:', fileInfo.size, 'bytes');
+      
+      if (fileInfo.size > 50 * 1024 * 1024) {
+        Alert.alert('File Too Large', 'Video must be under 50MB');
+        setUploading(false);
+        return;
+      }
+
+      const base64 = await FileSystem.readAsStringAsync(pendingVideoUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const videoData = `data:video/mp4;base64,${base64}`;
+
+      let thumbnailData = null;
       if (thumbnailUri) {
-        thumbnailBase64 = await fetch(thumbnailUri).then(r => r.blob()).then(blob => {
-          return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(blob);
-          });
+        const thumbBase64 = await FileSystem.readAsStringAsync(thumbnailUri, {
+          encoding: FileSystem.EncodingType.Base64,
         });
+        thumbnailData = `data:image/jpeg;base64,${thumbBase64}`;
       }
 
       const res = await fetch(`${API_URL}/mood`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ video: base64, thumbnail: thumbnailBase64, caption: captionInput.trim(), mood: selectedMoodEmoji })
+        body: JSON.stringify({ video: videoData, thumbnail: thumbnailData, caption: captionInput.trim(), mood: selectedMoodEmoji })
       });
 
       if (res.ok) {
@@ -353,37 +356,39 @@ export default function MoodScreen({ navigation, route }) {
       const checkData = await checkRes.json();
 
       if (checkData.hasAccess) {
-        // Already has access, go directly to chat
         navigation.navigate('Chat', { profile: targetUser });
         return;
       }
 
-      Alert.alert(
-        '💬 Start Chat',
-        `Send a message to ${targetUser.name}? This costs 30 coins for 6 hours of chat access.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Pay 30 Coins', onPress: async () => {
-              try {
-                const res = await fetch(`${API_URL}/mood-chat/${targetUser.id}`, {
-                  method: 'POST',
-                  headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await res.json();
-                if (res.ok) {
-                  navigation.navigate('Chat', { profile: targetUser });
-                } else {
-                  Alert.alert('❌ Error', data.error || 'Failed to purchase chat');
-                }
-              } catch (e) {
-                Alert.alert('Error', 'Something went wrong');
-              }
-            }
-          }
-        ]
-      );
+      // Fetch user coins
+      const coinsRes = await fetch(`${API_URL}/coins`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const coinsData = await coinsRes.json();
+      setUserCoins(coinsData.coins || 0);
+      setChatTargetUser(targetUser);
+      setChatModal(true);
     } catch (e) {
+      Alert.alert('Error', 'Something went wrong');
+    }
+  };
+
+  const handlePayForChat = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await fetch(`${API_URL}/mood-chat/${chatTargetUser.id}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setChatModal(false);
+      if (res.ok) {
+        navigation.navigate('Chat', { profile: chatTargetUser });
+      } else {
+        Alert.alert('❌ Error', data.error || 'Failed to purchase chat');
+      }
+    } catch (e) {
+      setChatModal(false);
       Alert.alert('Error', 'Something went wrong');
     }
   };
@@ -505,6 +510,9 @@ export default function MoodScreen({ navigation, route }) {
         videoStyle={{ width: '100%', height: '100%', objectFit: 'cover' }}
       />
 
+      {/* Mood emoji overlay */}
+      {item?.mood && <MoodEmojiOverlay mood={item?.mood} size={36} />}
+
       {/* Invisible tap to play/pause */}
       <TouchableOpacity style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' }} activeOpacity={1} onPress={togglePlayPause}>
         {paused && index === currentIndex && (
@@ -526,7 +534,7 @@ export default function MoodScreen({ navigation, route }) {
           )}
           <View>
             <Text style={styles.userName}>{item.user.name}, {item.user.age}</Text>
-            {item.mood && <Text style={styles.moodTag}>Mood: {item.mood}</Text>}
+            {item.mood && <MoodLabel mood={item.mood} style={{ marginTop: 4 }} />}
           </View>
           {item.user.isOnline && <View style={styles.onlineDot} />}
         </TouchableOpacity>
@@ -746,7 +754,10 @@ export default function MoodScreen({ navigation, route }) {
                   style={[styles.moodChip, selectedMoodEmoji === m.value && styles.moodChipActive]}
                   onPress={() => setSelectedMoodEmoji(m.value)}
                 >
-                  <Text style={[styles.moodChipText, selectedMoodEmoji === m.value && styles.moodChipTextActive]}>{m.label}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <MoodEmoji mood={m.value} size={18} />
+                    <Text style={[styles.moodChipText, selectedMoodEmoji === m.value && styles.moodChipTextActive]}>{m.value}</Text>
+                  </View>
                 </TouchableOpacity>
               ))}
             </View>
@@ -779,7 +790,7 @@ export default function MoodScreen({ navigation, route }) {
 
       {/* Comments Modal */}
       <Modal visible={commentModal} transparent animationType="slide">
-        <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20} style={styles.commentModalOverlay}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.commentModalOverlay}>
           <TouchableOpacity style={styles.commentModalDismiss} onPress={() => setCommentModal(false)} />
           <View style={[styles.commentModalContent, { backgroundColor: isDark ? '#1a0a2e' : '#fff' }]}>
             <View style={styles.commentHeader}>
@@ -826,6 +837,46 @@ export default function MoodScreen({ navigation, route }) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Chat Purchase Modal */}
+      <Modal visible={chatModal} transparent animationType="fade">
+        <View style={styles.chatModalOverlay}>
+          <View style={[styles.chatModalContent, { backgroundColor: isDark ? '#1a0a2e' : '#fff' }]}>
+            <View style={styles.chatModalHeader}>
+              <Text style={styles.chatModalEmoji}>💬</Text>
+              <Text style={[styles.chatModalTitle, { color: theme.text }]}>Start Chat</Text>
+            </View>
+            <Text style={[styles.chatModalDesc, { color: theme.textSecondary }]}>
+              Send a message to {chatTargetUser?.name}?{"\n"}This costs 30 coins for 6 hours of chat access.
+            </Text>
+            <View style={[styles.chatModalBalance, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }]}>
+              <Text style={styles.chatModalCoinIcon}>🪙</Text>
+              <Text style={[styles.chatModalBalanceText, { color: theme.text }]}>Your Balance: </Text>
+              <Text style={[styles.chatModalBalanceAmount, { color: userCoins >= 30 ? '#4CAF50' : '#FF5252' }]}>{userCoins} coins</Text>
+            </View>
+            <View style={styles.chatModalActions}>
+              <TouchableOpacity style={[styles.chatModalBtn, styles.chatModalCancelBtn, { borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} onPress={() => setChatModal(false)}>
+                <Text style={[styles.chatModalCancelText, { color: theme.textSecondary }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.chatModalBtn, styles.chatModalPayBtn, userCoins < 30 && { opacity: 0.5 }]} onPress={handlePayForChat} disabled={userCoins < 30}>
+                <Text style={styles.chatModalPayText}>🪙 Pay 30 Coins</Text>
+              </TouchableOpacity>
+            </View>
+            {userCoins < 30 && (
+              <TouchableOpacity onPress={() => { setChatModal(false); navigation.navigate('MyCoins'); }}>
+                <Text style={styles.chatModalGetCoins}>Not enough coins? Get more →</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Custom Camera Recorder */}
+      <MoodRecorder
+        visible={showRecorder}
+        onClose={() => setShowRecorder(false)}
+        onVideoRecorded={handleRecordedVideo}
+      />
     </View>
   );
 }
@@ -894,7 +945,7 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   // Comment modal
   commentModalOverlay: { flex: 1, justifyContent: 'flex-end' },
   commentModalDismiss: { flex: 1 },
-  commentModalContent: { maxHeight: '55%', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, paddingBottom: Platform.OS === 'android' ? 20 : 16 },
+  commentModalContent: { maxHeight: '55%', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, paddingBottom: Platform.OS === 'android' ? 10 : 16 },
   commentHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   commentTitle: { fontSize: 18, fontWeight: 'bold' },
   commentItem: { flexDirection: 'row', marginBottom: 16 },
@@ -906,4 +957,22 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   commentInput: { flex: 1, height: 40, borderWidth: 1, borderRadius: 20, paddingHorizontal: 16, fontSize: 14 },
   sendBtn: { marginLeft: 10, backgroundColor: '#FF6B9D', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
   sendBtnText: { color: '#fff', fontWeight: 'bold' },
+  // Chat purchase modal
+  chatModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  chatModalContent: { width: '100%', borderRadius: 24, padding: 24, alignItems: 'center' },
+  chatModalHeader: { alignItems: 'center', marginBottom: 12 },
+  chatModalEmoji: { fontSize: 48, marginBottom: 8 },
+  chatModalTitle: { fontSize: 22, fontWeight: 'bold' },
+  chatModalDesc: { fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 16 },
+  chatModalBalance: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, marginBottom: 20, width: '100%', justifyContent: 'center' },
+  chatModalCoinIcon: { fontSize: 18, marginRight: 6 },
+  chatModalBalanceText: { fontSize: 14, fontWeight: '500' },
+  chatModalBalanceAmount: { fontSize: 16, fontWeight: 'bold' },
+  chatModalActions: { flexDirection: 'row', gap: 12, width: '100%' },
+  chatModalBtn: { flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
+  chatModalCancelBtn: { borderWidth: 1.5 },
+  chatModalCancelText: { fontSize: 15, fontWeight: '600' },
+  chatModalPayBtn: { backgroundColor: '#FF6B9D' },
+  chatModalPayText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
+  chatModalGetCoins: { color: '#FF6B9D', fontSize: 13, fontWeight: '600', marginTop: 14 },
 });
