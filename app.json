@@ -2,6 +2,8 @@
   "expo": {
     "name": "Pingoo",
     "slug": "pingoo",
+    "owner": "nikhilspatil106",
+    "scheme": "com.pingoo.pingoo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -44,8 +46,11 @@
     },
     "extra": {
       "eas": {
-        "projectId": "0bdbc683-10ce-4a40-b2f0-3e835ec4a58f"
+        "projectId": "43840a1f-820b-4fe1-b41c-b982926c5354"
       }
-    }
+    },
+    "plugins": [
+      "@react-native-google-signin/google-signin"
+    ]
   }
 }

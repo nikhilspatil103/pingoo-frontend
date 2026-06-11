@@ -9,7 +9,7 @@ import PingooLogo from '../components/PingooLogo';
 import PingooLoader from '../assets/brand/PingooLoader';
 
 export default function ProfileSetupScreen({ route, navigation }) {
-  const { name, email, password } = route.params;
+  const { name, email, password, fromGoogle, token: googleToken } = route.params;
   const { login } = useAuth();
   const [step, setStep] = useState(1);
   const [age, setAge] = useState('');
@@ -126,90 +126,55 @@ export default function ProfileSetupScreen({ route, navigation }) {
   };
 
   const handleSignup = async () => {
-    console.log('handleSignup called');
-    console.log('age:', age);
-    console.log('gender:', gender);
-    console.log('interestedIn:', interestedIn);
-    console.log('lookingFor:', lookingFor);
-    
-    if (!age.trim()) {
-      console.log('Age validation failed');
-      setLoading(false);
-      showPopup('error', 'Age Required', 'Please enter your age to continue');
-      return;
-    }
-
-    if (!gender) {
-      console.log('Gender validation failed');
-      setLoading(false);
-      showPopup('error', 'Gender Required', 'Please select your gender');
-      return;
-    }
-
-    if (!interestedIn) {
-      console.log('Interest validation failed');
-      setLoading(false);
-      showPopup('error', 'Interest Required', 'Please select who you are interested in');
-      return;
-    }
-
-    if (!lookingFor.trim()) {
-      console.log('Looking for validation failed');
-      setLoading(false);
-      showPopup('error', 'Looking For Required', 'Please tell us what you are looking for');
-      return;
-    }
-
     const ageNum = parseInt(age);
-    if (isNaN(ageNum) || ageNum < 18) {
-      console.log('Age restriction validation failed');
+    if (!age.trim() || isNaN(ageNum) || ageNum < 18 || ageNum > 100) {
       setLoading(false);
-      showPopup('error', 'Age Restriction', 'You must be at least 18 years old to use this app');
+      showPopup('error', 'Invalid Age', 'Please enter a valid age (18+)');
+      return;
+    }
+    if (!gender || !interestedIn || !lookingFor.trim()) {
+      setLoading(false);
+      showPopup('error', 'Missing Fields', 'Please complete all fields');
       return;
     }
 
-    if (ageNum > 100) {
-      console.log('Invalid age validation failed');
-      setLoading(false);
-      showPopup('error', 'Invalid Age', 'Please enter a valid age');
-      return;
-    }
-
-    console.log('All validations passed, proceeding with signup');
     setLoading(true);
     try {
-      console.log('Fetching signup API...');
-      const response = await fetch(`${API_URL}/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          name, 
-          email, 
-          password, 
-          age: ageNum, 
-          gender, 
-          interestedIn,
-          lookingFor,
-          profilePhoto 
-        })
-      });
-      console.log('Signup response received:', response.status);
-      const data = await response.json();
-      console.log('Signup data:', data);
-      
-      if (response.ok) {
-        console.log('Signup successful, logging in...');
-        await login(data.user, data.token);
-        console.log('Login completed');
+      if (fromGoogle) {
+        // Google user already exists, update their profile
+        const response = await fetch(`${API_URL}/profile`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${googleToken}`
+          },
+          body: JSON.stringify({ age: ageNum, gender, interestedIn, lookingFor, profilePhoto })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          await login({ userId: data.user?.userId || data.userId, name, email }, googleToken);
+        } else {
+          setLoading(false);
+          showPopup('error', 'Update Failed', data.error || 'Something went wrong.');
+        }
       } else {
-        console.log('Signup failed:', data.error);
-        setLoading(false);
-        showPopup('error', 'Signup Failed', data.error || 'Something went wrong. Please try again.');
+        // Normal email/password signup
+        const response = await fetch(`${API_URL}/signup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, age: ageNum, gender, interestedIn, lookingFor, profilePhoto })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          await login(data.user, data.token);
+        } else {
+          setLoading(false);
+          showPopup('error', 'Signup Failed', data.error || 'Something went wrong.');
+        }
       }
     } catch (error) {
-      console.error('Signup error:', error);
       setLoading(false);
-      showPopup('error', 'Network Error', 'Please check your internet connection and try again.');
+      showPopup('error', 'Network Error', 'Please check your internet connection.');
     }
   };
 
