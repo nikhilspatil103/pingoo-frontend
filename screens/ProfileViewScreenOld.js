@@ -7,10 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
 import OptimizedImage from '../components/OptimizedImage';
 
-let FastImage;
-if (Platform.OS !== 'web') {
-  FastImage = require('react-native-fast-image');
-}
+import { Image as ExpoImage } from 'expo-image';
 
 const { width } = Dimensions.get('window');
 
@@ -188,7 +185,6 @@ export default function ProfileViewScreen({ route, navigation }) {
                         style={[styles.profileImage, { width: width - 40 }]}
                         userId={profile.id}
                         userName={profile.name}
-                        priority={Platform.OS !== 'web' ? (index === 0 ? FastImage?.priority?.high : FastImage?.priority?.normal) : undefined}
                       />
                     </TouchableOpacity>
                   ))}
@@ -441,10 +437,10 @@ export default function ProfileViewScreen({ route, navigation }) {
             {Platform.OS === 'web' ? (
               <OptimizedImage uri={allImages[currentImageIndex]} style={styles.fullScreenImage} />
             ) : (
-              <FastImage 
-                source={{ uri: allImages[currentImageIndex], priority: FastImage.priority.high }} 
+              <ExpoImage 
+                source={{ uri: allImages[currentImageIndex] }} 
                 style={styles.fullScreenImage} 
-                resizeMode={FastImage.resizeMode.contain} 
+                contentFit="contain" 
               />
             )}
           </View>

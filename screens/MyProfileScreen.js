@@ -15,10 +15,6 @@ import PingooLoader from '../assets/brand/PingooLoader';
 import OptimizedImage from '../components/OptimizedImage';
 import { useFocusEffect } from '@react-navigation/native';
 
-let FastImage;
-if (Platform.OS !== 'web') {
-  FastImage = require('react-native-fast-image');
-}
 
 export default function MyProfileScreen({ navigation }) {
   const { theme, isDark } = useTheme();
@@ -271,7 +267,6 @@ export default function MyProfileScreen({ navigation }) {
                   style={styles.avatar}
                   userId={profile.email}
                   userName={profile.name}
-                  priority={Platform.OS !== 'web' ? FastImage?.priority?.high : undefined}
                 />
                 <View style={styles.editBadge}>
                   <Text style={styles.editIcon}>✏️</Text>

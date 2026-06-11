@@ -1,10 +1,6 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-let FastImage;
-if (Platform.OS !== 'web') {
-  FastImage = require('react-native-fast-image');
-}
+import { Image } from 'expo-image';
 
 class MemoryManager {
   constructor() {
@@ -13,10 +9,10 @@ class MemoryManager {
 
   // Clear image cache
   async clearImageCache() {
-    if (Platform.OS !== 'web' && FastImage) {
+    if (Platform.OS !== 'web') {
       try {
-        await FastImage.clearMemoryCache();
-        await FastImage.clearDiskCache();
+        await Image.clearMemoryCache();
+        await Image.clearDiskCache();
         console.log('Image cache cleared');
       } catch (error) {
         console.error('Error clearing image cache:', error);

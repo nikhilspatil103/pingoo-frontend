@@ -11,10 +11,7 @@ import PingooLoader from '../assets/brand/PingooLoader';
 import { getStoredLocation, calculateDistance, formatDistance } from '../utils/locationService';
 import { formatLastSeen } from '../utils/timeUtils';
 
-let FastImage;
-if (Platform.OS !== 'web') {
-  FastImage = require('react-native-fast-image');
-}
+import { Image as ExpoImage } from 'expo-image';
 
 const { width } = Dimensions.get('window');
 
@@ -469,7 +466,7 @@ export default function ProfileViewScreen({ route, navigation }) {
                 {Platform.OS === 'web' ? (
                   <OptimizedImage uri={allImages[currentImageIndex]} style={styles.fullModalImage} resizeMode="contain" />
                 ) : (
-                  <FastImage source={{ uri: allImages[currentImageIndex] }} style={styles.fullModalImage} resizeMode={FastImage.resizeMode.contain} />
+                  <ExpoImage source={{ uri: allImages[currentImageIndex] }} style={styles.fullModalImage} contentFit="contain" />
                 )}
               </View>
             </SafeAreaView>

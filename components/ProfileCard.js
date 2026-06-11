@@ -6,13 +6,7 @@ import OptimizedImage from './OptimizedImage';
 import { getStoredLocation, calculateDistance, formatDistance } from '../utils/locationService';
 import { formatLastSeen } from '../utils/timeUtils';
 
-let FastImage;
-if (Platform.OS !== 'web') {
-  FastImage = require('react-native-fast-image');
-}
-
 const ProfileCard = React.memo(({ profile, onPress, isDark, theme, index = 0 }) => {
-  const priority = Platform.OS !== 'web' ? FastImage?.priority?.normal : undefined;
   const [distance, setDistance] = useState(null);
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(25)).current;
@@ -56,7 +50,6 @@ const ProfileCard = React.memo(({ profile, onPress, isDark, theme, index = 0 }) 
             style={styles.cardImageFull}
             userId={profile.id}
             userName={profile.name}
-            priority={priority}
           />
           {profile.isOnline ? (
             <View style={styles.onlineBadge}>
@@ -98,7 +91,6 @@ const ProfileCard = React.memo(({ profile, onPress, isDark, theme, index = 0 }) 
 });
 
 const ListCard = React.memo(({ profile, onPress, isDark, theme, index = 0 }) => {
-  const priority = Platform.OS !== 'web' ? FastImage?.priority?.normal : undefined;
   const [distance, setDistance] = useState(null);
   const opacity = useRef(new Animated.Value(0)).current;
   const translateX = useRef(new Animated.Value(-30)).current;
@@ -142,7 +134,6 @@ const ListCard = React.memo(({ profile, onPress, isDark, theme, index = 0 }) => 
             style={styles.listImage}
             userId={profile.id}
             userName={profile.name}
-            priority={priority}
           />
           {profile.isOnline ? (
             <View style={styles.listOnlineBadge}>
