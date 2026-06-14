@@ -1,5 +1,5 @@
 import io from 'socket.io-client';
-import { API_URL } from '../config/urlConfig';
+import { SOCKET_URL } from '../config/urlConfig';
 
 class SocketService {
   constructor() {
@@ -21,8 +21,7 @@ class SocketService {
       this.socket = null;
     }
 
-    const socketUrl = API_URL.replace('/api', '');
-    this.socket = io(socketUrl);
+    this.socket = io(SOCKET_URL);
 
     this.socket.on('connect', () => {
       this.isConnected = true;

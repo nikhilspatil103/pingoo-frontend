@@ -1,5 +1,5 @@
 import io from 'socket.io-client';
-import { API_URL } from '../config/urlConfig';
+import { SOCKET_URL } from '../config/urlConfig';
 
 class ProfileSocketService {
   constructor() {
@@ -10,8 +10,7 @@ class ProfileSocketService {
   connect(token) {
     if (this.socket?.connected) return;
 
-    const socketUrl = API_URL.replace('/api', '');
-    this.socket = io(socketUrl, {
+    this.socket = io(SOCKET_URL, {
       auth: { token },
       transports: ['websocket'],
       reconnection: true,

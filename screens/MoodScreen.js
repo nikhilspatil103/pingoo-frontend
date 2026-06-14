@@ -713,58 +713,67 @@ export default function MoodScreen({ navigation, route }) {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.commentModalOverlay}>
           <TouchableOpacity style={styles.commentModalDismiss} onPress={() => { setPostModal(false); setPendingVideoUri(null); }} />
           <View style={[styles.postModalContent, { backgroundColor: isDark ? '#1a0a2e' : '#fff' }]}>
-            <View style={styles.commentHeader}>
-              <Text style={[styles.commentTitle, { color: theme.text }]}>Post Your Mood 🫧</Text>
-              <TouchableOpacity onPress={() => { setPostModal(false); setPendingVideoUri(null); }}>
-                <Text style={{ fontSize: 24, color: theme.text }}>✕</Text>
+            {/* Drag Handle */}
+            <View style={styles.postModalHandle} />
+
+            {/* Header */}
+            <View style={styles.postModalHeader}>
+              <View>
+                <Text style={[styles.postModalTitle, { color: theme.text }]}>Post Your Mood</Text>
+                <Text style={[styles.postModalSubtitle, { color: theme.textSecondary }]}>Share what you're feeling right now</Text>
+              </View>
+              <TouchableOpacity style={styles.postModalCloseBtn} onPress={() => { setPostModal(false); setPendingVideoUri(null); }}>
+                <Ionicons name="close" size={20} color={theme.textSecondary} />
               </TouchableOpacity>
             </View>
 
             {/* Caption Input */}
-            <TextInput
-              style={[styles.captionInput, { color: theme.text, borderColor: isDark ? '#333' : '#ddd' }]}
-              placeholder="What's your mood? Write a caption..."
-              placeholderTextColor={theme.textSecondary}
-              value={captionInput}
-              onChangeText={setCaptionInput}
-              maxLength={150}
-              multiline
-            />
-            <Text style={[styles.charCount, { color: theme.textSecondary }]}>{captionInput.length}/150</Text>
+            <View style={[styles.postModalSection, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f8f9fa', borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#eee' }]}>
+              <TextInput
+                style={[styles.captionInput, { color: theme.text }]}
+                placeholder="What's on your mind?"
+                placeholderTextColor={theme.textSecondary}
+                value={captionInput}
+                onChangeText={setCaptionInput}
+                maxLength={150}
+                multiline
+              />
+              <Text style={[styles.charCount, { color: theme.textSecondary }]}>{captionInput.length}/150</Text>
+            </View>
 
             {/* Thumbnail Picker */}
-            <Text style={[styles.moodPickerLabel, { color: theme.text }]}>Thumbnail:</Text>
-            <TouchableOpacity style={styles.thumbnailPicker} onPress={pickThumbnail}>
+            <TouchableOpacity style={[styles.thumbnailPicker, { borderColor: isDark ? 'rgba(255,255,255,0.12)' : '#e0e0e0' }]} onPress={pickThumbnail}>
               {thumbnailUri ? (
                 <Image source={{ uri: thumbnailUri }} style={styles.thumbnailPreview} />
               ) : (
                 <View style={styles.thumbnailPlaceholder}>
-                  <Ionicons name="image-outline" size={32} color={theme.textSecondary} />
-                  <Text style={[styles.thumbnailText, { color: theme.textSecondary }]}>Pick thumbnail from gallery</Text>
+                  <View style={[styles.thumbnailIconWrap, { backgroundColor: isDark ? 'rgba(255,107,157,0.15)' : 'rgba(255,107,157,0.1)' }]}>
+                    <Ionicons name="image-outline" size={22} color="#FF6B9D" />
+                  </View>
+                  <Text style={[styles.thumbnailText, { color: theme.textSecondary }]}>Add cover thumbnail</Text>
                 </View>
               )}
             </TouchableOpacity>
 
             {/* Mood Emoji Picker */}
-            <Text style={[styles.moodPickerLabel, { color: theme.text }]}>Select your mood:</Text>
+            <Text style={[styles.moodPickerLabel, { color: theme.text }]}>How are you feeling?</Text>
             <View style={styles.moodGrid}>
               {MOOD_OPTIONS.map(m => (
                 <TouchableOpacity
                   key={m.value}
-                  style={[styles.moodChip, selectedMoodEmoji === m.value && styles.moodChipActive]}
+                  style={[styles.moodChip, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f5f5f5', borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e8e8e8' }, selectedMoodEmoji === m.value && styles.moodChipActive]}
                   onPress={() => setSelectedMoodEmoji(m.value)}
                 >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <MoodEmoji mood={m.value} size={18} />
-                    <Text style={[styles.moodChipText, selectedMoodEmoji === m.value && styles.moodChipTextActive]}>{m.value}</Text>
-                  </View>
+                  <MoodEmoji mood={m.value} size={16} />
+                  <Text style={[styles.moodChipText, { color: isDark ? 'rgba(255,255,255,0.7)' : '#555' }, selectedMoodEmoji === m.value && styles.moodChipTextActive]}>{m.value}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             {/* Post Button */}
-            <TouchableOpacity style={styles.postBtn} onPress={uploadMood}>
-              <Text style={styles.postBtnText}>🚀 Post Mood</Text>
+            <TouchableOpacity style={styles.postBtn} onPress={uploadMood} activeOpacity={0.8}>
+              <Ionicons name="rocket-outline" size={18} color="#fff" />
+              <Text style={styles.postBtnText}>Post Mood</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -927,21 +936,28 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   viewsRow: { flexDirection: 'row', marginTop: 8 },
   viewsText: { color: 'rgba(255,255,255,0.7)', fontSize: 12 },
   // Post modal
-  postModalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40 },
-  captionInput: { borderWidth: 1, borderRadius: 12, padding: 14, fontSize: 15, minHeight: 60, textAlignVertical: 'top', marginBottom: 4 },
-  charCount: { fontSize: 12, textAlign: 'right', marginBottom: 16 },
-  moodPickerLabel: { fontSize: 15, fontWeight: '600', marginBottom: 10 },
+  postModalContent: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 },
+  postModalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(150,150,150,0.3)', alignSelf: 'center', marginBottom: 16 },
+  postModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  postModalTitle: { fontSize: 20, fontWeight: '700', letterSpacing: -0.3 },
+  postModalSubtitle: { fontSize: 13, marginTop: 2 },
+  postModalCloseBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(150,150,150,0.12)', justifyContent: 'center', alignItems: 'center' },
+  postModalSection: { borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1 },
+  captionInput: { fontSize: 15, minHeight: 50, textAlignVertical: 'top', lineHeight: 21 },
+  charCount: { fontSize: 11, textAlign: 'right', marginTop: 6 },
+  moodPickerLabel: { fontSize: 14, fontWeight: '600', marginBottom: 10, letterSpacing: -0.2 },
   moodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
-  moodChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#FF6B9D' },
-  moodChipActive: { backgroundColor: '#FF6B9D' },
-  moodChipText: { fontSize: 13, color: '#FF6B9D' },
-  moodChipTextActive: { color: '#fff', fontWeight: 'bold' },
-  postBtn: { backgroundColor: '#FF6B9D', paddingVertical: 14, borderRadius: 25, alignItems: 'center' },
-  postBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  thumbnailPicker: { marginBottom: 16, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#FF6B9D', borderStyle: 'dashed' },
+  moodChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  moodChipActive: { backgroundColor: '#FF6B9D', borderColor: '#FF6B9D' },
+  moodChipText: { fontSize: 12, fontWeight: '500', textTransform: 'capitalize' },
+  moodChipTextActive: { color: '#fff', fontWeight: '700' },
+  postBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FF6B9D', paddingVertical: 15, borderRadius: 14, shadowColor: '#FF6B9D', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  postBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  thumbnailPicker: { marginBottom: 16, borderRadius: 14, overflow: 'hidden', borderWidth: 1.5, borderStyle: 'dashed' },
   thumbnailPreview: { width: '100%', height: 120, borderRadius: 12 },
-  thumbnailPlaceholder: { height: 80, justifyContent: 'center', alignItems: 'center', gap: 6 },
-  thumbnailText: { fontSize: 13 },
+  thumbnailPlaceholder: { height: 70, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10 },
+  thumbnailIconWrap: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  thumbnailText: { fontSize: 13, fontWeight: '500' },
   // Comment modal
   commentModalOverlay: { flex: 1, justifyContent: 'flex-end' },
   commentModalDismiss: { flex: 1 },
