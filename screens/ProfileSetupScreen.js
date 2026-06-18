@@ -8,18 +8,6 @@ import { requestLocationPermission, getCurrentLocation } from '../utils/location
 import PingooLogo from '../components/PingooLogo';
 import PingooLoader from '../assets/brand/PingooLoader';
 
-const MOOD_OPTIONS = [
-  { label: '😊 Happy', value: 'happy' },
-  { label: '😎 Vibing', value: 'vibing' },
-  { label: '🥰 Romantic', value: 'romantic' },
-  { label: '😢 Sad', value: 'sad' },
-  { label: '🤪 Crazy', value: 'crazy' },
-  { label: '😴 Bored', value: 'bored' },
-  { label: '🔥 Excited', value: 'excited' },
-  { label: '🧘 Chill', value: 'chill' },
-  { label: '💪 Motivated', value: 'motivated' },
-  { label: '🎉 Party', value: 'party' },
-];
 
 export default function ProfileSetupScreen({ route, navigation }) {
   const { name, email, password, fromGoogle, token: googleToken } = route.params;
@@ -29,7 +17,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
   const [gender, setGender] = useState('');
   const [interestedIn, setInterestedIn] = useState('');
   const [lookingFor, setLookingFor] = useState('');
-  const [currentMood, setCurrentMood] = useState('happy');
+
   const [locationGranted, setLocationGranted] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState('');
   const [loading, setLoading] = useState(false);
@@ -107,8 +95,6 @@ export default function ProfileSetupScreen({ route, navigation }) {
         return;
       }
       if (loading) return;
-      setStep(6);
-    } else if (step === 6) {
       // Request location permission directly
       const granted = await requestLocationPermission();
       if (granted) {
@@ -162,7 +148,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${googleToken}`
           },
-          body: JSON.stringify({ age: ageNum, gender, interestedIn, lookingFor, profilePhoto, currentMood })
+          body: JSON.stringify({ age: ageNum, gender, interestedIn, lookingFor, profilePhoto })
         });
         const data = await response.json();
         if (response.ok) {
@@ -175,7 +161,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
         const response = await fetch(`${API_URL}/signup`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password, age: ageNum, gender, interestedIn, lookingFor, profilePhoto, currentMood })
+          body: JSON.stringify({ name, email, password, age: ageNum, gender, interestedIn, lookingFor, profilePhoto })
         });
         const data = await response.json();
         if (response.ok) {
@@ -199,7 +185,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
           <TouchableOpacity onPress={() => step > 1 ? setStep(step - 1) : navigation.goBack()} style={styles.backBtn}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Step {step} of 6</Text>
+          <Text style={styles.headerTitle}>Step {step} of 5</Text>
           <View style={{ width: 40 }} />
         </View>
 
@@ -208,10 +194,10 @@ export default function ProfileSetupScreen({ route, navigation }) {
             <View style={styles.welcomeSection}>
               <PingooLoader />
               <Text style={styles.title}>
-                {step === 1 ? 'Add Your Photo' : step === 2 ? 'How old are you?' : step === 3 ? 'Your Gender' : step === 4 ? 'Interested in' : step === 5 ? 'What are you looking for?' : "What's your vibe?"}
+                {step === 1 ? 'Add Your Photo' : step === 2 ? 'How old are you?' : step === 3 ? 'Your Gender' : step === 4 ? 'Interested in' : 'What are you looking for?'}
               </Text>
               <Text style={styles.subtitle}>
-                {step === 1 ? 'Optional - You can skip this' : step === 2 ? 'You must be 18 or older' : step === 3 ? 'Select your gender' : step === 4 ? 'Who would you like to meet?' : step === 5 ? 'Tell us your preferences' : 'Let people know how you're feeling'}
+                {step === 1 ? 'Optional - You can skip this' : step === 2 ? 'You must be 18 or older' : step === 3 ? 'Select your gender' : step === 4 ? 'Who would you like to meet?' : 'Tell us your preferences'}
               </Text>
             </View>
 
@@ -312,25 +298,6 @@ export default function ProfileSetupScreen({ route, navigation }) {
               </View>
             )}
 
-            {step === 6 && (
-              <View style={styles.formCard}>
-                <Text style={styles.moodSectionLabel}>How are you feeling right now?</Text>
-                <View style={styles.moodGrid}>
-                  {MOOD_OPTIONS.map(option => (
-                    <TouchableOpacity
-                      key={option.value}
-                      style={[styles.moodChip, currentMood === option.value && styles.moodChipSelected]}
-                      onPress={() => setCurrentMood(option.value)}
-                    >
-                      <Text style={styles.moodEmoji}>{option.label.split(' ')[0]}</Text>
-                      <Text style={[styles.moodLabel, currentMood === option.value && styles.moodLabelSelected]}>
-                        {option.label.split(' ')[1]}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
 
           </View>
         </ScrollView>
@@ -342,7 +309,7 @@ export default function ProfileSetupScreen({ route, navigation }) {
             disabled={loading}
           >
             <Text style={styles.continueBtnText}>
-              {loading ? 'Creating Account...' : step === 6 ? 'Complete' : step === 1 ? (profilePhoto ? 'Next' : 'Skip') : 'Next'}
+              {loading ? 'Creating Account...' : step === 5 ? 'Complete' : step === 1 ? (profilePhoto ? 'Next' : 'Skip') : 'Next'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -518,24 +485,7 @@ const styles = StyleSheet.create({
   optionIconLarge: { fontSize: 48, marginBottom: 12 },
   optionLabel: { fontSize: 14, fontWeight: '500', color: 'rgba(255,255,255,0.6)' },
   selectedLabel: { color: '#fff', fontWeight: '600' },
-  // Mood picker styles
-  moodSectionLabel: { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 16, textAlign: 'center' },
-  moodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
-  moodChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.15)',
-  },
-  moodChipSelected: { backgroundColor: '#FF6B9D', borderColor: '#FF6B9D' },
-  moodEmoji: { fontSize: 20 },
-  moodLabel: { fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
-  moodLabelSelected: { color: '#fff', fontWeight: '700' },
+
   bottomSection: {
     padding: 20,
     backgroundColor: 'rgba(255,255,255,0.05)',
