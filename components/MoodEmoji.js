@@ -3,18 +3,45 @@ import { View, Text, StyleSheet, Animated, Easing, Dimensions } from 'react-nati
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Expanded mood emoji sets — multiple emojis per mood for variety
 const MOOD_EMOJIS = {
   happy: ['😊', '😄', '🌟', '✨', '💫'],
   vibing: ['😎', '🎶', '🎧', '💜', '🪩'],
   romantic: ['🥰', '💕', '💗', '🌹', '💋'],
-  sad: ['😢', '🥺', '💧', '🌧️', '💔'],
+  hot: ['🔥', '🥵', '💥', '☄️', '🌞'],
+  kinky: ['😈', '👿', '⛓️', '👀', '🫦'],
+  flirty: ['😏', '😉', '💋', '💅', '🫣'],
+  spicy: ['🌶️', '🔥', '🥵', '💣', '⚡'],
+  naughty: ['💋', '😈', '🫣', '👅', '💝'],
+  thirsty: ['🥵', '💦', '🍌', '😋', '🪄'],
+  savage: ['💃', '👑', '💪', '🔥', '🙌'],
   crazy: ['🤪', '🤯', '⚡', '🫨', '🎪'],
   bored: ['😴', '🥱', '💤', '😑', '🫠'],
-  excited: ['🔥', '🚀', '⚡', '🤩', '💥'],
+  excited: ['🤩', '🚀', '⚡', '🌟', '💥'],
   chill: ['🧘', '☁️', '🍃', '🌊', '😌'],
   motivated: ['💪', '🏆', '👑', '⭐', '🎯'],
   party: ['🎉', '🥳', '🪅', '🍾', '🎊'],
+  sad: ['😢', '🥺', '💧', '🌧️', '💔'],
+};
+
+// MOOD_THEMES used by ProfileViewScreen for mood section
+const MOOD_THEMES = {
+  happy: { emoji: '😊', label: 'Happy' },
+  vibing: { emoji: '😎', label: 'Vibing' },
+  romantic: { emoji: '🥰', label: 'Romantic' },
+  hot: { emoji: '🔥', label: 'Hot' },
+  kinky: { emoji: '😈', label: 'Kinky' },
+  flirty: { emoji: '😏', label: 'Flirty' },
+  spicy: { emoji: '🌶️', label: 'Spicy' },
+  naughty: { emoji: '💋', label: 'Naughty' },
+  thirsty: { emoji: '🥵', label: 'Thirsty' },
+  savage: { emoji: '💃', label: 'Savage' },
+  crazy: { emoji: '🤪', label: 'Crazy' },
+  bored: { emoji: '😴', label: 'Bored' },
+  excited: { emoji: '🤩', label: 'Excited' },
+  chill: { emoji: '🧘', label: 'Chill' },
+  motivated: { emoji: '💪', label: 'Motivated' },
+  party: { emoji: '🎉', label: 'Party' },
+  sad: { emoji: '😢', label: 'Sad' },
 };
 
 // Single floating emoji with animation
@@ -120,7 +147,7 @@ export function MoodLabel({ mood, style }) {
   );
 }
 
-export { MOOD_EMOJIS };
+export { MOOD_EMOJIS, MOOD_THEMES };
 
 const styles = StyleSheet.create({
   overlayContainer: {

@@ -1,6 +1,6 @@
 // Backend Provider: 'lambda' | 'render'
 // Switch this to change where your API calls go
-const BACKEND_PROVIDER = 'lambda';
+const BACKEND_PROVIDER = 'render';
 
 const BACKENDS = {
   render: {

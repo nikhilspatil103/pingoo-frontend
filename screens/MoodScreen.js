@@ -51,13 +51,20 @@ export default function MoodScreen({ navigation, route }) {
     { label: '😊 Happy', value: 'happy' },
     { label: '😎 Vibing', value: 'vibing' },
     { label: '🥰 Romantic', value: 'romantic' },
-    { label: '😢 Sad', value: 'sad' },
+    { label: '🔥 Hot', value: 'hot' },
+    { label: '😈 Kinky', value: 'kinky' },
+    { label: '😏 Flirty', value: 'flirty' },
+    { label: '🌶️ Spicy', value: 'spicy' },
+    { label: '💋 Naughty', value: 'naughty' },
     { label: '🤪 Crazy', value: 'crazy' },
+    { label: '🥵 Thirsty', value: 'thirsty' },
+    { label: '💃 Savage', value: 'savage' },
+    { label: '🤩 Excited', value: 'excited' },
     { label: '😴 Bored', value: 'bored' },
-    { label: '🔥 Excited', value: 'excited' },
     { label: '🧘 Chill', value: 'chill' },
     { label: '💪 Motivated', value: 'motivated' },
     { label: '🎉 Party', value: 'party' },
+    { label: '😢 Sad', value: 'sad' },
   ];
 
   // Handle deep link from push notification

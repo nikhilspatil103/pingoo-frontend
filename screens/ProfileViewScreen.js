@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Dimensions, Platform, StatusBar, TextInput, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Modal, Dimensions, Platform, StatusBar, TextInput, Alert, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 // import { View } from 'expo-blur';
+import { Video } from 'expo-av';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
@@ -11,7 +12,7 @@ import PingooLoader from '../assets/brand/PingooLoader';
 import { getStoredLocation, calculateDistance, formatDistance } from '../utils/locationService';
 import { formatLastSeen } from '../utils/timeUtils';
 
-import { Image as ExpoImage } from 'expo-image';
+import { Image as ExpoImage } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -33,6 +34,7 @@ export default function ProfileViewScreen({ route, navigation }) {
   const [reportReason, setReportReason] = useState('');
   const [selectedReportOption, setSelectedReportOption] = useState('');
   const [distance, setDistance] = useState(null);
+  const [userMoods, setUserMoods] = useState([]);
   
   const getAllImages = () => {
     if (!profile) return [];
@@ -48,6 +50,7 @@ export default function ProfileViewScreen({ route, navigation }) {
     const profileId = initialProfile?.id || userId;
     if (profileId) {
       fetchProfileDetails(profileId);
+      fetchUserMoods(profileId);
     }
   }, [initialProfile?.id, userId]);
 
@@ -109,6 +112,21 @@ export default function ProfileViewScreen({ route, navigation }) {
       console.error('Failed to fetch profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserMoods = async (profileId) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await fetch(`${API_URL}/user-moods/${profileId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserMoods(data.moods || []);
+      }
+    } catch (e) {
+      // silently fail
     }
   };
 
@@ -340,6 +358,35 @@ export default function ProfileViewScreen({ route, navigation }) {
               <View  tint={isDark ? 'dark' : 'light'} style={styles.section}>
                 <Text style={styles.sectionTitle}>About</Text>
                 <Text style={styles.bioText}>{profile.bio}</Text>
+              </View>
+            )}
+
+            {/* Moods Section */}
+            {userMoods?.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Moods</Text>
+                <View style={styles.moodsRow}>
+                  {userMoods.map((item) => (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={styles.moodGridItem}
+                      onPress={() => navigation.navigate('MoodPlayer', { moods: userMoods.map(m => ({ ...m, user: { id: profile.id, name: profile.name, age: profile.age, profilePhoto: profile.profilePhoto } })), startIndex: userMoods.indexOf(item) })}
+                      activeOpacity={0.8}
+                    >
+                      {item.thumbnailUrl ? (
+                        <Image source={{ uri: item.thumbnailUrl }} style={styles.moodGridThumb} />
+                      ) : (
+                        <Video source={{ uri: item.videoUrl }} style={styles.moodGridThumb} resizeMode="cover" shouldPlay={false} positionMillis={500} />
+                      )}
+                      <View style={styles.moodGridOverlay}>
+                        <Text style={styles.moodGridStats}>▶ {item.views || 0}</Text>
+                      </View>
+                      <View style={styles.moodGridLikes}>
+                        <Text style={styles.moodGridStats}>❤️ {item.likesCount || 0}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
             )}
 
@@ -647,4 +694,10 @@ const getStyles = (theme, isDark) => StyleSheet.create({
   fullModalCloseIcon: { fontSize: 22, color: '#fff', fontWeight: 'bold' },
   fullModalImageContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 40 },
   fullModalImage: { width: '100%', height: '100%', resizeMode: 'contain' },
+  moodsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  moodGridItem: { width: '31%', aspectRatio: 0.65, borderRadius: 8, overflow: 'hidden', position: 'relative', marginBottom: 4 },
+  moodGridThumb: { width: '100%', height: '100%', backgroundColor: '#333' },
+  moodGridOverlay: { position: 'absolute', bottom: 6, left: 6 },
+  moodGridLikes: { position: 'absolute', bottom: 6, right: 6 },
+  moodGridStats: { color: '#fff', fontSize: 11, fontWeight: '600', textShadowColor: '#000', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
 });
