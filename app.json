@@ -50,7 +50,19 @@
       }
     },
     "plugins": [
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "1.9.25",
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 34,
+            "sourceCompatibility": "VERSION_17",
+            "targetCompatibility": "VERSION_17"
+          }
+        }
+      ]
     ]
   }
 }

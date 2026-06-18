@@ -1,23 +1,14 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Image } from 'expo-image';
 
 class MemoryManager {
   constructor() {
     this.cacheCleanupInterval = null;
   }
 
-  // Clear image cache
+  // Clear image cache (no-op without expo-image)
   async clearImageCache() {
-    if (Platform.OS !== 'web') {
-      try {
-        await Image.clearMemoryCache();
-        await Image.clearDiskCache();
-        console.log('Image cache cleared');
-      } catch (error) {
-        console.error('Error clearing image cache:', error);
-      }
-    }
+    // No longer using expo-image cache
   }
 
   // Start periodic cache cleanup (every 30 minutes)
@@ -25,7 +16,7 @@ class MemoryManager {
     if (this.cacheCleanupInterval) return;
 
     this.cacheCleanupInterval = setInterval(() => {
-      this.clearImageCache();
+      this.clearOldCache();
     }, 30 * 60 * 1000); // 30 minutes
   }
 
@@ -62,7 +53,6 @@ class MemoryManager {
   // Clean up all resources
   async cleanup() {
     this.stopPeriodicCleanup();
-    await this.clearImageCache();
     await this.clearOldCache();
   }
 }

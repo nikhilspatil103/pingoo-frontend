@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/urlConfig';
 import OptimizedImage from '../components/OptimizedImage';
 
-import { Image as ExpoImage } from 'expo-image';
+import { Image as ExpoImage } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -440,7 +440,7 @@ export default function ProfileViewScreen({ route, navigation }) {
               <ExpoImage 
                 source={{ uri: allImages[currentImageIndex] }} 
                 style={styles.fullScreenImage} 
-                contentFit="contain" 
+                resizeMode="contain" 
               />
             )}
           </View>

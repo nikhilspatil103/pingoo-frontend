@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Platform, ActivityIndicator } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Text, StyleSheet, Platform, ActivityIndicator, Image } from 'react-native';
 import { getAvatarColor } from '../utils/avatarColors';
 import { useTheme } from '../context/ThemeContext';
 
@@ -26,8 +25,7 @@ const OptimizedImage = ({ uri, style, userId, userName, priority, resizeMode }) 
       <Image
         source={{ uri }}
         style={style}
-        contentFit={resizeMode || 'cover'}
-        cachePolicy="disk"
+        resizeMode={resizeMode || 'cover'}
         onLoadEnd={() => setLoading(false)}
       />
     </View>
