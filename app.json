@@ -2,7 +2,7 @@
   "expo": {
     "name": "Pingoo",
     "slug": "pingoo",
-    "owner": "nikhilspatil106",
+    "owner": "pingo-latest",
     "scheme": "com.pingoo.pingoo",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -32,12 +32,14 @@
       },
       "package": "com.pingoo.pingoo",
       "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE"
       ],
       "useNextNotificationsApi": true,
       "googleServicesFile": "./google-services.json",
-      "newArchEnabled": false,
+      "newArchEnabled": true,
       "enableProguardInReleaseBuilds": true,
       "enableShrinkResourcesInReleaseBuilds": true
     },
@@ -46,7 +48,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "43840a1f-820b-4fe1-b41c-b982926c5354"
+        "projectId": "a1f7c5d3-4175-4884-b4d4-39dbf41e7258"
       }
     },
     "plugins": [
