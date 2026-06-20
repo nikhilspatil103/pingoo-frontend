@@ -177,7 +177,7 @@ export default function MoodScreen({ navigation, route }) {
     setShowRecorder(true);
   };
 
-  const handleRecordedVideo = (uri) => {
+  const handleRecordedVideo = (uri, filter) => {
     setShowRecorder(false);
     setPendingVideoUri(uri);
     setCaptionInput('');
